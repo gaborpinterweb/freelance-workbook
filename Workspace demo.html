@@ -38,6 +38,8 @@ main.global-view #view{margin-top:8px;border-radius:10px 10px 0 0;overflow:hidde
 #menu{position:fixed;z-index:5;background:var(--bar);border:1px solid var(--line);border-radius:12px;padding:6px;display:none;box-shadow:0 8px 28px #00000022;min-width:240px}
 #menu button{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;padding:8px 10px;border-radius:8px}
 #menu button:hover{background:var(--sel)}
+#menu button:disabled{opacity:.45;cursor:default;pointer-events:none}
+#menu button:disabled:hover{background:transparent}
 #menu .mi{display:grid;flex:none;width:28px;height:28px;border-radius:7px;place-items:center;color:#fff}
 #menu .mi svg{display:block}
 #menu .mt{display:flex;flex-direction:column;gap:1px;min-width:0}
@@ -91,14 +93,15 @@ td+td,th+th{border-left:1px solid var(--line)}
 td:focus{outline:2px solid var(--acc);outline-offset:-2px}
 .new{color:var(--mute);cursor:pointer}.new:hover{background:var(--sel)}
 select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4px;padding:2px 6px}
-.board{display:flex;gap:12px;padding:12px;overflow:auto;flex:1;align-items:flex-start}
+.board{display:flex;gap:0;padding:0;overflow:auto;flex:1;align-items:stretch;background:#fff;min-height:0}
 .mb{flex:1;min-height:0;display:flex;flex-direction:column}
 .mb-foot{display:flex;flex:none;border-top:1px solid var(--line)}
 .mb-foot button{flex:1;min-width:0;padding:14px 10px;font-size:13px;text-align:center;border-radius:0;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:opacity .15s}
 .mb-foot button.off{text-decoration:line-through;opacity:.45}
 .card.tint{border-color:color-mix(in srgb,var(--pc) 25%,var(--line))}
-.col{width:230px;flex:none;background:var(--col);border-radius:8px;padding:8px}
-.col h3{margin:4px 6px 8px;font-size:13px;color:var(--mute);font-weight:600}
+.col{width:240px;flex:none;background:transparent;border-radius:0;padding:12px 14px;border-left:1px solid var(--line);min-height:100%}
+.col:first-child{border-left:0}
+.col h3{margin:0 0 12px;font-size:13px;color:var(--mute);font-weight:600;text-align:center}
 .card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-bottom:8px;cursor:grab}
 .card b,.card span{display:block}.card span{color:var(--mute);font-size:13px}
 .card .src{font-size:12px;color:var(--mute);margin-top:4px}
@@ -107,13 +110,17 @@ select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4
 .pick{max-height:240px;overflow:auto;min-width:220px}
 .pick button{font-size:13px}
 .pick small{display:block;color:var(--mute);font-size:11px}
-.addc{color:var(--mute);width:100%;text-align:left;padding:4px 6px;border-radius:6px}.addc:hover{background:var(--sel)}
+.addc{color:var(--mute);width:100%;text-align:center;padding:6px;border-radius:6px}.addc:hover{background:var(--sel)}
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:12px;overflow:auto;flex:1;align-content:start}
 .gcard{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;padding-bottom:10px}
 .gcard>:not(.cover){display:block;margin:6px 12px 0}
 .gcard span{color:var(--mute);font-size:13px}
 .gcard em{font-style:normal;font-size:12px;background:var(--sel);border-radius:4px;padding:2px 6px;width:fit-content}
 .cover{height:90px;display:grid;place-items:center;font-size:32px;font-weight:600;background:var(--sel);color:var(--acc)}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:40px 24px;text-align:center}
+.empty h2{margin:0;font-size:20px;font-weight:600;color:var(--ink)}
+.empty p{margin:0 0 12px;font-size:14px;color:var(--mute);max-width:340px;line-height:1.45}
+.empty .cta{font:inherit;color:#fff;background:var(--acc);border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
 aside small{display:block;color:var(--mute);font-size:12px;font-weight:400}
 .bm{display:flex;align-items:center;gap:8px}
 .bm span:first-child{display:flex;flex:none}
@@ -143,7 +150,13 @@ td.open{width:1%}.open button{color:var(--acc);font-size:13px}
 const STAGES=["Applied","Interview","Offer","Hired"];
 const TYPES=[
  {t:"Board",title:"Board",sub:"Kanban columns and cards"},
- {t:"Database",title:"Database",sub:"Tables and structured records"}
+ {t:"Database",title:"Database",sub:"Tables and structured records"},
+ {t:"Files",title:"Files",sub:"Assets, kits, and uploads",off:true},
+ {t:"Docs",title:"Docs",sub:"Knowledge base notes and briefs",off:true},
+ {t:"Links",title:"Links",sub:"Stakeholders and key references",off:true},
+ {t:"Chat",title:"Chat",sub:"Communication channels and threads",off:true},
+ {t:"Iframe",title:"Iframe",sub:"Embed Google Docs and pages",off:true},
+ {t:"Changelog",title:"Changelog",sub:"Release notes and product updates",off:true}
 ];
 let folders=[],p=0,m=0,g=null;
 const $=id=>document.getElementById(id);
@@ -283,6 +296,7 @@ function render(){
     $("bar").style.display="none";
     document.querySelector("main").classList.add("global-view");
     if(g==="Tasks")renderMasterBoard(c);
+    else if(g==="Calendar")renderCalendar(c);
     else{
       $("view").className="mod";$("view").style.setProperty("--tab",c);$("view").innerHTML="";
       $("view").append(globalBar(g),Object.assign(el("div","", "This is the "+g.toLowerCase()+" page."),{style:"padding:20px;color:var(--mute);font-size:18px;text-align:center"}));
@@ -355,6 +369,7 @@ const IC={
  Changelog:['<path d="M4 3h8M4 6.5h8M4 10h5"/><circle cx="12" cy="11.5" r="1.5"/>',"#7a8f5c"],
  Tasks:['<rect x="2" y="3" width="3.5" height="10" rx="1"/><rect x="6.5" y="3" width="3.5" height="7" rx="1"/><rect x="11" y="3" width="3" height="5" rx="1"/>',"#9a5b2e"],
  Timelogs:['<circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/>',"#9a5b2e"],
+ Calendar:['<rect x="3" y="3.5" width="10" height="10" rx="1.5"/><path d="M3 6.5h10M6 2.5v2M10 2.5v2M6.5 9h3"/>',"#9a5b2e"],
  project:['<rect x="2.5" y="2.5" width="11" height="11" rx="3"/><path d="M6 6h4M6 9h2.5"/>',""],
  folder:['<path d="M4 2.5h7.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 4 2.5z"/><path d="M6.5 5h4M6.5 7.5h4M6.5 10h2.5"/>',""],
  settings:['<circle cx="8" cy="8" r="2.2"/><path d="M8 2.5v1.2M8 12.3v1.2M2.5 8h1.2M12.3 8h1.2M3.9 3.9l.85.85M11.25 11.25l.85.85M3.9 12.1l.85-.85M11.25 4.75l.85-.85"/>',""]};
@@ -362,12 +377,13 @@ const GACC="#9a5b2e";
 const PC=["#3b82c4","#4a9d5b","#d0547f","#e0812b"];
 const icon=t=>`<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${IC[t][0]}</svg>`;
 $("menu").innerHTML="";
-TYPES.forEach(({t,title,sub})=>{
+TYPES.forEach(({t,title,sub,off})=>{
   const b=el("button");
   const mi=el("span","mi");mi.style.background=IC[t][1];mi.innerHTML=icon(t);
   const mt=el("span","mt");mt.append(el("b","",title),el("span","",sub));
   b.append(mi,mt);
-  b.onclick=async()=>{
+  if(off){b.disabled=true;b.title="Coming soon"}
+  else b.onclick=async()=>{
     const name=(prompt(t+" name")||"").trim();
     if(!name)return;
     const path=t==="Board"?"/api/board":"/api/database";
@@ -392,7 +408,7 @@ function globalBar(name){
 }
 function globals(){
   const box=$("globals");box.innerHTML="";
-  ["Tasks","Timelogs"].forEach(n=>{
+  ["Tasks","Timelogs","Calendar"].forEach(n=>{
     const k=el("button","bm"+(g===n?" on":"")),i=el("span");
     i.innerHTML=icon(n);i.style.color=GACC;
     k.append(i,el("span","",n));k.onclick=()=>{g=n;render()};box.append(k);
@@ -444,6 +460,17 @@ function renderMasterBoard(tabC){
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
   v.append(globalBar("Tasks"),masterBoard());
+}
+function renderCalendar(tabC){
+  const v=$("view");v.className="mod";v.innerHTML="";
+  v.style.setProperty("--tab",tabC);
+  const empty=el("div","empty");
+  empty.append(
+    el("h2","","See your calendar here"),
+    el("p","","Connect your Google Calendar so you see your events here"),
+    el("button","cta","Connect Google Calendar")
+  );
+  v.append(globalBar("Calendar"),empty);
 }
 function masterBoard(){
   const wrap=el("div","mb");
