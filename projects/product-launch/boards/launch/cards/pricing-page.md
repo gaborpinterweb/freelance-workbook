@@ -1,5 +1,5 @@
 ---
 title: Pricing page
-status: Interview
+status: Offer
 role: Product
 ---

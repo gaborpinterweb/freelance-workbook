@@ -1,5 +1,5 @@
 ---
 title: Ana Kovacs
-status: Applied
+status: Hired
 role: Product designer
 ---

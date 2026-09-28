@@ -118,6 +118,49 @@ function readDatabases(projDir) {
   return databases;
 }
 
+function todayISO() {
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
+}
+
+function readCover(meta) {
+  let fields = String(meta.data.fields || "created")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!fields.includes("created")) fields = ["created", ...fields];
+  const values = {
+    created: meta.data.created || todayISO(),
+    deadline: meta.data.deadline || "",
+    goal: meta.data.goal || "",
+    description: meta.body || "",
+  };
+  return { fields, values };
+}
+
+function writeProject(project, patch) {
+  const file = path.join(ROOT, project, "project.md");
+  const prev = fs.existsSync(file) ? parseFm(fs.readFileSync(file, "utf8")) : { data: {}, body: "" };
+  const name = patch.name != null ? patch.name : prev.data.name || project;
+  const color = patch.color != null ? patch.color : prev.data.color || "#9a5b2e";
+  const cover = patch.cover || readCover(prev);
+  const fields = cover.fields && cover.fields.length ? cover.fields.slice() : ["created"];
+  if (!fields.includes("created")) fields.unshift("created");
+  const values = Object.assign(
+    { created: todayISO(), deadline: "", goal: "", description: "" },
+    cover.values || {}
+  );
+  if (!values.created) values.created = todayISO();
+  const data = { name, color, fields: fields.join(",") };
+  fields.forEach((f) => {
+    if (f === "description") return;
+    data[f] = values[f] != null ? String(values[f]).replace(/\n/g, " ") : "";
+  });
+  const body = fields.includes("description") ? values.description || "" : "";
+  fs.mkdirSync(path.join(ROOT, project), { recursive: true });
+  fs.writeFileSync(file, dumpFm(data, body));
+}
+
 function readWorkspace() {
   if (!fs.existsSync(ROOT)) fs.mkdirSync(ROOT, { recursive: true });
   const projects = [];
@@ -131,6 +174,7 @@ function readWorkspace() {
       slug,
       name: meta.data.name || slug,
       color: meta.data.color || "#9a5b2e",
+      cover: readCover(meta),
       boards: readBoards(projDir),
       databases: readDatabases(projDir),
     });
@@ -229,6 +273,16 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/workspace") {
       return json(res, 200, readWorkspace());
     }
+    if (req.method === "PUT" && url.pathname === "/api/project") {
+      const body = await readBody(req);
+      if (!body.project) return json(res, 400, { error: "missing fields" });
+      writeProject(body.project, {
+        name: body.name,
+        color: body.color,
+        cover: body.cover,
+      });
+      return json(res, 200, readWorkspace());
+    }
     if (req.method === "PUT" && url.pathname === "/api/card") {
       const body = await readBody(req);
       if (!body.project || !body.board || !body.title) return json(res, 400, { error: "missing fields" });
@@ -304,6 +358,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Workspace at http://localhost:${PORT}`);
+  console.log(`Projectoire v0.1.0 at http://localhost:${PORT}`);
   console.log(`Projects vault: ${ROOT}`);
 });

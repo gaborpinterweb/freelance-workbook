@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Workspace demo</title>
+<title>Projectoire</title>
 <style>
 :root{--bg:#f0ede8;--bar:#fbf9f5;--card:#fbf9f5;--col:#e6e2db;--line:#dcd7cd;--ink:#33261c;--mute:#7c6b58;--acc:#9a5b2e;--sel:#e8e3d9;
 --side:#160e08;--side-ink:#f0e6d6;--side-mute:#a08d78;--side-sel:#2c1e14;--radius:14px;
@@ -13,11 +13,15 @@ html,body{height:100%;margin:0}
 body{display:flex;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 button:focus-visible{outline:2px solid var(--acc)}
-aside{width:220px;flex:none;background:var(--side);color:var(--side-ink);padding:16px 10px}
+aside{width:220px;flex:none;background:var(--side);color:var(--side-ink);padding:16px 10px;display:flex;flex-direction:column;min-height:0}
 aside h2{font-size:13px;color:var(--side-mute);font-weight:600;margin:0 8px 8px}
 aside button{display:block;width:100%;text-align:left;padding:8px;border-radius:calc(var(--radius) - 4px)}
 aside button:focus-visible{outline-color:var(--side-ink)}
 aside button.on{background:var(--side-sel)}
+aside .side-scroll{flex:1;min-height:0;overflow:auto}
+.brand{margin-top:auto;padding:14px 8px 4px;border-top:1px solid color-mix(in srgb,var(--side-ink) 10%,transparent)}
+.brand b{display:block;font-size:13px;font-weight:650;letter-spacing:.01em;color:var(--side-ink)}
+.brand span{display:block;font-size:11px;color:var(--side-mute);margin-top:2px}
 main{flex:1;min-width:0;display:flex;flex-direction:column}
 main.global-view{background:var(--side)}
 main.global-view #view{margin-top:8px;border-radius:var(--radius) var(--radius) 0 0;overflow:hidden;background:var(--bg)}
@@ -117,6 +121,20 @@ select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4
 .gcard span{color:var(--mute);font-size:13px}
 .gcard em{font-style:normal;font-size:12px;background:var(--sel);border-radius:4px;padding:2px 6px;width:fit-content}
 .cover{height:90px;display:grid;place-items:center;font-size:32px;font-weight:600;background:var(--sel);color:var(--acc)}
+.cover-page{flex:1;min-height:0;overflow:auto;background:#fff;padding:28px 32px 40px;max-width:640px}
+.cover-page h1{margin:0 0 24px;font-size:28px;font-weight:650;letter-spacing:-.02em;color:var(--ink)}
+.cover-rows{display:flex;flex-direction:column;gap:14px}
+.cover-row{display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:start}
+.cover-row label{font-size:13px;font-weight:600;color:var(--mute);padding-top:8px}
+.cover-row input,.cover-row textarea{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:7px 10px;width:100%;box-sizing:border-box}
+.cover-row textarea{min-height:88px;resize:vertical;line-height:1.45}
+.cover-row input:focus,.cover-row textarea:focus{outline:2px solid color-mix(in srgb,var(--acc) 35%,transparent);outline-offset:1px;border-color:color-mix(in srgb,var(--acc) 40%,var(--line))}
+.cover-add{position:relative;margin-top:18px;width:fit-content}
+.cover-add>button{color:var(--mute);font-weight:600;font-size:13px;padding:6px 10px;border-radius:calc(var(--radius) - 4px)}
+.cover-add>button:hover{background:var(--sel);color:var(--ink)}
+.cover-add .pop{min-width:180px}
+.cover-add .pop button{padding:8px 10px}
+.cover-add .pop small{margin-top:2px}
 .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:40px 24px;text-align:center}
 .empty h2{margin:0;font-size:20px;font-weight:600;color:var(--ink)}
 .empty p{margin:0 0 12px;font-size:14px;color:var(--mute);max-width:340px;line-height:1.45}
@@ -140,7 +158,13 @@ td.open{width:1%}.open button{color:var(--acc);font-size:13px}
 </style>
 </head>
 <body>
-<aside><h2>Globals</h2><div id="globals"></div><h2 style="margin-top:20px">Projects</h2><div id="folders"></div></aside>
+<aside>
+  <div class="side-scroll">
+    <h2>Globals</h2><div id="globals"></div>
+    <h2 style="margin-top:20px">Projects</h2><div id="folders"></div>
+  </div>
+  <div class="brand"><b>Projectoire</b><span>v0.1.0</span></div>
+</aside>
 <main>
   <div id="bar"></div>
   <div id="menu"></div>
@@ -156,14 +180,16 @@ const TYPES=[
  {t:"Links",title:"Links",sub:"Stakeholders and key references",off:true},
  {t:"Chat",title:"Chat",sub:"Communication channels and threads",off:true},
  {t:"Iframe",title:"Iframe",sub:"Embed Google Docs and pages",off:true},
- {t:"Changelog",title:"Changelog",sub:"Release notes and product updates",off:true}
+ {t:"Changelog",title:"Changelog",sub:"Release notes and product updates",off:true},
+ {t:"Workflows",title:"Workflows",sub:"Trigger remote workers",off:true}
 ];
 let folders=[],p=0,m=0,g=null;
 const $=id=>document.getElementById(id);
 
 function fromApi(data){
   return (data.projects||[]).map(pr=>{
-    const mods=[];
+    const cover=pr.cover||{fields:["created"],values:{created:new Date().toISOString().slice(0,10),deadline:"",goal:"",description:""}};
+    const mods=[["Cover","Cover",{slug:"cover",fields:cover.fields.slice(),values:Object.assign({created:"",deadline:"",goal:"",description:""},cover.values)}]];
     (pr.databases||[]).forEach(d=>{
       mods.push(["Database",d.name,{
         slug:d.slug,
@@ -333,7 +359,8 @@ function render(){
   set.id="settings";set.title="Project settings";set.innerHTML=icon("settings");
   actions.append(set);
   $("bar").append(actions);
-  if(x&&x[0]==="Board")renderBoard(x,tabC);
+  if(x&&x[0]==="Cover")renderCover(folders[p],x,tabC);
+  else if(x&&x[0]==="Board")renderBoard(x,tabC);
   else if(x&&x[0]==="Database")renderDb(x,tabC);
   else{
     $("view").className="mod";
@@ -356,17 +383,19 @@ const tabBtn=(label,c,on,type)=>{
 };
 let drag;
 const IC={
- table:['<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 7h12M6 7v6"/>',"#2b9a8a"],
- board:['<rect x="2" y="3" width="3.5" height="10" rx="1"/><rect x="6.5" y="3" width="3.5" height="6" rx="1"/><rect x="11" y="3" width="3" height="8" rx="1"/>',"#e0812b"],
- gallery:['<rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/>',"#b45bd0"],
- Database:['<ellipse cx="8" cy="4" rx="5" ry="2"/><path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>',"#3b82c4"],
- Board:['<rect x="2" y="3" width="3.5" height="10" rx="1"/><rect x="6.5" y="3" width="3.5" height="6" rx="1"/><rect x="11" y="3" width="3" height="8" rx="1"/>',"#e0812b"],
- Files:['<path d="M2.5 3h4l1.5 2h5.5v8h-11z"/>',"#c9a227"],
- Docs:['<path d="M4 2h6l3 3v9H4zM6.5 8h4M6.5 11h4"/>',"#4a9d5b"],
- Links:['<path d="M7 9a3 3 0 0 0 4 0l2-2a3 3 0 0 0-4-4l-1 1M9 7a3 3 0 0 0-4 0l-2 2a3 3 0 0 0 4 4l1-1"/>',"#d0547f"],
- Chat:['<path d="M2 3h12v8H7l-3 3v-3H2z"/>',"#6f7fdc"],
- Iframe:['<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6h12"/>',"#5b8def"],
- Changelog:['<path d="M4 3h8M4 6.5h8M4 10h5"/><circle cx="12" cy="11.5" r="1.5"/>',"#7a8f5c"],
+ table:['<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 7h12M6 7v6"/>',"#2f7a6e"],
+ board:['<rect x="2" y="3" width="3.5" height="10" rx="1"/><rect x="6.5" y="3" width="3.5" height="6" rx="1"/><rect x="11" y="3" width="3" height="8" rx="1"/>',"#b45a3c"],
+ gallery:['<rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/>',"#6b4f8c"],
+ Database:['<ellipse cx="8" cy="4" rx="5" ry="2"/><path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>',"#3d6b7a"],
+ Board:['<rect x="2" y="3" width="3.5" height="10" rx="1"/><rect x="6.5" y="3" width="3.5" height="6" rx="1"/><rect x="11" y="3" width="3" height="8" rx="1"/>',"#b45a3c"],
+ Files:['<path d="M2.5 3h4l1.5 2h5.5v8h-11z"/>',"#8a5c2e"],
+ Docs:['<path d="M4 2h6l3 3v9H4zM6.5 8h4M6.5 11h4"/>',"#5a6e4a"],
+ Links:['<path d="M7 9a3 3 0 0 0 4 0l2-2a3 3 0 0 0-4-4l-1 1M9 7a3 3 0 0 0-4 0l-2 2a3 3 0 0 0 4 4l1-1"/>',"#a04d6e"],
+ Chat:['<path d="M2 3h12v8H7l-3 3v-3H2z"/>',"#6b4f8c"],
+ Iframe:['<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6h12"/>',"#4a5a7a"],
+ Changelog:['<path d="M4 3h8M4 6.5h8M4 10h5"/><circle cx="12" cy="11.5" r="1.5"/>',"#6e7a4a"],
+ Workflows:['<circle cx="4" cy="4" r="1.5"/><circle cx="12" cy="8" r="1.5"/><circle cx="4" cy="12" r="1.5"/><path d="M5.4 4.8l5.2 2.4M5.4 11.2l5.2-2.4"/>',"#5c6a8a"],
+ Cover:['<rect x="2.5" y="3" width="11" height="10" rx="1.5"/><path d="M5 7.5h6M5 10h4"/>',"#9a5b2e"],
  Tasks:['<rect x="2" y="3" width="3.5" height="10" rx="1"/><rect x="6.5" y="3" width="3.5" height="7" rx="1"/><rect x="11" y="3" width="3" height="5" rx="1"/>',"#9a5b2e"],
  Timelogs:['<circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/>',"#9a5b2e"],
  Calendar:['<rect x="3" y="3.5" width="10" height="10" rx="1.5"/><path d="M3 6.5h10M6 2.5v2M10 2.5v2M6.5 9h3"/>',"#9a5b2e"],
@@ -374,7 +403,7 @@ const IC={
  folder:['<path d="M4 2.5h7.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 4 2.5z"/><path d="M6.5 5h4M6.5 7.5h4M6.5 10h2.5"/>',""],
  settings:['<circle cx="8" cy="8" r="2.2"/><path d="M8 2.5v1.2M8 12.3v1.2M2.5 8h1.2M12.3 8h1.2M3.9 3.9l.85.85M11.25 11.25l.85.85M3.9 12.1l.85-.85M11.25 4.75l.85-.85"/>',""]};
 const GACC="#9a5b2e";
-const PC=["#3b82c4","#4a9d5b","#d0547f","#e0812b"];
+const PC=["#6b4f8c","#2f7a6e","#b45a3c","#8a5c2e"];
 const icon=t=>`<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${IC[t][0]}</svg>`;
 $("menu").innerHTML="";
 TYPES.forEach(({t,title,sub,off})=>{
@@ -419,6 +448,96 @@ function renderBoard(x,tabC){
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
   v.append(el("div","modbar"),board(d,folders[p],x));
+}
+const COVER_DEFS=[
+  {id:"created",label:"Created At",type:"date"},
+  {id:"deadline",label:"Deadline",type:"date",add:true},
+  {id:"goal",label:"Goal",type:"text",add:true},
+  {id:"description",label:"Description",type:"textarea",add:true}
+];
+async function saveCover(folder,mod){
+  if(!folder||!mod||mod[0]!=="Cover")return;
+  const data=await fetch("/api/project",{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      project:folder.slug,
+      name:folder.name,
+      color:folder.color,
+      cover:{fields:mod[2].fields,values:mod[2].values}
+    })
+  }).then(r=>r.json());
+  const keepM=mod[2].slug;
+  folders=fromApi(data);
+  p=Math.max(0,folders.findIndex(f=>f.slug===folder.slug));
+  m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===keepM));
+}
+function renderCover(folder,mod,tabC){
+  const d=mod[2]||(mod[2]={fields:["created"],values:{created:new Date().toISOString().slice(0,10)}});
+  if(!d.fields)d.fields=["created"];
+  if(!d.values)d.values={};
+  if(!d.values.created)d.values.created=new Date().toISOString().slice(0,10);
+  const v=$("view");v.className="mod";v.innerHTML="";
+  v.style.setProperty("--tab",tabC);
+  const page=el("div","cover-page");
+  page.append(el("h1","",folder.name));
+  const rows=el("div","cover-rows");
+  const paintRows=()=>{
+    rows.innerHTML="";
+    d.fields.forEach(id=>{
+      const def=COVER_DEFS.find(x=>x.id===id)||{id,label:id,type:"text"};
+      const row=el("div","cover-row");
+      row.append(el("label","",def.label));
+      let input;
+      if(def.type==="textarea"){
+        input=document.createElement("textarea");
+        input.value=d.values[id]||"";
+        input.rows=4;
+      }else{
+        input=document.createElement("input");
+        input.type=def.type==="date"?"date":"text";
+        input.value=d.values[id]||"";
+      }
+      input.oninput=()=>{d.values[id]=input.value};
+      input.onchange=async()=>{d.values[id]=input.value;await saveCover(folder,mod)};
+      row.append(input);
+      rows.append(row);
+    });
+  };
+  paintRows();
+  page.append(rows);
+  const addWrap=el("div","cover-add");
+  const addBtn=el("button","","Add row");
+  const pop=el("div","pop");
+  const refreshPop=()=>{
+    pop.innerHTML="";
+    COVER_DEFS.filter(x=>x.add&&!d.fields.includes(x.id)).forEach(def=>{
+      const b=el("button");
+      b.append(document.createTextNode(def.label),el("small","",def.type));
+      b.onclick=async e=>{
+        e.stopPropagation();
+        d.fields.push(def.id);
+        if(def.type==="date"&&!d.values[def.id])d.values[def.id]=new Date().toISOString().slice(0,10);
+        else if(d.values[def.id]==null)d.values[def.id]="";
+        pop.style.display="none";
+        paintRows();
+        refreshPop();
+        addWrap.style.display=COVER_DEFS.some(x=>x.add&&!d.fields.includes(x.id))?"":"none";
+        await saveCover(folder,mod);
+      };
+      pop.append(b);
+    });
+  };
+  refreshPop();
+  addBtn.onclick=e=>{
+    e.stopPropagation();
+    document.querySelectorAll(".pop").forEach(e=>e.style.display="none");
+    pop.style.display=pop.style.display==="block"?"none":"block";
+  };
+  if(!COVER_DEFS.some(x=>x.add&&!d.fields.includes(x.id)))addWrap.style.display="none";
+  addWrap.append(addBtn,pop);
+  page.append(addWrap);
+  v.append(el("div","modbar"),page);
 }
 function renderDb(x,tabC){
   const d=x[2]||(x[2]={cur:0,views:[{n:"Table",t:"table"}],cols:[],rows:[]});
