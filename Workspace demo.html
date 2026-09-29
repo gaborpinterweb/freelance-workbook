@@ -162,7 +162,6 @@ select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4
 .pick{max-height:240px;overflow:auto;min-width:220px}
 .pick button{font-size:13px}
 .pick small{display:block;color:var(--mute);font-size:11px}
-.addc{color:var(--mute);width:100%;text-align:center;padding:6px;border-radius:calc(var(--radius) - 4px)}.addc:hover{background:var(--sel)}
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:12px;overflow:auto;flex:1;align-content:start}
 .gcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;padding-bottom:10px}
 .gcard>:not(.cover){display:block;margin:6px 12px 0}
@@ -442,8 +441,9 @@ async function moveCard(row,from,to){
 function slugifyClient(s){
   return String(s||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"item";
 }
-async function createCard(folder,mod,title,status){
+async function createCard(folder,mod,title,status,master){
   const boardCol=status||(mod[2].columns||stages)[0];
+  const masterCol=master&&stages.includes(master)?master:stages[0];
   const res=await fetch("/api/card",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -452,13 +452,19 @@ async function createCard(folder,mod,title,status){
       board:mod[2].slug,
       title,
       status:boardCol,
-      master:stages[0],
+      master:masterCol,
       body:""
     })
   });
   const data=await res.json();
   folders=fromApi(data);
   return data.slug;
+}
+function masterCreateTarget(){
+  const boards=allBoards().filter(b=>!masterOff.has(b.key));
+  if(!boards.length)return null;
+  const cur=folders[p];
+  return boards.find(b=>b.folder===cur)||boards[0];
 }
 async function saveItem(row,folder,mod){
   if(!folder||!mod||mod[0]!=="Database")return;
@@ -1224,6 +1230,18 @@ function masterBoard(){
           dragPayload:t
         }));
       });
+      if(!boardEdit){
+        body.ondblclick=async e=>{
+          if(e.target.closest(".card,.day-group"))return;
+          const target=masterCreateTarget();
+          if(!target){alert("Enable at least one board in the footer to create a card.");return}
+          const title=(prompt("Task title")||"").trim();
+          if(!title)return;
+          const boardStatus=(target.mod[2].columns||stages)[0];
+          await createCard(target.folder,target.mod,title,boardStatus,s);
+          render();
+        };
+      }
       if(mode==="inplace"&&done.length){
         fillDoneGroups(body,done.map(t=>({
           row:t.row,folder:t.folder,mod:t.mod,
@@ -1481,15 +1499,14 @@ function board(d,folder,mod){
     },body=>{
       split.open.forEach(r=>body.append(makeTaskCard(r,f,md)));
       if(!boardEdit){
-        const a=el("button","addc","+ New");
-        a.onclick=async()=>{
+        body.ondblclick=async e=>{
+          if(e.target.closest(".card,.day-group"))return;
           const title=(prompt("Task title")||"").trim();
           if(!title)return;
           await createCard(f,md,title,s);
           m=folders[p].mods.findIndex(x=>x[2]?.slug===md[2].slug);
           render();
         };
-        body.append(a);
       }
       if(mode==="inplace"&&split.done.length){
         fillDoneGroups(body,split.done.map(row=>({
