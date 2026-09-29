@@ -73,9 +73,12 @@ main.global-view #view{margin:0;border-radius:0;overflow:hidden;background:var(-
 .col.done-col .done-empty{padding:16px 8px;text-align:center;color:var(--mute);font-size:13px}
 .col-name-input{font:inherit;font-size:13px;font-weight:600;color:var(--ink);text-align:center;background:#fff;border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:4px 8px;width:100%;min-width:0;flex:1;box-sizing:border-box}
 .col-name-input:focus{outline:2px solid color-mix(in srgb,var(--acc) 35%,transparent);outline-offset:1px;border-color:color-mix(in srgb,var(--acc) 40%,var(--line))}
-.col-move{flex:none;width:28px;height:28px;display:grid;place-items:center;border-radius:calc(var(--radius) - 6px);color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
-.col-move:hover:not(:disabled){color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
-.col-move:disabled{opacity:.28;cursor:default}
+.col-move,.col-del{flex:none;width:28px;height:28px;display:grid;place-items:center;border-radius:calc(var(--radius) - 6px);color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
+.col-move:hover:not(:disabled),.col-del:hover:not(:disabled){color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.col-move:disabled,.col-del:disabled{opacity:.28;cursor:default}
+.col-del:hover:not(:disabled){color:#b42318;background:color-mix(in srgb,#b42318 10%,transparent)}
+.col-add{flex:0 0 auto;align-self:stretch;min-width:140px;margin:0;padding:12px 16px;border:0;border-left:1px solid var(--line);background:color-mix(in srgb,var(--sel) 55%,#fff);color:var(--acc);font:inherit;font-size:13px;font-weight:600;text-align:left;cursor:pointer}
+.col-add:hover{color:var(--ink);background:var(--sel)}
 .board.editing .col-head{cursor:default;background:var(--sel);gap:4px;padding:8px 8px}
 .board.editing .col-head:hover{color:var(--mute);background:var(--sel)}
 .modbar.gbar{gap:8px;color:#fff;font-weight:600}
@@ -923,6 +926,12 @@ const masterOff=new Set();
 const colCollapsed=new Set();
 let boardEdit=false;
 function colCollapseKey(scope,s){return scope+"\0"+s}
+function confirmDeleteColumn(name,count,target){
+  const cards=count
+    ? `${count} card${count===1?"":"s"} will move to "${target}".`
+    : `No cards are in this column.`;
+  return confirm(`Delete column "${name}"?\n\n${cards}`);
+}
 async function renameBoardColumn(folder,mod,from,to){
   if(!folder||!mod||mod[0]!=="Board")return;
   const next=(to||"").trim().replace(/,/g," ");
@@ -956,6 +965,59 @@ async function renameBoardColumn(folder,mod,from,to){
   m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===keepM));
   render();
 }
+async function addBoardColumn(folder,mod){
+  if(!folder||!mod||mod[0]!=="Board")return;
+  const label=(prompt("Column name")||"").trim().replace(/,/g," ");
+  if(!label)return;
+  const cols=(mod[2].columns||[]).slice();
+  if(cols.includes(label)){alert("A column with that name already exists.");return}
+  cols.push(label);
+  const data=await fetch("/api/board",{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      project:folder.slug,
+      board:mod[2].slug,
+      name:mod[1],
+      columns:cols
+    })
+  }).then(r=>r.json());
+  const keepM=mod[2].slug;
+  folders=fromApi(data);
+  p=Math.max(0,folders.findIndex(f=>f.slug===folder.slug));
+  m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===keepM));
+  render();
+}
+async function deleteBoardColumn(folder,mod,name){
+  if(!folder||!mod||mod[0]!=="Board")return;
+  const cols=(mod[2].columns||[]).slice();
+  if(cols.length<=1)return;
+  const i=cols.indexOf(name);
+  if(i<0)return;
+  const remaining=cols.filter(c=>c!==name);
+  const target=remaining[0];
+  const count=(mod[2].rows||[]).filter(r=>r.s===name).length;
+  if(!confirmDeleteColumn(name,count,target))return;
+  cols.splice(i,1);
+  (mod[2].rows||[]).forEach(r=>{if(r.s===name)r.s=target});
+  colCollapsed.delete(colCollapseKey(boardKey(folder,mod),name));
+  const data=await fetch("/api/board",{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      project:folder.slug,
+      board:mod[2].slug,
+      name:mod[1],
+      columns:cols,
+      rename:{from:name,to:target}
+    })
+  }).then(r=>r.json());
+  const keepM=mod[2].slug;
+  folders=fromApi(data);
+  p=Math.max(0,folders.findIndex(f=>f.slug===folder.slug));
+  m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===keepM));
+  render();
+}
 async function renameMasterColumn(from,to){
   const next=(to||"").trim().replace(/,/g," ");
   if(!next||next===from)return;
@@ -973,7 +1035,41 @@ async function renameMasterColumn(from,to){
   const data=await fetch("/api/masterboard",{
     method:"PUT",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({columns:stages.slice(),rename:{from,to:next}})
+    body:JSON.stringify({columns:cols,rename:{from,to:next}})
+  }).then(r=>r.json());
+  folders=fromApi(data);
+  render();
+}
+async function addMasterColumn(){
+  const label=(prompt("Column name")||"").trim().replace(/,/g," ");
+  if(!label)return;
+  const cols=stages.slice();
+  if(cols.includes(label)){alert("A column with that name already exists.");return}
+  cols.push(label);
+  const data=await fetch("/api/masterboard",{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({columns:cols})
+  }).then(r=>r.json());
+  folders=fromApi(data);
+  render();
+}
+async function deleteMasterColumn(name){
+  const cols=stages.slice();
+  if(cols.length<=1)return;
+  const i=cols.indexOf(name);
+  if(i<0)return;
+  const remaining=cols.filter(c=>c!==name);
+  const target=remaining[0];
+  const count=allBoardTasks().filter(t=>t.row.ms===name).length;
+  if(!confirmDeleteColumn(name,count,target))return;
+  cols.splice(i,1);
+  allBoardTasks().forEach(t=>{if(t.row.ms===name)t.row.ms=target});
+  colCollapsed.delete(colCollapseKey("master",name));
+  const data=await fetch("/api/masterboard",{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({columns:cols,rename:{from:name,to:target}})
   }).then(r=>r.json());
   folders=fromApi(data);
   render();
@@ -1010,10 +1106,16 @@ async function moveMasterColumn(name,dir){
   const data=await fetch("/api/masterboard",{
     method:"PUT",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({columns:stages.slice()})
+    body:JSON.stringify({columns:cols})
   }).then(r=>r.json());
   folders=fromApi(data);
   render();
+}
+function boardAddCol(onAdd){
+  const btn=el("button","col-add","+ Add column");
+  btn.type="button";
+  btn.onclick=()=>onAdd&&onAdd();
+  return btn;
 }
 function boardCol(s,count,scope,ondrop,fillBody,opts){
   const editing=!!opts?.editing;
@@ -1047,7 +1149,13 @@ function boardCol(s,count,scope,ondrop,fillBody,opts){
       if(e.key==="Enter"){e.preventDefault();input.blur()}
       if(e.key==="Escape"){input.value=s;input.blur()}
     };
-    head.append(left,input,right);
+    const del=el("button","col-del","×");
+    del.type="button";
+    del.title=opts.canDelete?"Delete column":"Keep at least one column";
+    del.disabled=!opts.canDelete;
+    del.onmousedown=e=>e.preventDefault();
+    del.onclick=e=>{e.stopPropagation();if(opts.onDelete)opts.onDelete(s)};
+    head.append(left,input,right,del);
     c.append(head);
   }else{
     const head=el("button","col-head");
@@ -1128,10 +1236,13 @@ function masterBoard(){
       editing:boardEdit,
       canLeft:i>0,
       canRight:i<stages.length-1,
+      canDelete:stages.length>1,
       onRename:(from,to)=>renameMasterColumn(from,to),
-      onMove:(name,dir)=>moveMasterColumn(name,dir)
+      onMove:(name,dir)=>moveMasterColumn(name,dir),
+      onDelete:name=>deleteMasterColumn(name)
     }));
   });
+  if(boardEdit)b.append(boardAddCol(()=>addMasterColumn()));
   if(mode==="virtual"){
     const doneItems=tasks.filter(t=>isDone(t.row)).map(t=>({
       row:t.row,folder:t.folder,mod:t.mod,
@@ -1389,10 +1500,13 @@ function board(d,folder,mod){
       editing:boardEdit,
       canLeft:i>0,
       canRight:i<cols.length-1,
+      canDelete:cols.length>1,
       onRename:(from,to)=>renameBoardColumn(f,md,from,to),
-      onMove:(name,dir)=>moveBoardColumn(f,md,name,dir)
+      onMove:(name,dir)=>moveBoardColumn(f,md,name,dir),
+      onDelete:name=>deleteBoardColumn(f,md,name)
     }));
   });
+  if(boardEdit)b.append(boardAddCol(()=>addBoardColumn(f,md)));
   if(mode==="virtual"){
     const doneItems=(d.rows||[]).filter(isDone).map(row=>({
       row,folder:f,mod:md,color:f.color||PC[0],dragPayload:row
