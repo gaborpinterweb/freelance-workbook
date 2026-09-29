@@ -60,7 +60,8 @@ main.global-view #view{margin:0;border-radius:0;overflow:hidden;background:var(-
 #view.mod{place-items:unset}
 #view.cover-view{background:var(--tab)}
 .vbar,.modbar{background:var(--tab,var(--bar));display:flex;align-items:center;gap:4px;padding:7px 14px;min-height:42px;border-bottom:none;box-shadow:inset 0 -1px 0 color-mix(in srgb,#000 12%,transparent)}
-.modbar .bedit{margin-left:auto;padding:5px 12px;border-radius:999px;color:color-mix(in srgb,#fff 78%,transparent);font-size:13px;font-weight:600;transition:background .12s,color .12s}
+.modbar .bedit{margin-left:auto;display:grid;place-items:center;width:32px;height:32px;padding:0;border-radius:calc(var(--radius) - 4px);color:color-mix(in srgb,#fff 78%,transparent);transition:background .12s,color .12s}
+.modbar .bedit svg{display:block}
 .modbar .bedit:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
 .modbar .bedit.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
 .col-name-input{font:inherit;font-size:13px;font-weight:600;color:var(--ink);text-align:center;background:#fff;border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:4px 8px;width:100%;min-width:0;flex:1;box-sizing:border-box}
@@ -217,7 +218,42 @@ const TYPES=[
  {t:"Changelog",title:"Changelog",sub:"Release notes and product updates",off:true},
  {t:"Workflows",title:"Workflows",sub:"Trigger remote workers",off:true}
 ];
-let folders=[],p=0,m=0,g=null;
+let folders=[],p=0,m=0,g="Masterboard";
+const LAST_TAB_KEY="projectoire:lastTab";
+const SESSION_KEY="projectoire:session";
+function loadLastTabs(){
+  try{return JSON.parse(localStorage.getItem(LAST_TAB_KEY)||"{}")||{}}catch{return{}}
+}
+function saveLastTab(slug,tabSlug){
+  if(!slug||!tabSlug)return;
+  const map=loadLastTabs();
+  map[slug]=tabSlug;
+  try{localStorage.setItem(LAST_TAB_KEY,JSON.stringify(map))}catch{}
+}
+function rememberCurrentTab(){
+  const pr=folders[p];
+  const mod=pr?.mods?.[m];
+  if(pr&&mod?.[2]?.slug)saveLastTab(pr.slug,mod[2].slug);
+}
+function restoreTabIndex(pr){
+  if(!pr?.mods?.length)return 0;
+  const want=loadLastTabs()[pr.slug];
+  if(!want)return 0;
+  const i=pr.mods.findIndex(mod=>mod[2]?.slug===want);
+  return i>=0?i:0;
+}
+function loadSession(){
+  try{return JSON.parse(localStorage.getItem(SESSION_KEY)||"null")}catch{return null}
+}
+function rememberSession(){
+  try{
+    localStorage.setItem(SESSION_KEY,JSON.stringify({
+      g:g||null,
+      project:folders[p]?.slug||null
+    }));
+  }catch{}
+  if(!g)rememberCurrentTab();
+}
 const $=id=>document.getElementById(id);
 
 function fromApi(data){
@@ -251,13 +287,25 @@ function fromApi(data){
 function boardKey(folder,mod){return folder.slug+"/"+(mod[2]?.slug||mod[1])}
 async function reload(){
   const data=await fetch("/api/workspace").then(r=>r.json());
+  const initial=!folders.length;
   const keepP=folders[p]?.slug,keepM=folders[p]?.mods[m]?.[2]?.slug,keepG=g;
   folders=fromApi(data);
-  p=Math.max(0,folders.findIndex(f=>f.slug===keepP));
-  if(p<0)p=0;
-  m=Math.max(0,(folders[p]?.mods||[]).findIndex(mod=>mod[2]?.slug===keepM));
-  if(m<0)m=0;
-  g=keepG;
+  if(initial){
+    const sess=loadSession();
+    if(sess&&("g" in sess))g=sess.g||null;
+    else g="Masterboard";
+    if(sess?.project){
+      const pi=folders.findIndex(f=>f.slug===sess.project);
+      p=pi>=0?pi:0;
+    }else p=0;
+    m=restoreTabIndex(folders[p]);
+  }else{
+    p=Math.max(0,folders.findIndex(f=>f.slug===keepP));
+    if(p<0)p=0;
+    m=Math.max(0,(folders[p]?.mods||[]).findIndex(mod=>mod[2]?.slug===keepM));
+    if(m<0)m=0;
+    g=keepG;
+  }
   render();
 }
 async function saveCard(row,folder,mod){
@@ -349,7 +397,7 @@ function render(){
     b.className="bm"+(i===p&&!g?" on":"");
     const ic=el("span");ic.innerHTML=icon("folder");ic.style.color=pr.color||PC[i%PC.length];
     b.append(ic,el("span","",pr.name));
-    b.onclick=()=>{g=null;p=i;m=0;render()};
+    b.onclick=()=>{g=null;p=i;m=restoreTabIndex(folders[i]);boardEdit=false;render()};
     $("folders").append(b);
   });
   if(g){
@@ -362,6 +410,7 @@ function render(){
       $("view").className="mod";$("view").style.setProperty("--tab",c);$("view").innerHTML="";
       $("view").append(globalBar(g),Object.assign(el("div","", "This is the "+g.toLowerCase()+" page."),{style:"padding:20px;color:var(--mute);font-size:18px;text-align:center"}));
     }
+    rememberSession();
     globals();return;
   }
   document.querySelector("main").classList.remove("global-view");
@@ -407,6 +456,7 @@ function render(){
     msg.style.cssText="padding:20px;color:var(--mute);font-size:18px;text-align:center";
     $("view").append(msg);
   }
+  rememberSession();
   globals();
 }
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x)e.textContent=x;return e};
@@ -437,7 +487,8 @@ const IC={
  Calendar:['<rect x="3" y="3.5" width="10" height="10" rx="1.5"/><path d="M3 6.5h10M6 2.5v2M10 2.5v2M6.5 9h3"/>',"#9a5b2e"],
  project:['<rect x="2.5" y="2.5" width="11" height="11" rx="3"/><path d="M6 6h4M6 9h2.5"/>',""],
  folder:['<path d="M4 2.5h7.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 4 2.5z"/><path d="M6.5 5h4M6.5 7.5h4M6.5 10h2.5"/>',""],
- settings:['<circle cx="8" cy="8" r="2.2"/><path d="M8 2.5v1.2M8 12.3v1.2M2.5 8h1.2M12.3 8h1.2M3.9 3.9l.85.85M11.25 11.25l.85.85M3.9 12.1l.85-.85M11.25 4.75l.85-.85"/>',""]};
+ settings:['<circle cx="8" cy="8" r="2.2"/><path d="M8 2.5v1.2M8 12.3v1.2M2.5 8h1.2M12.3 8h1.2M3.9 3.9l.85.85M11.25 11.25l.85.85M3.9 12.1l.85-.85M11.25 4.75l.85-.85"/>',""],
+ pencil:['<path d="M11.5 2.5l2 2L5.5 12.5H3.5v-2zM9.8 4.2l2 2"/>',""]};
 const GACC="#9a5b2e";
 const PC=["#6b4f8c","#2f7a6e","#b45a3c","#8a5c2e"];
 const icon=t=>`<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${IC[t][0]}</svg>`;
@@ -462,6 +513,7 @@ TYPES.forEach(({t,title,sub,off})=>{
     folders=fromApi(data);
     m=folders[p].mods.findIndex(mod=>mod[2]?.slug===data.slug);
     if(m<0)m=folders[p].mods.length-1;
+    rememberCurrentTab();
     render();
   };
   $("menu").append(b);
@@ -473,7 +525,11 @@ function globalBar(name){
   return bar;
 }
 function boardEditBtn(){
-  const edit=el("button","bedit"+(boardEdit?" on":""),boardEdit?"Done":"Edit");
+  const edit=el("button","bedit"+(boardEdit?" on":""));
+  edit.type="button";
+  edit.title=boardEdit?"Done editing":"Edit board";
+  edit.setAttribute("aria-label",edit.title);
+  edit.innerHTML=icon("pencil");
   edit.onclick=()=>{boardEdit=!boardEdit;render()};
   return edit;
 }
