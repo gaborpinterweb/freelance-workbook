@@ -66,8 +66,12 @@ main.global-view #view{margin:0;border-radius:0;overflow:hidden;background:var(-
 .modbar .bedit.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
 .modbar .done-toggle{margin-left:auto;display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:calc(var(--radius) - 4px);color:color-mix(in srgb,#fff 78%,transparent);font-size:13px;font-weight:500;white-space:nowrap;transition:background .12s,color .12s}
 .modbar .done-toggle:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
-.modbar .done-toggle.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
 .modbar .done-toggle+.bedit{margin-left:0}
+.dlg.done-dlg{width:min(420px,100%);max-height:min(82vh,760px);padding:16px 16px 12px;gap:10px}
+.dlg.done-dlg h2{margin:0 4px 2px;font-size:18px;font-weight:650;color:var(--ink)}
+.dlg.done-dlg .done-empty{padding:24px 8px;text-align:center;color:var(--mute);font-size:14px}
+.done-list{overflow:auto;flex:1;min-height:120px;padding:4px 2px 8px;display:flex;flex-direction:column;gap:2px}
+.done-list .card{cursor:pointer}
 .col-name-input{font:inherit;font-size:13px;font-weight:600;color:var(--ink);text-align:center;background:#fff;border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:4px 8px;width:100%;min-width:0;flex:1;box-sizing:border-box}
 .col-name-input:focus{outline:2px solid color-mix(in srgb,var(--acc) 35%,transparent);outline-offset:1px;border-color:color-mix(in srgb,var(--acc) 40%,var(--line))}
 .col-move{flex:none;width:28px;height:28px;display:grid;place-items:center;border-radius:calc(var(--radius) - 6px);color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
@@ -352,7 +356,7 @@ async function reload(){
 }
 async function saveCard(row,folder,mod){
   if(!folder||!mod||mod[0]!=="Board")return;
-  await fetch("/api/card",{
+  const data=await fetch("/api/card",{
     method:"PUT",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
@@ -365,7 +369,16 @@ async function saveCard(row,folder,mod){
       doneAt:row.doneAt||"",
       body:row.body||""
     })
-  });
+  }).then(r=>r.json());
+  const keepP=folder.slug,keepM=mod[2].slug,keepG=g,keepCompleted=completedCtx;
+  folders=fromApi(data);
+  p=Math.max(0,folders.findIndex(f=>f.slug===keepP));
+  if(p<0)p=0;
+  m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===keepM));
+  if(m<0)m=0;
+  g=keepG;
+  completedCtx=keepCompleted;
+  return data;
 }
 async function deleteCard(folder,mod,slug){
   if(!folder||!mod||mod[0]!=="Board"||!slug)return;
@@ -611,17 +624,6 @@ function boardEditBtn(){
   edit.onclick=()=>{boardEdit=!boardEdit;render()};
   return edit;
 }
-const showCompletedByBoard=new Map();
-function showCompletedToggle(scope){
-  const on=!!showCompletedByBoard.get(scope);
-  const btn=el("button","done-toggle"+(on?" on":""));
-  btn.type="button";
-  btn.textContent=on?"Show active":"Show completed";
-  btn.title=on?"Show active tasks":"Show completed tasks";
-  btn.setAttribute("aria-pressed",on?"true":"false");
-  btn.onclick=()=>{showCompletedByBoard.set(scope,!on);render()};
-  return btn;
-}
 function isDone(row){return !!(row&&row.doneAt)}
 function dayKey(iso){
   const d=new Date(iso);
@@ -642,12 +644,6 @@ function groupByDoneDay(rows){
   });
   return [...map.values()];
 }
-async function toggleDone(row,folder,mod){
-  if(!row||!folder||!mod)return;
-  row.doneAt=isDone(row)?"":new Date().toISOString();
-  await saveCard(row,folder,mod);
-  render();
-}
 function cardTitle(name,row,folder,mod){
   const b=el("b");
   const check=document.createElement("input");
@@ -658,7 +654,12 @@ function cardTitle(name,row,folder,mod){
   check.onclick=e=>e.stopPropagation();
   check.onchange=async e=>{
     e.stopPropagation();
-    await toggleDone(row,folder,mod);
+    row.doneAt=check.checked?new Date().toISOString():"";
+    await saveCard(row,folder,mod);
+    const keep=completedCtx;
+    render();
+    completedCtx=keep;
+    if(completedCtx)paintCompletedDialog();
   };
   b.append(check,el("span","card-name",name||"Untitled"));
   return b;
@@ -675,36 +676,67 @@ function makeTaskCard(row,folder,mod,opts){
   if(opts?.src)k.append(el("span","src",opts.src));
   return k;
 }
-function fillCards(body,rows,folder,mod,opts){
-  const showDone=!!opts?.showDone;
-  const visible=rows.filter(r=>showDone?isDone(r):!isDone(r));
-  if(showDone){
-    groupByDoneDay(visible).forEach(group=>{
+function completedBtn(ctx){
+  const btn=el("button","done-toggle");
+  btn.type="button";
+  btn.textContent="Show completed";
+  btn.title="Show completed tasks";
+  btn.onclick=()=>openCompletedDialog(ctx);
+  return btn;
+}
+function collectCompleted(ctx){
+  if(ctx?.type==="master"){
+    return allBoardTasks()
+      .filter(t=>!masterOff.has(boardKey(t.folder,t.mod))&&isDone(t.row))
+      .map(t=>({row:t.row,folder:t.folder,mod:t.mod,fi:t.fi,src:t.folder.name+" › "+t.mod[1]}));
+  }
+  if(ctx?.type==="board"){
+    const folder=folders.find(f=>f.slug===ctx.project);
+    const mod=folder?.mods?.find(x=>x[0]==="Board"&&x[2]?.slug===ctx.board);
+    if(!folder||!mod)return[];
+    return (mod[2].rows||[]).filter(isDone).map(row=>({row,folder,mod,src:null}));
+  }
+  return[];
+}
+function openCompletedDialog(ctx){
+  completedCtx=ctx;
+  paintCompletedDialog();
+}
+function closeCompletedDialog(){
+  completedCtx=null;
+  document.querySelectorAll(".ov.done-ov").forEach(e=>e.remove());
+}
+function paintCompletedDialog(){
+  document.querySelectorAll(".ov.done-ov").forEach(e=>e.remove());
+  if(!completedCtx)return;
+  const items=collectCompleted(completedCtx);
+  const ov=el("div","ov done-ov"),dlg=el("div","dlg done-dlg");
+  dlg.append(el("h2","","Completed"));
+  const list=el("div","done-list");
+  if(!items.length)list.append(el("div","done-empty","No completed tasks yet."));
+  else{
+    groupByDoneDay(items.map(i=>i.row)).forEach(group=>{
       const wrap=el("div","day-group");
       wrap.append(el("div","day-title",group.title));
       group.rows.forEach(r=>{
-        const f=opts?.folderFor?opts.folderFor(r):folder;
-        const m=opts?.modFor?opts.modFor(r):mod;
-        wrap.append(makeTaskCard(r,f,m,{
-          color:opts?.colorFor?opts.colorFor(r):undefined,
-          src:opts?.srcFor?opts.srcFor(r):undefined,
-          dragPayload:opts?.dragFor?opts.dragFor(r):undefined
+        const item=items.find(i=>i.row===r);
+        if(!item)return;
+        wrap.append(makeTaskCard(r,item.folder,item.mod,{
+          color:item.folder.color||PC[(item.fi||0)%PC.length],
+          src:item.src||undefined,
+          noDrag:true
         }));
       });
-      body.append(wrap);
-    });
-  }else{
-    visible.forEach(r=>{
-      const f=opts?.folderFor?opts.folderFor(r):folder;
-      const m=opts?.modFor?opts.modFor(r):mod;
-      body.append(makeTaskCard(r,f,m,{
-        color:opts?.colorFor?opts.colorFor(r):undefined,
-        src:opts?.srcFor?opts.srcFor(r):undefined,
-        dragPayload:opts?.dragFor?opts.dragFor(r):undefined
-      }));
+      list.append(wrap);
     });
   }
-  return visible.length;
+  dlg.append(list);
+  const x=el("button","x","Close");
+  x.onclick=()=>{closeCompletedDialog();render()};
+  dlg.append(x);
+  ov.append(dlg);
+  ov.onmousedown=e=>{if(e.target===ov){closeCompletedDialog();render()}};
+  document.body.append(ov);
 }
 function globals(){
   const box=$("globals");box.innerHTML="";
@@ -718,9 +750,8 @@ function renderBoard(x,tabC){
   const d=x[2]||(x[2]={rows:[],columns:stages.slice()});
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
-  const scope=boardKey(folders[p],x);
   const bar=el("div","modbar");
-  bar.append(showCompletedToggle(scope),boardEditBtn());
+  bar.append(completedBtn({type:"board",project:folders[p].slug,board:d.slug}),boardEditBtn());
   v.append(bar,board(d,folders[p],x));
 }
 const COVER_DEFS=[
@@ -850,6 +881,7 @@ function allBoards(){
 const masterOff=new Set();
 const colCollapsed=new Set();
 let boardEdit=false;
+let completedCtx=null;
 function colCollapseKey(scope,s){return scope+"\0"+s}
 async function renameBoardColumn(folder,mod,from,to){
   if(!folder||!mod||mod[0]!=="Board")return;
@@ -1003,7 +1035,7 @@ function renderMasterBoard(tabC){
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
   const bar=globalBar("Masterboard");
-  bar.append(showCompletedToggle("master"),boardEditBtn());
+  bar.append(completedBtn({type:"master"}),boardEditBtn());
   v.append(bar,masterBoard());
 }
 function renderCalendar(tabC){
@@ -1020,49 +1052,23 @@ function renderCalendar(tabC){
 function masterBoard(){
   const wrap=el("div","mb");
   const b=el("div","board"+(boardEdit?" editing":""));
-  const showDone=!!showCompletedByBoard.get("master");
   const tasks=allBoardTasks().filter(t=>!masterOff.has(boardKey(t.folder,t.mod)));
   stages.forEach((s,i)=>{
-    const colTasks=tasks.filter(t=>t.row.ms===s);
-    const visible=colTasks.filter(t=>showDone?isDone(t.row):!isDone(t.row));
+    const visible=tasks.filter(t=>t.row.ms===s&&!isDone(t.row));
     b.append(boardCol(s,visible.length,"master",async()=>{
-      if(!drag||boardEdit||showDone)return;
+      if(!drag||boardEdit)return;
       const row=drag.row||drag;
       const loc=drag.folder?{folder:drag.folder,mod:drag.mod}:locateRow(row);
       row.ms=s;drag=null;render();
       if(loc)await saveCard(row,loc.folder,loc.mod);
     },body=>{
-      if(showDone){
-        const rows=visible.map(t=>t.row).slice().sort((a,b)=>String(b.doneAt).localeCompare(String(a.doneAt)));
-        const byDay=new Map();
-        rows.forEach(r=>{
-          const key=dayKey(r.doneAt);
-          if(!byDay.has(key))byDay.set(key,{title:dayTitle(r.doneAt),rows:[]});
-          byDay.get(key).rows.push(r);
-        });
-        byDay.forEach(group=>{
-          const wrap=el("div","day-group");
-          wrap.append(el("div","day-title",group.title));
-          group.rows.forEach(r=>{
-            const t=colTasks.find(x=>x.row===r);
-            if(!t)return;
-            wrap.append(makeTaskCard(r,t.folder,t.mod,{
-              color:t.folder.color||PC[t.fi%PC.length],
-              src:t.folder.name+" › "+t.mod[1],
-              dragPayload:t
-            }));
-          });
-          body.append(wrap);
-        });
-      }else{
-        visible.forEach(t=>{
-          body.append(makeTaskCard(t.row,t.folder,t.mod,{
-            color:t.folder.color||PC[t.fi%PC.length],
-            src:t.folder.name+" › "+t.mod[1],
-            dragPayload:t
-          }));
-        });
-      }
+      visible.forEach(t=>{
+        body.append(makeTaskCard(t.row,t.folder,t.mod,{
+          color:t.folder.color||PC[t.fi%PC.length],
+          src:t.folder.name+" › "+t.mod[1],
+          dragPayload:t
+        }));
+      });
     },{
       editing:boardEdit,
       canLeft:i>0,
@@ -1103,7 +1109,10 @@ function openItem(r){
       }
       if(curLoc.mod[0]==="Database")await saveItem(r,curLoc.folder,curLoc.mod);
     }
+    const keep=completedCtx;
     render();
+    completedCtx=keep;
+    if(completedCtx)paintCompletedDialog();
   };
   const props=el("div","props");
   const f=(l,i)=>{const w=el("label","prop");w.append(el("span","",l),i);return w};
@@ -1259,18 +1268,16 @@ function board(d,folder,mod){
   const b=el("div","board"+(boardEdit?" editing":""));
   const scope=boardKey(folder||folders[p],mod||folders[p].mods[m]);
   const f=folder||folders[p],md=mod||folders[p].mods[m];
-  const showDone=!!showCompletedByBoard.get(scope);
   cols.forEach((s,i)=>{
-    const all=d.rows.filter(r=>r.s===s);
-    const list=all.filter(r=>showDone?isDone(r):!isDone(r));
+    const list=d.rows.filter(r=>r.s===s&&!isDone(r));
     b.append(boardCol(s,list.length,scope,async()=>{
-      if(!drag||boardEdit||showDone)return;
+      if(!drag||boardEdit)return;
       const row=drag.row||drag;
       row.s=s;drag=null;render();
       await saveCard(row,f,md);
     },body=>{
-      fillCards(body,all,f,md,{showDone});
-      if(!boardEdit&&!showDone){
+      list.forEach(r=>body.append(makeTaskCard(r,f,md)));
+      if(!boardEdit){
         const a=el("button","addc","+ New");
         a.onclick=async()=>{
           const title=(prompt("Task title")||"").trim();
