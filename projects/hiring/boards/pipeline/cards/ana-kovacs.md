@@ -1,5 +1,5 @@
 ---
 title: Ana Kovacs
-status: Hired
+status: Low priority
 master: Backlog
 ---
