@@ -1,3 +1,3 @@
 ---
-stages: Backlog, This week, Today, Tomorrow, Next week, Done
+stages: Backlog, This week, Today, Tomorrow, Next week
 ---

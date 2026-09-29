@@ -164,7 +164,7 @@ function writeProject(project, patch) {
 
 function readWorkspaceMeta() {
   const file = path.join(ROOT, "workspace.md");
-  const defaults = ["Backlog", "This week", "Today", "Tomorrow", "Next week", "Done"];
+  const defaults = ["Backlog", "This week", "Today", "Tomorrow", "Next week"];
   if (!fs.existsSync(file)) return { stages: defaults.slice() };
   const meta = parseFm(fs.readFileSync(file, "utf8"));
   const names = String(meta.data.stages || "")

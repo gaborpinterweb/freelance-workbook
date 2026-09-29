@@ -66,12 +66,11 @@ main.global-view #view{margin:0;border-radius:0;overflow:hidden;background:var(-
 .modbar .bedit.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
 .modbar .done-toggle{margin-left:auto;display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:calc(var(--radius) - 4px);color:color-mix(in srgb,#fff 78%,transparent);font-size:13px;font-weight:500;white-space:nowrap;transition:background .12s,color .12s}
 .modbar .done-toggle:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
+.modbar .done-toggle.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
 .modbar .done-toggle+.bedit{margin-left:0}
-.dlg.done-dlg{width:min(420px,100%);max-height:min(82vh,760px);padding:16px 16px 12px;gap:10px}
-.dlg.done-dlg h2{margin:0 4px 2px;font-size:18px;font-weight:650;color:var(--ink)}
-.dlg.done-dlg .done-empty{padding:24px 8px;text-align:center;color:var(--mute);font-size:14px}
-.done-list{overflow:auto;flex:1;min-height:120px;padding:4px 2px 8px;display:flex;flex-direction:column;gap:2px}
-.done-list .card{cursor:pointer}
+.col.done-col{background:color-mix(in srgb,var(--sel) 55%,#fff)}
+.col.done-col .col-head{background:color-mix(in srgb,var(--sel) 80%,#fff)}
+.col.done-col .done-empty{padding:16px 8px;text-align:center;color:var(--mute);font-size:13px}
 .col-name-input{font:inherit;font-size:13px;font-weight:600;color:var(--ink);text-align:center;background:#fff;border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:4px 8px;width:100%;min-width:0;flex:1;box-sizing:border-box}
 .col-name-input:focus{outline:2px solid color-mix(in srgb,var(--acc) 35%,transparent);outline-offset:1px;border-color:color-mix(in srgb,var(--acc) 40%,var(--line))}
 .col-move{flex:none;width:28px;height:28px;display:grid;place-items:center;border-radius:calc(var(--radius) - 6px);color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
@@ -243,7 +242,7 @@ td.open{width:1%}.open button{color:var(--acc);font-size:13px}
   <div id="menu"></div>
 </main>
 <script>
-const STAGES=["Backlog","This week","Today","Tomorrow","Next week","Done"];
+const STAGES=["Backlog","This week","Today","Tomorrow","Next week"];
 let stages=STAGES.slice();
 function loadStages(list){
   if(!list||!list.length)return;
@@ -370,14 +369,13 @@ async function saveCard(row,folder,mod){
       body:row.body||""
     })
   }).then(r=>r.json());
-  const keepP=folder.slug,keepM=mod[2].slug,keepG=g,keepCompleted=completedCtx;
+  const keepP=folder.slug,keepM=mod[2].slug,keepG=g;
   folders=fromApi(data);
   p=Math.max(0,folders.findIndex(f=>f.slug===keepP));
   if(p<0)p=0;
   m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===keepM));
   if(m<0)m=0;
   g=keepG;
-  completedCtx=keepCompleted;
   return data;
 }
 async function deleteCard(folder,mod,slug){
@@ -654,12 +652,10 @@ function cardTitle(name,row,folder,mod){
   check.onclick=e=>e.stopPropagation();
   check.onchange=async e=>{
     e.stopPropagation();
+    // Keep board/master stage; only toggle doneAt so uncheck restores place.
     row.doneAt=check.checked?new Date().toISOString():"";
     await saveCard(row,folder,mod);
-    const keep=completedCtx;
     render();
-    completedCtx=keep;
-    if(completedCtx)paintCompletedDialog();
   };
   b.append(check,el("span","card-name",name||"Untitled"));
   return b;
@@ -676,67 +672,40 @@ function makeTaskCard(row,folder,mod,opts){
   if(opts?.src)k.append(el("span","src",opts.src));
   return k;
 }
-function completedBtn(ctx){
-  const btn=el("button","done-toggle");
+function completedBtn(scope){
+  const on=!!showCompletedByScope.get(scope);
+  const btn=el("button","done-toggle"+(on?" on":""));
   btn.type="button";
-  btn.textContent="Show completed";
-  btn.title="Show completed tasks";
-  btn.onclick=()=>openCompletedDialog(ctx);
+  btn.textContent=on?"Hide completed":"Show completed";
+  btn.title=on?"Hide completed column":"Show completed column";
+  btn.setAttribute("aria-pressed",on?"true":"false");
+  btn.onclick=()=>{showCompletedByScope.set(scope,!on);render()};
   return btn;
 }
-function collectCompleted(ctx){
-  if(ctx?.type==="master"){
-    return allBoardTasks()
-      .filter(t=>!masterOff.has(boardKey(t.folder,t.mod))&&isDone(t.row))
-      .map(t=>({row:t.row,folder:t.folder,mod:t.mod,fi:t.fi,src:t.folder.name+" › "+t.mod[1]}));
+function fillDoneGroups(body,items){
+  if(!items.length){
+    body.append(el("div","done-empty","No completed tasks"));
+    return;
   }
-  if(ctx?.type==="board"){
-    const folder=folders.find(f=>f.slug===ctx.project);
-    const mod=folder?.mods?.find(x=>x[0]==="Board"&&x[2]?.slug===ctx.board);
-    if(!folder||!mod)return[];
-    return (mod[2].rows||[]).filter(isDone).map(row=>({row,folder,mod,src:null}));
-  }
-  return[];
-}
-function openCompletedDialog(ctx){
-  completedCtx=ctx;
-  paintCompletedDialog();
-}
-function closeCompletedDialog(){
-  completedCtx=null;
-  document.querySelectorAll(".ov.done-ov").forEach(e=>e.remove());
-}
-function paintCompletedDialog(){
-  document.querySelectorAll(".ov.done-ov").forEach(e=>e.remove());
-  if(!completedCtx)return;
-  const items=collectCompleted(completedCtx);
-  const ov=el("div","ov done-ov"),dlg=el("div","dlg done-dlg");
-  dlg.append(el("h2","","Completed"));
-  const list=el("div","done-list");
-  if(!items.length)list.append(el("div","done-empty","No completed tasks yet."));
-  else{
-    groupByDoneDay(items.map(i=>i.row)).forEach(group=>{
-      const wrap=el("div","day-group");
-      wrap.append(el("div","day-title",group.title));
-      group.rows.forEach(r=>{
-        const item=items.find(i=>i.row===r);
-        if(!item)return;
-        wrap.append(makeTaskCard(r,item.folder,item.mod,{
-          color:item.folder.color||PC[(item.fi||0)%PC.length],
-          src:item.src||undefined,
-          noDrag:true
-        }));
-      });
-      list.append(wrap);
+  groupByDoneDay(items.map(i=>i.row)).forEach(group=>{
+    const wrap=el("div","day-group");
+    wrap.append(el("div","day-title",group.title));
+    group.rows.forEach(r=>{
+      const item=items.find(i=>i.row===r);
+      if(!item)return;
+      wrap.append(makeTaskCard(r,item.folder,item.mod,{
+        color:item.color,
+        src:item.src||undefined,
+        dragPayload:item.dragPayload
+      }));
     });
-  }
-  dlg.append(list);
-  const x=el("button","x","Close");
-  x.onclick=()=>{closeCompletedDialog();render()};
-  dlg.append(x);
-  ov.append(dlg);
-  ov.onmousedown=e=>{if(e.target===ov){closeCompletedDialog();render()}};
-  document.body.append(ov);
+    body.append(wrap);
+  });
+}
+function appendCompletedCol(boardEl,scope,items,ondrop){
+  const col=boardCol("Completed",items.length,scope,ondrop,body=>fillDoneGroups(body,items),{editing:false});
+  col.classList.add("done-col");
+  boardEl.append(col);
 }
 function globals(){
   const box=$("globals");box.innerHTML="";
@@ -750,8 +719,9 @@ function renderBoard(x,tabC){
   const d=x[2]||(x[2]={rows:[],columns:stages.slice()});
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
+  const scope=boardKey(folders[p],x);
   const bar=el("div","modbar");
-  bar.append(completedBtn({type:"board",project:folders[p].slug,board:d.slug}),boardEditBtn());
+  bar.append(completedBtn(scope),boardEditBtn());
   v.append(bar,board(d,folders[p],x));
 }
 const COVER_DEFS=[
@@ -880,8 +850,8 @@ function allBoards(){
 }
 const masterOff=new Set();
 const colCollapsed=new Set();
+const showCompletedByScope=new Map();
 let boardEdit=false;
-let completedCtx=null;
 function colCollapseKey(scope,s){return scope+"\0"+s}
 async function renameBoardColumn(folder,mod,from,to){
   if(!folder||!mod||mod[0]!=="Board")return;
@@ -1035,7 +1005,7 @@ function renderMasterBoard(tabC){
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
   const bar=globalBar("Masterboard");
-  bar.append(completedBtn({type:"master"}),boardEditBtn());
+  bar.append(completedBtn("master"),boardEditBtn());
   v.append(bar,masterBoard());
 }
 function renderCalendar(tabC){
@@ -1059,7 +1029,9 @@ function masterBoard(){
       if(!drag||boardEdit)return;
       const row=drag.row||drag;
       const loc=drag.folder?{folder:drag.folder,mod:drag.mod}:locateRow(row);
-      row.ms=s;drag=null;render();
+      row.ms=s;
+      row.doneAt="";
+      drag=null;render();
       if(loc)await saveCard(row,loc.folder,loc.mod);
     },body=>{
       visible.forEach(t=>{
@@ -1077,6 +1049,22 @@ function masterBoard(){
       onMove:(name,dir)=>moveMasterColumn(name,dir)
     }));
   });
+  if(showCompletedByScope.get("master")){
+    const doneItems=tasks.filter(t=>isDone(t.row)).map(t=>({
+      row:t.row,folder:t.folder,mod:t.mod,
+      color:t.folder.color||PC[t.fi%PC.length],
+      src:t.folder.name+" › "+t.mod[1],
+      dragPayload:t
+    }));
+    appendCompletedCol(b,"master",doneItems,async()=>{
+      if(!drag||boardEdit)return;
+      const row=drag.row||drag;
+      const loc=drag.folder?{folder:drag.folder,mod:drag.mod}:locateRow(row);
+      if(!isDone(row))row.doneAt=new Date().toISOString();
+      drag=null;render();
+      if(loc)await saveCard(row,loc.folder,loc.mod);
+    });
+  }
   const foot=el("div","mb-foot");
   allBoards().forEach(({mod,color,key})=>{
     const btn=el("button",masterOff.has(key)?"off":"",mod[1]);
@@ -1109,10 +1097,7 @@ function openItem(r){
       }
       if(curLoc.mod[0]==="Database")await saveItem(r,curLoc.folder,curLoc.mod);
     }
-    const keep=completedCtx;
     render();
-    completedCtx=keep;
-    if(completedCtx)paintCompletedDialog();
   };
   const props=el("div","props");
   const f=(l,i)=>{const w=el("label","prop");w.append(el("span","",l),i);return w};
@@ -1273,7 +1258,9 @@ function board(d,folder,mod){
     b.append(boardCol(s,list.length,scope,async()=>{
       if(!drag||boardEdit)return;
       const row=drag.row||drag;
-      row.s=s;drag=null;render();
+      row.s=s;
+      row.doneAt="";
+      drag=null;render();
       await saveCard(row,f,md);
     },body=>{
       list.forEach(r=>body.append(makeTaskCard(r,f,md)));
@@ -1296,6 +1283,18 @@ function board(d,folder,mod){
       onMove:(name,dir)=>moveBoardColumn(f,md,name,dir)
     }));
   });
+  if(showCompletedByScope.get(scope)){
+    const doneItems=(d.rows||[]).filter(isDone).map(row=>({
+      row,folder:f,mod:md,color:f.color||PC[0],dragPayload:row
+    }));
+    appendCompletedCol(b,scope,doneItems,async()=>{
+      if(!drag||boardEdit)return;
+      const row=drag.row||drag;
+      if(!isDone(row))row.doneAt=new Date().toISOString();
+      drag=null;render();
+      await saveCard(row,f,md);
+    });
+  }
   return b;
 }
 document.onclick=()=>{$("menu").style.display="none";document.querySelectorAll(".pop").forEach(e=>e.style.display="none")};
