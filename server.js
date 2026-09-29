@@ -357,6 +357,13 @@ const server = http.createServer(async (req, res) => {
       const slug = writeCard(body.project, body.board, body);
       return json(res, 200, { slug, ...readWorkspace() });
     }
+    if (req.method === "DELETE" && url.pathname === "/api/card") {
+      const body = await readBody(req);
+      if (!body.project || !body.board || !body.slug) return json(res, 400, { error: "missing fields" });
+      const file = cardPath(body.project, body.board, body.slug);
+      if (fs.existsSync(file)) fs.unlinkSync(file);
+      return json(res, 200, readWorkspace());
+    }
     if (req.method === "POST" && url.pathname === "/api/card") {
       const body = await readBody(req);
       if (!body.project || !body.board || !body.title) return json(res, 400, { error: "missing fields" });

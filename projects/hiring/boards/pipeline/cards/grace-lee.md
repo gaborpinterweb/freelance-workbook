@@ -1,5 +1,5 @@
 ---
 title: Grace Lee
-status: Interview
+status: Offer
 role: Designer
 ---
