@@ -82,6 +82,7 @@ function readBoards(projDir) {
         title: data.title || file.replace(/\.md$/, ""),
         status: data.status || columns[0] || "Medium priority",
         master: data.master || "Backlog",
+        doneAt: data.doneAt || "",
         body,
       });
     }
@@ -245,14 +246,13 @@ function writeCard(project, board, card) {
   const dir = path.join(ROOT, project, "boards", board, "cards");
   fs.mkdirSync(dir, { recursive: true });
   const slug = card.slug || slugify(card.title);
-  fs.writeFileSync(
-    cardPath(project, board, slug),
-    dumpFm({
-      title: card.title || slug,
-      status: card.status || "Medium priority",
-      master: card.master || "Backlog",
-    }, card.body || "")
-  );
+  const data = {
+    title: card.title || slug,
+    status: card.status || "Medium priority",
+    master: card.master || "Backlog",
+  };
+  if (card.doneAt) data.doneAt = card.doneAt;
+  fs.writeFileSync(cardPath(project, board, slug), dumpFm(data, card.body || ""));
   return slug;
 }
 

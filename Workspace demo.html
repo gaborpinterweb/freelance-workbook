@@ -64,6 +64,10 @@ main.global-view #view{margin:0;border-radius:0;overflow:hidden;background:var(-
 .modbar .bedit svg{display:block}
 .modbar .bedit:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
 .modbar .bedit.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
+.modbar .done-toggle{margin-left:auto;display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:calc(var(--radius) - 4px);color:color-mix(in srgb,#fff 78%,transparent);font-size:13px;font-weight:500;white-space:nowrap;transition:background .12s,color .12s}
+.modbar .done-toggle:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
+.modbar .done-toggle.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
+.modbar .done-toggle+.bedit{margin-left:0}
 .col-name-input{font:inherit;font-size:13px;font-weight:600;color:var(--ink);text-align:center;background:#fff;border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:4px 8px;width:100%;min-width:0;flex:1;box-sizing:border-box}
 .col-name-input:focus{outline:2px solid color-mix(in srgb,var(--acc) 35%,transparent);outline-offset:1px;border-color:color-mix(in srgb,var(--acc) 40%,var(--line))}
 .col-move{flex:none;width:28px;height:28px;display:grid;place-items:center;border-radius:calc(var(--radius) - 6px);color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
@@ -136,8 +140,13 @@ select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;cursor:grab}
 .card b,.card span{display:block}.card span{color:var(--mute);font-size:13px}
 .card b{display:flex;align-items:center;gap:8px;min-width:0;width:100%}
+.card .card-check{flex:none;width:16px;height:16px;margin:0;accent-color:var(--acc);cursor:pointer}
 .card .card-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font-size:inherit;font-weight:inherit}
+.card.done .card-name{text-decoration:line-through;opacity:.72}
 .card .src{font-size:12px;color:var(--mute);margin-top:4px}
+.day-group{margin:0 0 10px}
+.day-group:first-child{margin-top:2px}
+.day-title{margin:0 0 8px;padding:2px 2px 0;font-size:12px;font-weight:600;color:var(--mute);letter-spacing:.02em}
 .card .unpin{float:right;color:var(--mute);font-size:12px;padding:0 2px;opacity:0}
 .card:hover .unpin{opacity:1}
 .pick{max-height:240px;overflow:auto;min-width:220px}
@@ -310,7 +319,7 @@ function fromApi(data){
         rows:(b.cards||[]).map(c=>{
           const msRaw=c.master||c.status;
           const ms=stages.includes(msRaw)?msRaw:(stages.includes(c.status)?c.status:stages[0]);
-          return{n:c.title,s:c.status,ms,slug:c.slug,body:c.body||""};
+          return{n:c.title,s:c.status,ms,slug:c.slug,doneAt:c.doneAt||"",body:c.body||""};
         })
       }]);
     });
@@ -353,6 +362,7 @@ async function saveCard(row,folder,mod){
       title:row.n||"Untitled",
       status:row.s||(mod[2].columns||stages)[0]||stages[0],
       master:row.ms||stages[0],
+      doneAt:row.doneAt||"",
       body:row.body||""
     })
   });
@@ -601,6 +611,101 @@ function boardEditBtn(){
   edit.onclick=()=>{boardEdit=!boardEdit;render()};
   return edit;
 }
+const showCompletedByBoard=new Map();
+function showCompletedToggle(scope){
+  const on=!!showCompletedByBoard.get(scope);
+  const btn=el("button","done-toggle"+(on?" on":""));
+  btn.type="button";
+  btn.textContent=on?"Show active":"Show completed";
+  btn.title=on?"Show active tasks":"Show completed tasks";
+  btn.setAttribute("aria-pressed",on?"true":"false");
+  btn.onclick=()=>{showCompletedByBoard.set(scope,!on);render()};
+  return btn;
+}
+function isDone(row){return !!(row&&row.doneAt)}
+function dayKey(iso){
+  const d=new Date(iso);
+  if(Number.isNaN(d.getTime()))return"unknown";
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function dayTitle(iso){
+  const d=new Date(iso);
+  if(Number.isNaN(d.getTime()))return"Unknown date";
+  return d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric",year:"numeric"});
+}
+function groupByDoneDay(rows){
+  const map=new Map();
+  rows.slice().sort((a,b)=>String(b.doneAt).localeCompare(String(a.doneAt))).forEach(r=>{
+    const key=dayKey(r.doneAt);
+    if(!map.has(key))map.set(key,{key,title:dayTitle(r.doneAt),rows:[]});
+    map.get(key).rows.push(r);
+  });
+  return [...map.values()];
+}
+async function toggleDone(row,folder,mod){
+  if(!row||!folder||!mod)return;
+  row.doneAt=isDone(row)?"":new Date().toISOString();
+  await saveCard(row,folder,mod);
+  render();
+}
+function cardTitle(name,row,folder,mod){
+  const b=el("b");
+  const check=document.createElement("input");
+  check.type="checkbox";
+  check.className="card-check";
+  check.checked=isDone(row);
+  check.title=isDone(row)?"Mark active":"Mark completed";
+  check.onclick=e=>e.stopPropagation();
+  check.onchange=async e=>{
+    e.stopPropagation();
+    await toggleDone(row,folder,mod);
+  };
+  b.append(check,el("span","card-name",name||"Untitled"));
+  return b;
+}
+function makeTaskCard(row,folder,mod,opts){
+  const pc=opts?.color||folder?.color||PC[0];
+  const k=el("div","card tint"+(isDone(row)?" done":""));
+  k.draggable=!boardEdit&&!opts?.noDrag;
+  k.style.setProperty("--pc",pc);
+  k.style.background=pastel(pc);
+  k.onclick=()=>{if(!boardEdit)openItem(row)};
+  if(!boardEdit&&!opts?.noDrag)k.ondragstart=()=>drag=opts?.dragPayload||row;
+  k.append(cardTitle(row.n,row,folder,mod));
+  if(opts?.src)k.append(el("span","src",opts.src));
+  return k;
+}
+function fillCards(body,rows,folder,mod,opts){
+  const showDone=!!opts?.showDone;
+  const visible=rows.filter(r=>showDone?isDone(r):!isDone(r));
+  if(showDone){
+    groupByDoneDay(visible).forEach(group=>{
+      const wrap=el("div","day-group");
+      wrap.append(el("div","day-title",group.title));
+      group.rows.forEach(r=>{
+        const f=opts?.folderFor?opts.folderFor(r):folder;
+        const m=opts?.modFor?opts.modFor(r):mod;
+        wrap.append(makeTaskCard(r,f,m,{
+          color:opts?.colorFor?opts.colorFor(r):undefined,
+          src:opts?.srcFor?opts.srcFor(r):undefined,
+          dragPayload:opts?.dragFor?opts.dragFor(r):undefined
+        }));
+      });
+      body.append(wrap);
+    });
+  }else{
+    visible.forEach(r=>{
+      const f=opts?.folderFor?opts.folderFor(r):folder;
+      const m=opts?.modFor?opts.modFor(r):mod;
+      body.append(makeTaskCard(r,f,m,{
+        color:opts?.colorFor?opts.colorFor(r):undefined,
+        src:opts?.srcFor?opts.srcFor(r):undefined,
+        dragPayload:opts?.dragFor?opts.dragFor(r):undefined
+      }));
+    });
+  }
+  return visible.length;
+}
 function globals(){
   const box=$("globals");box.innerHTML="";
   ["Masterboard","Timelogs","Calendar"].forEach(n=>{
@@ -613,8 +718,9 @@ function renderBoard(x,tabC){
   const d=x[2]||(x[2]={rows:[],columns:stages.slice()});
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
+  const scope=boardKey(folders[p],x);
   const bar=el("div","modbar");
-  bar.append(boardEditBtn());
+  bar.append(showCompletedToggle(scope),boardEditBtn());
   v.append(bar,board(d,folders[p],x));
 }
 const COVER_DEFS=[
@@ -892,17 +998,12 @@ function boardCol(s,count,scope,ondrop,fillBody,opts){
   }
   return c;
 }
-function cardTitle(name){
-  const b=el("b");
-  b.append(el("span","card-name",name||"Untitled"));
-  return b;
-}
 function pastel(c){return`color-mix(in srgb,${c} 32%,#fff)`}
 function renderMasterBoard(tabC){
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
   const bar=globalBar("Masterboard");
-  bar.append(boardEditBtn());
+  bar.append(showCompletedToggle("master"),boardEditBtn());
   v.append(bar,masterBoard());
 }
 function renderCalendar(tabC){
@@ -919,26 +1020,49 @@ function renderCalendar(tabC){
 function masterBoard(){
   const wrap=el("div","mb");
   const b=el("div","board"+(boardEdit?" editing":""));
+  const showDone=!!showCompletedByBoard.get("master");
   const tasks=allBoardTasks().filter(t=>!masterOff.has(boardKey(t.folder,t.mod)));
   stages.forEach((s,i)=>{
-    const list=tasks.filter(t=>t.row.ms===s);
-    b.append(boardCol(s,list.length,"master",async()=>{
-      if(!drag||boardEdit)return;
+    const colTasks=tasks.filter(t=>t.row.ms===s);
+    const visible=colTasks.filter(t=>showDone?isDone(t.row):!isDone(t.row));
+    b.append(boardCol(s,visible.length,"master",async()=>{
+      if(!drag||boardEdit||showDone)return;
       const row=drag.row||drag;
       const loc=drag.folder?{folder:drag.folder,mod:drag.mod}:locateRow(row);
       row.ms=s;drag=null;render();
       if(loc)await saveCard(row,loc.folder,loc.mod);
     },body=>{
-      list.forEach(t=>{
-        const pc=t.folder.color||PC[t.fi%PC.length];
-        const k=el("div","card tint");k.draggable=!boardEdit;
-        k.style.setProperty("--pc",pc);
-        k.style.background=pastel(pc);
-        k.onclick=()=>{if(!boardEdit)openItem(t.row)};
-        if(!boardEdit)k.ondragstart=()=>drag=t;
-        k.append(cardTitle(t.row.n),el("span","src",t.folder.name+" › "+t.mod[1]));
-        body.append(k);
-      });
+      if(showDone){
+        const rows=visible.map(t=>t.row).slice().sort((a,b)=>String(b.doneAt).localeCompare(String(a.doneAt)));
+        const byDay=new Map();
+        rows.forEach(r=>{
+          const key=dayKey(r.doneAt);
+          if(!byDay.has(key))byDay.set(key,{title:dayTitle(r.doneAt),rows:[]});
+          byDay.get(key).rows.push(r);
+        });
+        byDay.forEach(group=>{
+          const wrap=el("div","day-group");
+          wrap.append(el("div","day-title",group.title));
+          group.rows.forEach(r=>{
+            const t=colTasks.find(x=>x.row===r);
+            if(!t)return;
+            wrap.append(makeTaskCard(r,t.folder,t.mod,{
+              color:t.folder.color||PC[t.fi%PC.length],
+              src:t.folder.name+" › "+t.mod[1],
+              dragPayload:t
+            }));
+          });
+          body.append(wrap);
+        });
+      }else{
+        visible.forEach(t=>{
+          body.append(makeTaskCard(t.row,t.folder,t.mod,{
+            color:t.folder.color||PC[t.fi%PC.length],
+            src:t.folder.name+" › "+t.mod[1],
+            dragPayload:t
+          }));
+        });
+      }
     },{
       editing:boardEdit,
       canLeft:i>0,
@@ -1135,24 +1259,18 @@ function board(d,folder,mod){
   const b=el("div","board"+(boardEdit?" editing":""));
   const scope=boardKey(folder||folders[p],mod||folders[p].mods[m]);
   const f=folder||folders[p],md=mod||folders[p].mods[m];
+  const showDone=!!showCompletedByBoard.get(scope);
   cols.forEach((s,i)=>{
-    const list=d.rows.filter(r=>r.s===s);
+    const all=d.rows.filter(r=>r.s===s);
+    const list=all.filter(r=>showDone?isDone(r):!isDone(r));
     b.append(boardCol(s,list.length,scope,async()=>{
-      if(!drag||boardEdit)return;
+      if(!drag||boardEdit||showDone)return;
       const row=drag.row||drag;
       row.s=s;drag=null;render();
       await saveCard(row,f,md);
     },body=>{
-      list.forEach(r=>{
-        const pc=f?.color||PC[0];
-        const k=el("div","card tint");k.draggable=!boardEdit;
-        k.style.setProperty("--pc",pc);
-        k.style.background=pastel(pc);
-        k.onclick=()=>{if(!boardEdit)openItem(r)};
-        if(!boardEdit)k.ondragstart=()=>drag=r;
-        k.append(cardTitle(r.n));body.append(k);
-      });
-      if(!boardEdit){
+      fillCards(body,all,f,md,{showDone});
+      if(!boardEdit&&!showDone){
         const a=el("button","addc","+ New");
         a.onclick=async()=>{
           const title=(prompt("Task title")||"").trim();
