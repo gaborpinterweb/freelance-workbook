@@ -11,6 +11,11 @@ const DEFAULT_DB_COLS = [
   { id: "r", label: "Role", type: "text" },
   { id: "s", label: "Stage", type: "stage" },
 ];
+const PRIORITIES = ["none", "low", "medium", "high"];
+function normalizePriority(v) {
+  const p = String(v || "none").toLowerCase().trim();
+  return PRIORITIES.includes(p) ? p : "none";
+}
 
 function slugify(s) {
   return String(s || "")
@@ -82,6 +87,7 @@ function readBoards(projDir) {
         title: data.title || file.replace(/\.md$/, ""),
         status: data.status || columns[0] || "Medium priority",
         master: data.master || "Backlog",
+        priority: normalizePriority(data.priority),
         doneAt: data.doneAt || "",
         body,
       });
@@ -246,11 +252,13 @@ function writeCard(project, board, card) {
   const dir = path.join(ROOT, project, "boards", board, "cards");
   fs.mkdirSync(dir, { recursive: true });
   const slug = card.slug || slugify(card.title);
+  const priority = normalizePriority(card.priority);
   const data = {
     title: card.title || slug,
     status: card.status || "Medium priority",
     master: card.master || "Backlog",
   };
+  if (priority !== "none") data.priority = priority;
   if (card.doneAt) data.doneAt = card.doneAt;
   fs.writeFileSync(cardPath(project, board, slug), dumpFm(data, card.body || ""));
   return slug;

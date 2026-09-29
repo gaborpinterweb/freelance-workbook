@@ -144,6 +144,10 @@ select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4
 .card b,.card span{display:block}.card span{color:var(--mute);font-size:13px}
 .card b{display:flex;align-items:center;gap:8px;min-width:0;width:100%}
 .card .card-check{flex:none;width:16px;height:16px;margin:0;accent-color:var(--acc);cursor:pointer}
+.card .card-prio{flex:none;font-weight:700;letter-spacing:-.04em;line-height:1}
+.dlg select.prio-high{color:#d12c2c;font-weight:600}
+.dlg select.prio-high option{color:var(--ink);font-weight:400}
+.dlg select.prio-high option[value="high"]{color:#d12c2c;font-weight:600}
 .card .card-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font-size:inherit;font-weight:inherit}
 .card.done .card-name{text-decoration:line-through;opacity:.72}
 .card .src{font-size:12px;color:var(--mute);margin-top:4px}
@@ -345,7 +349,7 @@ function fromApi(data){
         rows:(b.cards||[]).map(c=>{
           const msRaw=c.master||c.status;
           const ms=stages.includes(msRaw)?msRaw:(stages.includes(c.status)?c.status:stages[0]);
-          return{n:c.title,s:c.status,ms,slug:c.slug,doneAt:c.doneAt||"",body:c.body||""};
+          return{n:c.title,s:c.status,ms,slug:c.slug,priority:normalizePriority(c.priority),doneAt:c.doneAt||"",body:c.body||""};
         })
       }]);
     });
@@ -388,6 +392,7 @@ async function saveCard(row,folder,mod){
       title:row.n||"Untitled",
       status:row.s||(mod[2].columns||stages)[0]||stages[0],
       master:row.ms||stages[0],
+      priority:normalizePriority(row.priority),
       doneAt:row.doneAt||"",
       body:row.body||""
     })
@@ -646,6 +651,19 @@ function boardEditBtn(){
   return edit;
 }
 function isDone(row){return !!(row&&row.doneAt)}
+const PRIORITIES=[
+  {id:"none",label:"No priority",marks:"",color:""},
+  {id:"low",label:"! Low priority",marks:"!",color:"#c9a227"},
+  {id:"medium",label:"!! Medium priority",marks:"!!",color:"#e67e22"},
+  {id:"high",label:"!!! High priority",marks:"!!!",color:"#d12c2c"}
+];
+function normalizePriority(v){
+  const p=String(v||"none").toLowerCase().trim();
+  return PRIORITIES.some(x=>x.id===p)?p:"none";
+}
+function priorityInfo(v){
+  return PRIORITIES.find(x=>x.id===normalizePriority(v))||PRIORITIES[0];
+}
 function dayKey(iso){
   const d=new Date(iso);
   if(Number.isNaN(d.getTime()))return"unknown";
@@ -680,7 +698,14 @@ function cardTitle(name,row,folder,mod){
     await saveCard(row,folder,mod);
     render();
   };
-  b.append(check,el("span","card-name",name||"Untitled"));
+  b.append(check);
+  const prio=priorityInfo(row.priority);
+  if(prio.marks){
+    const mark=el("span","card-prio",prio.marks);
+    mark.style.color=prio.color;
+    b.append(mark);
+  }
+  b.append(el("span","card-name",name||"Untitled"));
   return b;
 }
 function makeTaskCard(row,folder,mod,opts){
@@ -1186,6 +1211,27 @@ function openItem(r){
   }else{
     const n=el("input","title");n.value=r.n||"";n.placeholder="Untitled";n.oninput=()=>r.n=n.value;
     if(!r.ms)r.ms=r.s||stages[0];
+    r.priority=normalizePriority(r.priority);
+    const prioritySel=el("select");
+    const paintPrioritySel=()=>{
+      const info=priorityInfo(prioritySel.value);
+      prioritySel.classList.toggle("prio-high",info.id==="high");
+      prioritySel.style.color=info.color||"";
+      prioritySel.style.fontWeight=info.id==="high"?"600":"";
+    };
+    PRIORITIES.forEach(o=>{
+      const op=el("option","",o.label);
+      op.value=o.id;
+      op.selected=o.id===r.priority;
+      if(o.color)op.style.color=o.color;
+      if(o.id==="high")op.style.fontWeight="600";
+      prioritySel.append(op);
+    });
+    prioritySel.onchange=()=>{
+      r.priority=normalizePriority(prioritySel.value);
+      paintPrioritySel();
+    };
+    paintPrioritySel();
     const boardCol=el("select");
     const fillBoardCol=()=>{
       const cols=curLoc?.mod[2]?.columns||stages;
@@ -1242,7 +1288,7 @@ function openItem(r){
     paintPtab();
     ptab.append(ptabBtn,pop);
     dlg.append(n,props);
-    props.append(f("Board",ptab),f("Board column",boardCol),f("Masterboard column",masterCol));
+    props.append(f("Board",ptab),f("Board column",boardCol),f("Masterboard column",masterCol),f("Priority",prioritySel));
   }
   const x=el("button","x","Save");x.onclick=()=>close(true);
   dlg.append(desc,x);ov.append(dlg);
