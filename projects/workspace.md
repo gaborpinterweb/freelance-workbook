@@ -1,3 +1,3 @@
 ---
-stages: Backlog, Interview, Offer, Hired
+stages: Backlog, This week, Today, Tomorrow, Next week, Done
 ---

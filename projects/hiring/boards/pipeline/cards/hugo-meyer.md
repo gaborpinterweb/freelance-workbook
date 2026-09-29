@@ -1,5 +1,4 @@
 ---
 title: Hugo Meyer
-status: Backlog
-role: Data analyst
+status: Low priority
 ---

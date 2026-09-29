@@ -1,5 +1,4 @@
 ---
 title: SEO audit
-status: Offer
-role: Content
+status: High priority
 ---

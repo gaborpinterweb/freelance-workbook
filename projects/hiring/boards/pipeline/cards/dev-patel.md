@@ -1,5 +1,5 @@
 ---
 title: Dev Patel
-status: Interview
-role: Backend engineer
+status: Medium priority
+master: Backlog
 ---

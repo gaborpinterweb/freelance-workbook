@@ -1,5 +1,4 @@
 ---
 title: Grace Lee
-status: Offer
-role: Designer
+status: High priority
 ---

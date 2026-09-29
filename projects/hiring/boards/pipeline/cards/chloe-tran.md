@@ -1,5 +1,5 @@
 ---
 title: Chloe Tran
-status: Interview
-role: Data analyst
+status: Medium priority
+master: Backlog
 ---

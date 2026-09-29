@@ -1,5 +1,5 @@
 ---
 title: Funnel rebuild
-status: Interview
-role: Data
+status: Medium priority
+master: Interview
 ---

@@ -1,5 +1,4 @@
 ---
 title: Cohort report
-status: Backlog
-role: Data
+status: Low priority
 ---

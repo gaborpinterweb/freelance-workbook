@@ -1,5 +1,4 @@
 ---
 title: Press kit final
-status: Interview
-role: Marketing
+status: Medium priority
 ---

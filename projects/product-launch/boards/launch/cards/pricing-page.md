@@ -1,5 +1,4 @@
 ---
 title: Pricing page
-status: Offer
-role: Product
+status: High priority
 ---

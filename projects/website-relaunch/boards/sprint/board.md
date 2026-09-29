@@ -1,4 +1,4 @@
 ---
 name: Sprint
-columns: Backlog, Interview, Offer, Hired
+columns: Low priority, Medium priority, High priority
 ---

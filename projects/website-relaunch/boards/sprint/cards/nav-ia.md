@@ -1,5 +1,4 @@
 ---
 title: Nav IA
-status: Interview
-role: Design
+status: Medium priority
 ---

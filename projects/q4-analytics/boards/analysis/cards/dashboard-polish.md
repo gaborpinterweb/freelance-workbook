@@ -1,5 +1,4 @@
 ---
 title: Dashboard polish
-status: Offer
-role: Design
+status: High priority
 ---

@@ -1,5 +1,4 @@
 ---
 title: Hero redesign
-status: Backlog
-role: Design
+status: Low priority
 ---

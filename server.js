@@ -70,7 +70,7 @@ function readBoards(projDir) {
     const bMeta = parseFm(fs.existsSync(path.join(bDir, "board.md"))
       ? fs.readFileSync(path.join(bDir, "board.md"), "utf8")
       : "");
-    const columns = (bMeta.data.columns || "Applied, Interview, Offer, Hired")
+    const columns = (bMeta.data.columns || "Low priority, Medium priority, High priority")
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
@@ -80,8 +80,8 @@ function readBoards(projDir) {
       cards.push({
         slug: file.replace(/\.md$/, ""),
         title: data.title || file.replace(/\.md$/, ""),
-        status: data.status || columns[0] || "Applied",
-        role: data.role || "",
+        status: data.status || columns[0] || "Medium priority",
+        master: data.master || "Backlog",
         body,
       });
     }
@@ -163,7 +163,7 @@ function writeProject(project, patch) {
 
 function readWorkspaceMeta() {
   const file = path.join(ROOT, "workspace.md");
-  const defaults = ["Applied", "Interview", "Offer", "Hired"];
+  const defaults = ["Backlog", "This week", "Today", "Tomorrow", "Next week", "Done"];
   if (!fs.existsSync(file)) return { stages: defaults.slice() };
   const meta = parseFm(fs.readFileSync(file, "utf8"));
   const stages = String(meta.data.stages || "")
@@ -189,18 +189,22 @@ function renameAcrossBoards(from, to) {
     for (const bSlug of readDir(boardsDir)) {
       const bDir = path.join(boardsDir, bSlug);
       if (!fs.statSync(bDir).isDirectory()) continue;
-      const boardFile = path.join(bDir, "board.md");
-      if (fs.existsSync(boardFile)) {
-        const prev = parseFm(fs.readFileSync(boardFile, "utf8"));
-        const cols = String(prev.data.columns || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-          .map((c) => (c === from ? to : c));
-        writeBoard(slug, bSlug, { name: prev.data.name || bSlug, columns: cols });
-      }
-      renameBoardStatuses(slug, bSlug, from, to);
+      renameMasterStatuses(slug, bSlug, from, to);
     }
+  }
+}
+
+function renameMasterStatuses(project, board, from, to) {
+  if (!from || !to || from === to) return;
+  const cardsDir = path.join(ROOT, project, "boards", board, "cards");
+  for (const file of readDir(cardsDir).filter((f) => f.endsWith(".md"))) {
+    const full = path.join(cardsDir, file);
+    const { data, body } = parseFm(fs.readFileSync(full, "utf8"));
+    const cur = data.master || data.status || "";
+    if (cur !== from) continue;
+    data.master = to;
+    delete data.role;
+    fs.writeFileSync(full, dumpFm(data, body));
   }
 }
 
@@ -240,7 +244,11 @@ function writeCard(project, board, card) {
   const slug = card.slug || slugify(card.title);
   fs.writeFileSync(
     cardPath(project, board, slug),
-    dumpFm({ title: card.title || slug, status: card.status || "Applied", role: card.role || "" }, card.body || "")
+    dumpFm({
+      title: card.title || slug,
+      status: card.status || "Medium priority",
+      master: card.master || "Backlog",
+    }, card.body || "")
   );
   return slug;
 }
@@ -272,7 +280,7 @@ function createBoard(project, name) {
   const bSlug = slugify(name);
   const dir = path.join(ROOT, project, "boards", bSlug);
   fs.mkdirSync(path.join(dir, "cards"), { recursive: true });
-  fs.writeFileSync(path.join(dir, "board.md"), dumpFm({ name, columns: "Applied, Interview, Offer, Hired" }));
+  fs.writeFileSync(path.join(dir, "board.md"), dumpFm({ name, columns: "Low priority, Medium priority, High priority" }));
   return bSlug;
 }
 

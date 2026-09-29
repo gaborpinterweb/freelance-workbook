@@ -1,5 +1,4 @@
 ---
 title: Waitlist email
-status: Backlog
-role: Growth
+status: Low priority
 ---

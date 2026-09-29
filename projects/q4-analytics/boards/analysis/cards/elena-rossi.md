@@ -1,6 +1,5 @@
 ---
 title: Elena Rossi
-status: Backlog
-role: Product manager
+status: Low priority
 ---
 This is a test

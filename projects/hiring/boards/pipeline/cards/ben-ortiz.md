@@ -1,5 +1,5 @@
 ---
 title: Ben Ortiz
-status: Interview
-role: Frontend engineer
+status: Medium priority
+master: Backlog
 ---
