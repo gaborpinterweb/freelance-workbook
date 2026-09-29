@@ -64,11 +64,6 @@ main.global-view #view{margin:0;border-radius:0;overflow:hidden;background:var(-
 .modbar .bedit svg{display:block}
 .modbar .bedit:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
 .modbar .bedit.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
-.modbar .arch-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:calc(var(--radius) - 4px);color:color-mix(in srgb,#fff 78%,transparent);font-size:13px;font-weight:500;transition:background .12s,color .12s}
-.modbar .arch-toggle svg{display:block;width:14px;height:14px}
-.modbar .arch-toggle:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
-.modbar .arch-toggle.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
-.modbar .arch-toggle+.bedit{margin-left:0}
 .col-name-input{font:inherit;font-size:13px;font-weight:600;color:var(--ink);text-align:center;background:#fff;border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:4px 8px;width:100%;min-width:0;flex:1;box-sizing:border-box}
 .col-name-input:focus{outline:2px solid color-mix(in srgb,var(--acc) 35%,transparent);outline-offset:1px;border-color:color-mix(in srgb,var(--acc) 40%,var(--line))}
 .col-move{flex:none;width:28px;height:28px;display:grid;place-items:center;border-radius:calc(var(--radius) - 6px);color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
@@ -131,22 +126,17 @@ select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4
 .col-head{display:flex;align-items:center;justify-content:center;gap:6px;flex:none;width:100%;margin:0;padding:12px 14px 10px;font:inherit;font-size:13px;font-weight:600;color:var(--mute);text-align:center;cursor:pointer;background:var(--sel);border-bottom:1px solid var(--line);border-radius:0}
 .col-head:hover{color:var(--ink);background:color-mix(in srgb,var(--sel) 70%,#fff)}
 .col-head .col-name{min-width:0}
-.col-head .col-arch{display:inline-flex;flex:none;opacity:.8}
-.col-head .col-arch svg{display:block;width:14px;height:14px}
 .col:not(.collapsed) .col-count{display:none}
 .col-body{flex:1;min-height:0;overflow-y:auto;padding:10px 14px 12px;display:flex;flex-direction:column}
 .col.collapsed{flex:0 0 44px;min-width:44px;width:44px;background:#fff}
 .col.collapsed .col-head{flex:1;flex-direction:column;justify-content:flex-start;align-items:center;padding:0;gap:0;height:100%;background:transparent;border-bottom:0}
 .col.collapsed .col-count{display:grid;place-items:center;flex:none;order:1;width:100%;height:40px;font-size:13px;font-weight:600;color:var(--ink);background:var(--sel);border-bottom:1px solid var(--line)}
 .col.collapsed .col-name{order:2;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:.08em;text-transform:uppercase;font-size:12px;padding:14px 0 8px;color:var(--mute)}
-.col.collapsed .col-arch{order:3;transform:rotate(90deg);margin:0 0 12px;opacity:.8}
 .col.collapsed .col-body{display:none}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;cursor:grab}
 .card b,.card span{display:block}.card span{color:var(--mute);font-size:13px}
 .card b{display:flex;align-items:center;gap:8px;min-width:0;width:100%}
 .card .card-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font-size:inherit;font-weight:inherit}
-.card .card-arch{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;margin-left:auto;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--mute) 65%,transparent);color:var(--mute);background:color-mix(in srgb,#fff 55%,transparent);box-sizing:border-box}
-.card .card-arch svg{display:block;width:10px;height:10px}
 .card .src{font-size:12px;color:var(--mute);margin-top:4px}
 .card .unpin{float:right;color:var(--mute);font-size:12px;padding:0 2px;opacity:0}
 .card:hover .unpin{opacity:1}
@@ -242,20 +232,9 @@ td.open{width:1%}.open button{color:var(--acc);font-size:13px}
 <script>
 const STAGES=["Backlog","This week","Today","Tomorrow","Next week","Done"];
 let stages=STAGES.slice();
-let stageFlags={Done:{isArchive:true}};
-function isArchiveStage(name){return !!stageFlags[name]?.isArchive}
 function loadStages(list){
   if(!list||!list.length)return;
-  stages=list.map(s=>typeof s==="string"?s:s.name);
-  stageFlags={};
-  list.forEach(s=>{
-    const name=typeof s==="string"?s:s.name;
-    const archived=typeof s==="object"?!!s.isArchive:name==="Done";
-    stageFlags[name]={isArchive:archived};
-  });
-}
-function masterColumnsPayload(){
-  return stages.map(name=>({name,isArchive:isArchiveStage(name)}));
+  stages=list.map(s=>typeof s==="string"?s:s.name).filter(Boolean);
 }
 const TYPES=[
  {t:"Board",title:"Board",sub:"Kanban columns and cards"},
@@ -577,8 +556,7 @@ const IC={
  project:['<rect x="2.5" y="2.5" width="11" height="11" rx="3"/><path d="M6 6h4M6 9h2.5"/>',""],
  folder:['<path d="M4 2.5h7.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 4 2.5z"/><path d="M6.5 5h4M6.5 7.5h4M6.5 10h2.5"/>',""],
  settings:['<circle cx="8" cy="8" r="2.2"/><path d="M8 2.5v1.2M8 12.3v1.2M2.5 8h1.2M12.3 8h1.2M3.9 3.9l.85.85M11.25 11.25l.85.85M3.9 12.1l.85-.85M11.25 4.75l.85-.85"/>',""],
- pencil:['<path d="M11.5 2.5l2 2L5.5 12.5H3.5v-2zM9.8 4.2l2 2"/>',""],
- check:['<path d="M3.5 8.2l3 3.1 6-6.6"/>',""]};
+ pencil:['<path d="M11.5 2.5l2 2L5.5 12.5H3.5v-2zM9.8 4.2l2 2"/>',""]};
 const GACC="#9a5b2e";
 const PC=["#6b4f8c","#2f7a6e","#b45a3c","#8a5c2e"];
 const icon=t=>`<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${IC[t][0]}</svg>`;
@@ -623,18 +601,6 @@ function boardEditBtn(){
   edit.onclick=()=>{boardEdit=!boardEdit;render()};
   return edit;
 }
-const showArchivedByBoard=new Map();
-function showArchivedToggle(scope){
-  const on=!!showArchivedByBoard.get(scope);
-  const btn=el("button","arch-toggle"+(on?" on":""));
-  btn.type="button";
-  btn.title=on?"Hide archived tasks":"Show archived tasks";
-  btn.setAttribute("aria-pressed",on?"true":"false");
-  const ico=el("span");ico.innerHTML=icon("check");
-  btn.append(ico,document.createTextNode("Archived"));
-  btn.onclick=()=>{showArchivedByBoard.set(scope,!on);render()};
-  return btn;
-}
 function globals(){
   const box=$("globals");box.innerHTML="";
   ["Masterboard","Timelogs","Calendar"].forEach(n=>{
@@ -647,9 +613,8 @@ function renderBoard(x,tabC){
   const d=x[2]||(x[2]={rows:[],columns:stages.slice()});
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
-  const scope=boardKey(folders[p],x);
   const bar=el("div","modbar");
-  bar.append(showArchivedToggle(scope),boardEditBtn());
+  bar.append(boardEditBtn());
   v.append(bar,board(d,folders[p],x));
 }
 const COVER_DEFS=[
@@ -821,10 +786,6 @@ async function renameMasterColumn(from,to){
   if(i<0)return;
   if(cols.includes(next)){render();return}
   cols[i]=next;
-  if(stageFlags[from]){
-    stageFlags[next]=stageFlags[from];
-    delete stageFlags[from];
-  }
   allBoardTasks().forEach(t=>{if(t.row.ms===from)t.row.ms=next});
   const oldKey=colCollapseKey("master",from);
   if(colCollapsed.has(oldKey)){
@@ -834,7 +795,7 @@ async function renameMasterColumn(from,to){
   const data=await fetch("/api/masterboard",{
     method:"PUT",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({columns:masterColumnsPayload(),rename:{from,to:next}})
+    body:JSON.stringify({columns:stages.slice(),rename:{from,to:next}})
   }).then(r=>r.json());
   folders=fromApi(data);
   render();
@@ -871,18 +832,16 @@ async function moveMasterColumn(name,dir){
   const data=await fetch("/api/masterboard",{
     method:"PUT",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({columns:masterColumnsPayload()})
+    body:JSON.stringify({columns:stages.slice()})
   }).then(r=>r.json());
   folders=fromApi(data);
   render();
 }
 function boardCol(s,count,scope,ondrop,fillBody,opts){
   const editing=!!opts?.editing;
-  const archived=!!opts?.isArchive;
   const key=colCollapseKey(scope,s);
   const collapsed=!editing&&colCollapsed.has(key);
-  const c=el("div","col"+(collapsed?" collapsed":"")+(archived?" archive":""));
-  const archIcon=()=>{const i=el("span","col-arch");i.innerHTML=icon("check");i.title="Archive";return i};
+  const c=el("div","col"+(collapsed?" collapsed":""));
   if(editing){
     const head=el("div","col-head");
     const left=el("button","col-move","‹");
@@ -910,16 +869,13 @@ function boardCol(s,count,scope,ondrop,fillBody,opts){
       if(e.key==="Enter"){e.preventDefault();input.blur()}
       if(e.key==="Escape"){input.value=s;input.blur()}
     };
-    head.append(left,input);
-    if(archived)head.append(archIcon());
-    head.append(right);
+    head.append(left,input,right);
     c.append(head);
   }else{
     const head=el("button","col-head");
     head.type="button";
     head.title=collapsed?"Expand column":"Collapse column";
     head.append(el("span","col-count",String(count)),el("span","col-name",s));
-    if(archived)head.append(archIcon());
     head.onclick=e=>{
       e.stopPropagation();
       colCollapsed.has(key)?colCollapsed.delete(key):colCollapsed.add(key);
@@ -936,15 +892,9 @@ function boardCol(s,count,scope,ondrop,fillBody,opts){
   }
   return c;
 }
-function cardTitle(name,archived){
+function cardTitle(name){
   const b=el("b");
   b.append(el("span","card-name",name||"Untitled"));
-  if(archived){
-    const ico=el("span","card-arch");
-    ico.innerHTML=icon("check");
-    ico.title="Archived";
-    b.append(ico);
-  }
   return b;
 }
 function pastel(c){return`color-mix(in srgb,${c} 32%,#fff)`}
@@ -972,7 +922,6 @@ function masterBoard(){
   const tasks=allBoardTasks().filter(t=>!masterOff.has(boardKey(t.folder,t.mod)));
   stages.forEach((s,i)=>{
     const list=tasks.filter(t=>t.row.ms===s);
-    const archived=isArchiveStage(s);
     b.append(boardCol(s,list.length,"master",async()=>{
       if(!drag||boardEdit)return;
       const row=drag.row||drag;
@@ -982,17 +931,16 @@ function masterBoard(){
     },body=>{
       list.forEach(t=>{
         const pc=t.folder.color||PC[t.fi%PC.length];
-        const k=el("div","card tint"+(archived?" archived":""));k.draggable=!boardEdit;
+        const k=el("div","card tint");k.draggable=!boardEdit;
         k.style.setProperty("--pc",pc);
         k.style.background=pastel(pc);
         k.onclick=()=>{if(!boardEdit)openItem(t.row)};
         if(!boardEdit)k.ondragstart=()=>drag=t;
-        k.append(cardTitle(t.row.n,archived),el("span","src",t.folder.name+" › "+t.mod[1]));
+        k.append(cardTitle(t.row.n),el("span","src",t.folder.name+" › "+t.mod[1]));
         body.append(k);
       });
     },{
       editing:boardEdit,
-      isArchive:archived,
       canLeft:i>0,
       canRight:i<stages.length-1,
       onRename:(from,to)=>renameMasterColumn(from,to),
@@ -1187,9 +1135,8 @@ function board(d,folder,mod){
   const b=el("div","board"+(boardEdit?" editing":""));
   const scope=boardKey(folder||folders[p],mod||folders[p].mods[m]);
   const f=folder||folders[p],md=mod||folders[p].mods[m];
-  const showArch=!!showArchivedByBoard.get(scope);
   cols.forEach((s,i)=>{
-    const list=d.rows.filter(r=>r.s===s&&(showArch||!isArchiveStage(r.ms)));
+    const list=d.rows.filter(r=>r.s===s);
     b.append(boardCol(s,list.length,scope,async()=>{
       if(!drag||boardEdit)return;
       const row=drag.row||drag;
@@ -1198,13 +1145,12 @@ function board(d,folder,mod){
     },body=>{
       list.forEach(r=>{
         const pc=f?.color||PC[0];
-        const archived=isArchiveStage(r.ms);
-        const k=el("div","card tint"+(archived?" archived":""));k.draggable=!boardEdit;
+        const k=el("div","card tint");k.draggable=!boardEdit;
         k.style.setProperty("--pc",pc);
         k.style.background=pastel(pc);
         k.onclick=()=>{if(!boardEdit)openItem(r)};
         if(!boardEdit)k.ondragstart=()=>drag=r;
-        k.append(cardTitle(r.n,archived));body.append(k);
+        k.append(cardTitle(r.n));body.append(k);
       });
       if(!boardEdit){
         const a=el("button","addc","+ New");

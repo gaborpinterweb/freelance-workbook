@@ -163,43 +163,23 @@ function writeProject(project, patch) {
 
 function readWorkspaceMeta() {
   const file = path.join(ROOT, "workspace.md");
-  const defaults = [
-    { name: "Backlog", isArchive: false },
-    { name: "This week", isArchive: false },
-    { name: "Today", isArchive: false },
-    { name: "Tomorrow", isArchive: false },
-    { name: "Next week", isArchive: false },
-    { name: "Done", isArchive: true },
-  ];
-  if (!fs.existsSync(file)) return { stages: defaults.map((s) => ({ ...s })) };
+  const defaults = ["Backlog", "This week", "Today", "Tomorrow", "Next week", "Done"];
+  if (!fs.existsSync(file)) return { stages: defaults.slice() };
   const meta = parseFm(fs.readFileSync(file, "utf8"));
   const names = String(meta.data.stages || "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  if (!names.length) return { stages: defaults.map((s) => ({ ...s })) };
-  const archive = new Set(
-    String(meta.data.archive || "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-  );
-  if (!("archive" in meta.data) && names.includes("Done")) archive.add("Done");
-  return {
-    stages: names.map((name) => ({ name, isArchive: archive.has(name) })),
-  };
+  return { stages: names.length ? names : defaults.slice() };
 }
 
 function writeWorkspaceMeta({ stages }) {
   const file = path.join(ROOT, "workspace.md");
   const cols = (stages || [])
-    .map((s) => (typeof s === "string" ? { name: s, isArchive: false } : s))
-    .map((s) => ({ name: String(s.name || "").trim(), isArchive: !!s.isArchive }))
-    .filter((s) => s.name);
-  const data = { stages: cols.map((s) => s.name).join(", ") };
-  const archive = cols.filter((s) => s.isArchive).map((s) => s.name);
-  if (archive.length) data.archive = archive.join(", ");
-  fs.writeFileSync(file, dumpFm(data));
+    .map((s) => (typeof s === "string" ? s : s && s.name))
+    .map((s) => String(s || "").trim())
+    .filter(Boolean);
+  fs.writeFileSync(file, dumpFm({ stages: cols.join(", ") }));
 }
 
 function renameAcrossBoards(from, to) {
@@ -429,19 +409,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "PUT" && url.pathname === "/api/masterboard") {
       const body = await readBody(req);
       if (!body.columns) return json(res, 400, { error: "missing fields" });
-      const prev = readWorkspaceMeta();
-      const prevByName = Object.fromEntries(prev.stages.map((s) => [s.name, s]));
-      const stages = body.columns.map((c) => {
-        if (typeof c === "string") {
-          return { name: c, isArchive: !!prevByName[c]?.isArchive };
-        }
-        return { name: String(c.name || "").trim(), isArchive: !!c.isArchive };
-      }).filter((s) => s.name);
-      if (body.rename && body.rename.from && body.rename.to) {
-        const from = prevByName[body.rename.from];
-        const target = stages.find((s) => s.name === body.rename.to);
-        if (from && target) target.isArchive = !!from.isArchive;
-      }
+      const stages = body.columns
+        .map((c) => (typeof c === "string" ? c : c && c.name))
+        .map((s) => String(s || "").trim())
+        .filter(Boolean);
       writeWorkspaceMeta({ stages });
       if (body.rename && body.rename.from && body.rename.to) {
         renameAcrossBoards(body.rename.from, body.rename.to);
