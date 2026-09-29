@@ -1,4 +1,4 @@
 ---
 name: Launch
-columns: Applied, Interview, Offer, Hired
+columns: Backlog, Interview, Offer, Hired
 ---

@@ -1,5 +1,5 @@
 ---
 title: Hugo Meyer
-status: Applied
+status: Backlog
 role: Data analyst
 ---

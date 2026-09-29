@@ -1,5 +1,5 @@
 ---
 title: Launch checklist
-status: Applied
+status: Backlog
 role: PM
 ---

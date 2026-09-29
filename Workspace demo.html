@@ -60,6 +60,16 @@ main.global-view #view{margin:0;border-radius:0;overflow:hidden;background:var(-
 #view.mod{place-items:unset}
 #view.cover-view{background:var(--tab)}
 .vbar,.modbar{background:var(--tab,var(--bar));display:flex;align-items:center;gap:4px;padding:7px 14px;min-height:42px;border-bottom:none;box-shadow:inset 0 -1px 0 color-mix(in srgb,#000 12%,transparent)}
+.modbar .bedit{margin-left:auto;padding:5px 12px;border-radius:999px;color:color-mix(in srgb,#fff 78%,transparent);font-size:13px;font-weight:600;transition:background .12s,color .12s}
+.modbar .bedit:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
+.modbar .bedit.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
+.col-name-input{font:inherit;font-size:13px;font-weight:600;color:var(--ink);text-align:center;background:#fff;border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:4px 8px;width:100%;min-width:0;flex:1;box-sizing:border-box}
+.col-name-input:focus{outline:2px solid color-mix(in srgb,var(--acc) 35%,transparent);outline-offset:1px;border-color:color-mix(in srgb,var(--acc) 40%,var(--line))}
+.col-move{flex:none;width:28px;height:28px;display:grid;place-items:center;border-radius:calc(var(--radius) - 6px);color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
+.col-move:hover:not(:disabled){color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.col-move:disabled{opacity:.28;cursor:default}
+.board.editing .col-head{cursor:default;background:var(--sel);gap:4px;padding:8px 8px}
+.board.editing .col-head:hover{color:var(--mute);background:var(--sel)}
 .modbar.gbar{gap:8px;color:#fff;font-weight:600}
 .modbar.gbar span{display:flex}
 .modbar.gbar b{font-size:14px;font-weight:600;letter-spacing:.01em}
@@ -195,6 +205,7 @@ td.open{width:1%}.open button{color:var(--acc);font-size:13px}
 </main>
 <script>
 const STAGES=["Applied","Interview","Offer","Hired"];
+let stages=STAGES.slice();
 const TYPES=[
  {t:"Board",title:"Board",sub:"Kanban columns and cards"},
  {t:"Database",title:"Database",sub:"Tables and structured records"},
@@ -210,6 +221,7 @@ let folders=[],p=0,m=0,g=null;
 const $=id=>document.getElementById(id);
 
 function fromApi(data){
+  if(data.stages&&data.stages.length)stages=data.stages.slice();
   return (data.projects||[]).map(pr=>{
     const cover=pr.cover||{fields:["created"],values:{created:new Date().toISOString().slice(0,10),deadline:"",goal:"",description:""}};
     const mods=[["Cover","Cover",{slug:"cover",fields:cover.fields.slice(),values:Object.assign({created:"",deadline:"",goal:"",description:""},cover.values)}]];
@@ -229,7 +241,7 @@ function fromApi(data){
     (pr.boards||[]).forEach(b=>{
       mods.push(["Board",b.name,{
         slug:b.slug,
-        columns:b.columns&&b.columns.length?b.columns:STAGES.slice(),
+        columns:b.columns&&b.columns.length?b.columns:stages.slice(),
         rows:(b.cards||[]).map(c=>({n:c.title,r:c.role||"",s:c.status,slug:c.slug,body:c.body||""}))
       }]);
     });
@@ -258,7 +270,7 @@ async function saveCard(row,folder,mod){
       board:mod[2].slug,
       slug:row.slug,
       title:row.n||"Untitled",
-      status:row.s||STAGES[0],
+      status:row.s||stages[0],
       role:row.r||"",
       body:row.body||""
     })
@@ -272,7 +284,7 @@ async function createCard(folder,mod,title,status){
       project:folder.slug,
       board:mod[2].slug,
       title,
-      status:status||(mod[2].columns||STAGES)[0],
+      status:status||(mod[2].columns||stages)[0],
       role:""
     })
   });
@@ -344,7 +356,7 @@ function render(){
     const c=GACC;
     $("bar").style.display="none";
     document.querySelector("main").classList.add("global-view");
-    if(g==="Tasks")renderMasterBoard(c);
+    if(g==="Masterboard")renderMasterBoard(c);
     else if(g==="Calendar")renderCalendar(c);
     else{
       $("view").className="mod";$("view").style.setProperty("--tab",c);$("view").innerHTML="";
@@ -382,10 +394,11 @@ function render(){
   set.id="settings";set.title="Project settings";set.innerHTML=icon("settings");
   actions.append(set);
   $("bar").append(actions);
-  if(x&&x[0]==="Cover")renderCover(folders[p],x,tabC);
+  if(x&&x[0]==="Cover"){boardEdit=false;renderCover(folders[p],x,tabC)}
   else if(x&&x[0]==="Board")renderBoard(x,tabC);
-  else if(x&&x[0]==="Database")renderDb(x,tabC);
+  else if(x&&x[0]==="Database"){boardEdit=false;renderDb(x,tabC)}
   else{
+    boardEdit=false;
     $("view").className="mod";
     $("view").style.setProperty("--tab",tabC);
     $("view").innerHTML="";
@@ -419,7 +432,7 @@ const IC={
  Changelog:['<path d="M4 3h8M4 6.5h8M4 10h5"/><circle cx="12" cy="11.5" r="1.5"/>',"#6e7a4a"],
  Workflows:['<circle cx="4" cy="4" r="1.5"/><circle cx="12" cy="8" r="1.5"/><circle cx="4" cy="12" r="1.5"/><path d="M5.4 4.8l5.2 2.4M5.4 11.2l5.2-2.4"/>',"#5c6a8a"],
  Cover:['<rect x="2.5" y="3" width="11" height="10" rx="1.5"/><path d="M5 7.5h6M5 10h4"/>',"#9a5b2e"],
- Tasks:['<rect x="2" y="3" width="3.5" height="10" rx="1"/><rect x="6.5" y="3" width="3.5" height="7" rx="1"/><rect x="11" y="3" width="3" height="5" rx="1"/>',"#9a5b2e"],
+ Masterboard:['<rect x="2" y="3" width="3.5" height="10" rx="1"/><rect x="6.5" y="3" width="3.5" height="7" rx="1"/><rect x="11" y="3" width="3" height="5" rx="1"/>',"#9a5b2e"],
  Timelogs:['<circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/>',"#9a5b2e"],
  Calendar:['<rect x="3" y="3.5" width="10" height="10" rx="1.5"/><path d="M3 6.5h10M6 2.5v2M10 2.5v2M6.5 9h3"/>',"#9a5b2e"],
  project:['<rect x="2.5" y="2.5" width="11" height="11" rx="3"/><path d="M6 6h4M6 9h2.5"/>',""],
@@ -459,19 +472,26 @@ function globalBar(name){
   bar.append(i,el("b","",name));
   return bar;
 }
+function boardEditBtn(){
+  const edit=el("button","bedit"+(boardEdit?" on":""),boardEdit?"Done":"Edit");
+  edit.onclick=()=>{boardEdit=!boardEdit;render()};
+  return edit;
+}
 function globals(){
   const box=$("globals");box.innerHTML="";
-  ["Tasks","Timelogs","Calendar"].forEach(n=>{
+  ["Masterboard","Timelogs","Calendar"].forEach(n=>{
     const k=el("button","bm"+(g===n?" on":"")),i=el("span");
     i.innerHTML=icon(n);i.style.color=GACC;
-    k.append(i,el("span","",n));k.onclick=()=>{g=n;render()};box.append(k);
+    k.append(i,el("span","",n));k.onclick=()=>{boardEdit=false;g=n;render()};box.append(k);
   });
 }
 function renderBoard(x,tabC){
-  const d=x[2]||(x[2]={rows:[],columns:STAGES.slice()});
+  const d=x[2]||(x[2]={rows:[],columns:stages.slice()});
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
-  v.append(el("div","modbar"),board(d,folders[p],x));
+  const bar=el("div","modbar");
+  bar.append(boardEditBtn());
+  v.append(bar,board(d,folders[p],x));
 }
 const COVER_DEFS=[
   {id:"created",label:"Created At",type:"date"},
@@ -599,21 +619,145 @@ function allBoards(){
 }
 const masterOff=new Set();
 const colCollapsed=new Set();
+let boardEdit=false;
 function colCollapseKey(scope,s){return scope+"\0"+s}
-function boardCol(s,count,scope,ondrop,fillBody){
+async function renameBoardColumn(folder,mod,from,to){
+  if(!folder||!mod||mod[0]!=="Board")return;
+  const next=(to||"").trim().replace(/,/g," ");
+  if(!next||next===from)return;
+  const cols=(mod[2].columns||[]).slice();
+  const i=cols.indexOf(from);
+  if(i<0)return;
+  if(cols.includes(next)){render();return}
+  cols[i]=next;
+  (mod[2].rows||[]).forEach(r=>{if(r.s===from)r.s=next});
+  const scope=boardKey(folder,mod);
+  const oldKey=colCollapseKey(scope,from);
+  if(colCollapsed.has(oldKey)){
+    colCollapsed.delete(oldKey);
+    colCollapsed.add(colCollapseKey(scope,next));
+  }
+  const data=await fetch("/api/board",{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      project:folder.slug,
+      board:mod[2].slug,
+      name:mod[1],
+      columns:cols,
+      rename:{from,to:next}
+    })
+  }).then(r=>r.json());
+  const keepM=mod[2].slug;
+  folders=fromApi(data);
+  p=Math.max(0,folders.findIndex(f=>f.slug===folder.slug));
+  m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===keepM));
+  render();
+}
+async function renameMasterColumn(from,to){
+  const next=(to||"").trim().replace(/,/g," ");
+  if(!next||next===from)return;
+  const cols=stages.slice();
+  const i=cols.indexOf(from);
+  if(i<0)return;
+  if(cols.includes(next)){render();return}
+  cols[i]=next;
+  const oldKey=colCollapseKey("master",from);
+  if(colCollapsed.has(oldKey)){
+    colCollapsed.delete(oldKey);
+    colCollapsed.add(colCollapseKey("master",next));
+  }
+  const data=await fetch("/api/masterboard",{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({columns:cols,rename:{from,to:next}})
+  }).then(r=>r.json());
+  folders=fromApi(data);
+  render();
+}
+async function moveBoardColumn(folder,mod,name,dir){
+  if(!folder||!mod||mod[0]!=="Board")return;
+  const cols=(mod[2].columns||[]).slice();
+  const i=cols.indexOf(name);
+  const j=i+dir;
+  if(i<0||j<0||j>=cols.length)return;
+  [cols[i],cols[j]]=[cols[j],cols[i]];
+  const data=await fetch("/api/board",{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      project:folder.slug,
+      board:mod[2].slug,
+      name:mod[1],
+      columns:cols
+    })
+  }).then(r=>r.json());
+  const keepM=mod[2].slug;
+  folders=fromApi(data);
+  p=Math.max(0,folders.findIndex(f=>f.slug===folder.slug));
+  m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===keepM));
+  render();
+}
+async function moveMasterColumn(name,dir){
+  const cols=stages.slice();
+  const i=cols.indexOf(name);
+  const j=i+dir;
+  if(i<0||j<0||j>=cols.length)return;
+  [cols[i],cols[j]]=[cols[j],cols[i]];
+  const data=await fetch("/api/masterboard",{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({columns:cols})
+  }).then(r=>r.json());
+  folders=fromApi(data);
+  render();
+}
+function boardCol(s,count,scope,ondrop,fillBody,opts){
+  const editing=!!opts?.editing;
   const key=colCollapseKey(scope,s);
-  const collapsed=colCollapsed.has(key);
+  const collapsed=!editing&&colCollapsed.has(key);
   const c=el("div","col"+(collapsed?" collapsed":""));
-  const head=el("button","col-head");
-  head.type="button";
-  head.title=collapsed?"Expand column":"Collapse column";
-  head.append(el("span","col-count",String(count)),el("span","col-name",s));
-  head.onclick=e=>{
-    e.stopPropagation();
-    colCollapsed.has(key)?colCollapsed.delete(key):colCollapsed.add(key);
-    render();
-  };
-  c.append(head);
+  if(editing){
+    const head=el("div","col-head");
+    const left=el("button","col-move","‹");
+    left.type="button";left.title="Move left";left.disabled=!opts.canLeft;
+    left.onmousedown=e=>e.preventDefault();
+    left.onclick=e=>{e.stopPropagation();if(opts.onMove)opts.onMove(s,-1)};
+    const right=el("button","col-move","›");
+    right.type="button";right.title="Move right";right.disabled=!opts.canRight;
+    right.onmousedown=e=>e.preventDefault();
+    right.onclick=e=>{e.stopPropagation();if(opts.onMove)opts.onMove(s,1)};
+    const input=document.createElement("input");
+    input.className="col-name-input";
+    input.value=s;
+    input.setAttribute("aria-label","Column name");
+    let saved=false;
+    const commit=async()=>{
+      if(saved)return;
+      saved=true;
+      const next=input.value.trim();
+      if(!next||next===s){saved=false;return}
+      await opts.onRename(s,next);
+    };
+    input.onblur=()=>commit();
+    input.onkeydown=e=>{
+      if(e.key==="Enter"){e.preventDefault();input.blur()}
+      if(e.key==="Escape"){input.value=s;input.blur()}
+    };
+    head.append(left,input,right);
+    c.append(head);
+  }else{
+    const head=el("button","col-head");
+    head.type="button";
+    head.title=collapsed?"Expand column":"Collapse column";
+    head.append(el("span","col-count",String(count)),el("span","col-name",s));
+    head.onclick=e=>{
+      e.stopPropagation();
+      colCollapsed.has(key)?colCollapsed.delete(key):colCollapsed.add(key);
+      render();
+    };
+    c.append(head);
+  }
   c.ondragover=e=>e.preventDefault();
   c.ondrop=ondrop;
   if(!collapsed){
@@ -627,7 +771,9 @@ function pastel(c){return`color-mix(in srgb,${c} 32%,#fff)`}
 function renderMasterBoard(tabC){
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
-  v.append(globalBar("Tasks"),masterBoard());
+  const bar=globalBar("Masterboard");
+  bar.append(boardEditBtn());
+  v.append(bar,masterBoard());
 }
 function renderCalendar(tabC){
   const v=$("view");v.className="mod";v.innerHTML="";
@@ -642,12 +788,12 @@ function renderCalendar(tabC){
 }
 function masterBoard(){
   const wrap=el("div","mb");
-  const b=el("div","board");
+  const b=el("div","board"+(boardEdit?" editing":""));
   const tasks=allBoardTasks().filter(t=>!masterOff.has(boardKey(t.folder,t.mod)));
-  STAGES.forEach(s=>{
+  stages.forEach((s,i)=>{
     const list=tasks.filter(t=>t.row.s===s);
     b.append(boardCol(s,list.length,"master",async()=>{
-      if(!drag)return;
+      if(!drag||boardEdit)return;
       const row=drag.row||drag;
       const loc=drag.folder?{folder:drag.folder,mod:drag.mod}:locateRow(row);
       row.s=s;drag=null;render();
@@ -655,14 +801,20 @@ function masterBoard(){
     },body=>{
       list.forEach(t=>{
         const pc=t.folder.color||PC[t.fi%PC.length];
-        const k=el("div","card tint");k.draggable=true;
+        const k=el("div","card tint");k.draggable=!boardEdit;
         k.style.setProperty("--pc",pc);
         k.style.background=pastel(pc);
-        k.onclick=()=>openItem(t.row);
-        k.ondragstart=()=>drag=t;
+        k.onclick=()=>{if(!boardEdit)openItem(t.row)};
+        if(!boardEdit)k.ondragstart=()=>drag=t;
         k.append(el("b","",t.row.n||"Untitled"),el("span","",t.row.r||""),el("span","src",t.folder.name+" › "+t.mod[1]));
         body.append(k);
       });
+    },{
+      editing:boardEdit,
+      canLeft:i>0,
+      canRight:i<stages.length-1,
+      onRename:(from,to)=>renameMasterColumn(from,to),
+      onMove:(name,dir)=>moveMasterColumn(name,dir)
     }));
   });
   const foot=el("div","mb-foot");
@@ -699,14 +851,14 @@ function openItem(r){
       if(c===titleCol)return;
       if(c.type==="stage"){
         const s=el("select");
-        STAGES.forEach(o=>{const op=el("option","",o);op.selected=o===r[c.id];s.append(op)});
+        stages.forEach(o=>{const op=el("option","",o);op.selected=o===r[c.id];s.append(op)});
         s.onchange=()=>r[c.id]=s.value;dlg.append(f(c.label,s));
       }else{
         const i=el("input");i.value=r[c.id]||"";i.oninput=()=>r[c.id]=i.value;dlg.append(f(c.label,i));
       }
     });
   }else{
-    const cols=loc?.mod[2]?.columns||STAGES;
+    const cols=loc?.mod[2]?.columns||stages;
     const n=el("input","title");n.value=r.n||"";n.placeholder="Untitled";n.oninput=()=>r.n=n.value;
     const ro=el("input");ro.value=r.r||"";ro.oninput=()=>r.r=ro.value;
     const s=el("select");
@@ -742,7 +894,7 @@ function table(d,folder,mod){
     d.cols.forEach(c=>{
       if(c.type==="stage"){
         const td=el("td"),s=el("select");
-        STAGES.forEach(o=>{const op=el("option","",o);op.selected=o===r[c.id];s.append(op)});
+        stages.forEach(o=>{const op=el("option","",o);op.selected=o===r[c.id];s.append(op)});
         s.onchange=async()=>{r[c.id]=s.value;await saveItem(r,folder,mod)};
         td.append(s);tr.append(td);
       }else{
@@ -758,7 +910,7 @@ function table(d,folder,mod){
   td.colSpan=d.cols.length+2;
   td.onclick=async()=>{
     const fields={};
-    d.cols.forEach(c=>fields[c.id]=c.type==="stage"?STAGES[0]:"");
+    d.cols.forEach(c=>fields[c.id]=c.type==="stage"?stages[0]:"");
     await createItem(folder,mod,fields);
     m=folders[p].mods.findIndex(x=>x[2]?.slug===mod[2].slug);
     render();
@@ -775,35 +927,44 @@ function gallery(d){
   return g;
 }
 function board(d,folder,mod){
-  const cols=d.columns||STAGES;
-  const b=el("div","board");
+  const cols=d.columns||stages;
+  const b=el("div","board"+(boardEdit?" editing":""));
   const scope=boardKey(folder||folders[p],mod||folders[p].mods[m]);
-  cols.forEach(s=>{
+  const f=folder||folders[p],md=mod||folders[p].mods[m];
+  cols.forEach((s,i)=>{
     const list=d.rows.filter(r=>r.s===s);
     b.append(boardCol(s,list.length,scope,async()=>{
-      if(!drag)return;
+      if(!drag||boardEdit)return;
       const row=drag.row||drag;
       row.s=s;drag=null;render();
-      await saveCard(row,folder||folders[p],mod||folders[p].mods[m]);
+      await saveCard(row,f,md);
     },body=>{
       list.forEach(r=>{
-        const pc=folder?.color||PC[0];
-        const k=el("div","card tint");k.draggable=true;
+        const pc=f?.color||PC[0];
+        const k=el("div","card tint");k.draggable=!boardEdit;
         k.style.setProperty("--pc",pc);
         k.style.background=pastel(pc);
-        k.onclick=()=>openItem(r);k.ondragstart=()=>drag=r;
+        k.onclick=()=>{if(!boardEdit)openItem(r)};
+        if(!boardEdit)k.ondragstart=()=>drag=r;
         k.append(el("b","",r.n||"Untitled"),el("span","",r.r));body.append(k);
       });
-      const a=el("button","addc","+ New");
-      a.onclick=async()=>{
-        const title=(prompt("Task title")||"").trim();
-        if(!title)return;
-        const f=folder||folders[p],md=mod||folders[p].mods[m];
-        await createCard(f,md,title,s);
-        m=folders[p].mods.findIndex(x=>x[2]?.slug===md[2].slug);
-        render();
-      };
-      body.append(a);
+      if(!boardEdit){
+        const a=el("button","addc","+ New");
+        a.onclick=async()=>{
+          const title=(prompt("Task title")||"").trim();
+          if(!title)return;
+          await createCard(f,md,title,s);
+          m=folders[p].mods.findIndex(x=>x[2]?.slug===md[2].slug);
+          render();
+        };
+        body.append(a);
+      }
+    },{
+      editing:boardEdit,
+      canLeft:i>0,
+      canRight:i<cols.length-1,
+      onRename:(from,to)=>renameBoardColumn(f,md,from,to),
+      onMove:(name,dir)=>moveBoardColumn(f,md,name,dir)
     }));
   });
   return b;

@@ -1,5 +1,5 @@
 ---
 title: Elena Rossi
-status: Applied
+status: Backlog
 role: Product manager
 ---

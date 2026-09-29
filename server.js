@@ -161,25 +161,69 @@ function writeProject(project, patch) {
   fs.writeFileSync(file, dumpFm(data, body));
 }
 
+function readWorkspaceMeta() {
+  const file = path.join(ROOT, "workspace.md");
+  const defaults = ["Applied", "Interview", "Offer", "Hired"];
+  if (!fs.existsSync(file)) return { stages: defaults.slice() };
+  const meta = parseFm(fs.readFileSync(file, "utf8"));
+  const stages = String(meta.data.stages || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return { stages: stages.length ? stages : defaults.slice() };
+}
+
+function writeWorkspaceMeta({ stages }) {
+  const file = path.join(ROOT, "workspace.md");
+  const cols = (stages || []).map((s) => String(s).trim()).filter(Boolean);
+  fs.writeFileSync(file, dumpFm({ stages: cols.join(", ") }));
+}
+
+function renameAcrossBoards(from, to) {
+  if (!from || !to || from === to) return;
+  for (const slug of readDir(ROOT)) {
+    const projDir = path.join(ROOT, slug);
+    if (!fs.statSync(projDir).isDirectory() || slug.startsWith(".")) continue;
+    if (!fs.existsSync(path.join(projDir, "project.md")) && !fs.existsSync(path.join(projDir, "boards"))) continue;
+    const boardsDir = path.join(projDir, "boards");
+    for (const bSlug of readDir(boardsDir)) {
+      const bDir = path.join(boardsDir, bSlug);
+      if (!fs.statSync(bDir).isDirectory()) continue;
+      const boardFile = path.join(bDir, "board.md");
+      if (fs.existsSync(boardFile)) {
+        const prev = parseFm(fs.readFileSync(boardFile, "utf8"));
+        const cols = String(prev.data.columns || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map((c) => (c === from ? to : c));
+        writeBoard(slug, bSlug, { name: prev.data.name || bSlug, columns: cols });
+      }
+      renameBoardStatuses(slug, bSlug, from, to);
+    }
+  }
+}
+
 function readWorkspace() {
   if (!fs.existsSync(ROOT)) fs.mkdirSync(ROOT, { recursive: true });
+  const meta = readWorkspaceMeta();
   const projects = [];
   for (const slug of readDir(ROOT).sort()) {
     const projDir = path.join(ROOT, slug);
     if (!fs.statSync(projDir).isDirectory()) continue;
-    const meta = parseFm(fs.existsSync(path.join(projDir, "project.md"))
+    const pmeta = parseFm(fs.existsSync(path.join(projDir, "project.md"))
       ? fs.readFileSync(path.join(projDir, "project.md"), "utf8")
       : "");
     projects.push({
       slug,
-      name: meta.data.name || slug,
-      color: meta.data.color || "#9a5b2e",
-      cover: readCover(meta),
+      name: pmeta.data.name || slug,
+      color: pmeta.data.color || "#9a5b2e",
+      cover: readCover(pmeta),
       boards: readBoards(projDir),
       databases: readDatabases(projDir),
     });
   }
-  return { projects };
+  return { stages: meta.stages, projects };
 }
 
 function cardPath(project, board, slug) {
@@ -230,6 +274,30 @@ function createBoard(project, name) {
   fs.mkdirSync(path.join(dir, "cards"), { recursive: true });
   fs.writeFileSync(path.join(dir, "board.md"), dumpFm({ name, columns: "Applied, Interview, Offer, Hired" }));
   return bSlug;
+}
+
+function writeBoard(project, board, { name, columns }) {
+  const dir = path.join(ROOT, project, "boards", board);
+  fs.mkdirSync(path.join(dir, "cards"), { recursive: true });
+  const file = path.join(dir, "board.md");
+  const prev = fs.existsSync(file) ? parseFm(fs.readFileSync(file, "utf8")).data : {};
+  const cols = Array.isArray(columns) ? columns.filter(Boolean) : String(columns || "").split(",").map((s) => s.trim()).filter(Boolean);
+  fs.writeFileSync(
+    file,
+    dumpFm({ name: name || prev.name || board, columns: cols.join(", ") })
+  );
+}
+
+function renameBoardStatuses(project, board, from, to) {
+  if (!from || !to || from === to) return;
+  const cardsDir = path.join(ROOT, project, "boards", board, "cards");
+  for (const file of readDir(cardsDir).filter((f) => f.endsWith(".md"))) {
+    const full = path.join(cardsDir, file);
+    const { data, body } = parseFm(fs.readFileSync(full, "utf8"));
+    if (data.status !== from) continue;
+    data.status = to;
+    fs.writeFileSync(full, dumpFm(data, body));
+  }
 }
 
 function createDatabase(project, name) {
@@ -305,6 +373,29 @@ const server = http.createServer(async (req, res) => {
       if (!body.project || !body.name) return json(res, 400, { error: "missing fields" });
       const slug = createBoard(body.project, body.name);
       return json(res, 201, { slug, ...readWorkspace() });
+    }
+    if (req.method === "PUT" && url.pathname === "/api/board") {
+      const body = await readBody(req);
+      if (!body.project || !body.board || !body.columns) return json(res, 400, { error: "missing fields" });
+      const file = path.join(ROOT, body.project, "boards", body.board, "board.md");
+      const prev = fs.existsSync(file) ? parseFm(fs.readFileSync(file, "utf8")).data : {};
+      writeBoard(body.project, body.board, {
+        name: body.name || prev.name || body.board,
+        columns: body.columns,
+      });
+      if (body.rename && body.rename.from && body.rename.to) {
+        renameBoardStatuses(body.project, body.board, body.rename.from, body.rename.to);
+      }
+      return json(res, 200, readWorkspace());
+    }
+    if (req.method === "PUT" && url.pathname === "/api/masterboard") {
+      const body = await readBody(req);
+      if (!body.columns) return json(res, 400, { error: "missing fields" });
+      writeWorkspaceMeta({ stages: body.columns });
+      if (body.rename && body.rename.from && body.rename.to) {
+        renameAcrossBoards(body.rename.from, body.rename.to);
+      }
+      return json(res, 200, readWorkspace());
     }
     if (req.method === "POST" && url.pathname === "/api/database") {
       const body = await readBody(req);

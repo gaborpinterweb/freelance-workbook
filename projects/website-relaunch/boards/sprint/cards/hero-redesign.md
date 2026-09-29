@@ -1,5 +1,5 @@
 ---
 title: Hero redesign
-status: Applied
+status: Backlog
 role: Design
 ---

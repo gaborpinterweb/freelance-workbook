@@ -1,5 +1,5 @@
 ---
 title: Waitlist email
-status: Applied
+status: Backlog
 role: Growth
 ---
