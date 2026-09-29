@@ -64,10 +64,11 @@ main.global-view #view{margin:0;border-radius:0;overflow:hidden;background:var(-
 .modbar .bedit svg{display:block}
 .modbar .bedit:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
 .modbar .bedit.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
-.modbar .done-toggle{margin-left:auto;display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:calc(var(--radius) - 4px);color:color-mix(in srgb,#fff 78%,transparent);font-size:13px;font-weight:500;white-space:nowrap;transition:background .12s,color .12s}
-.modbar .done-toggle:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
-.modbar .done-toggle.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
-.modbar .done-toggle+.bedit{margin-left:0}
+.modbar .done-view{margin-left:auto;display:inline-flex;align-items:center;height:32px;padding:2px;gap:2px;border-radius:calc(var(--radius) - 4px);background:color-mix(in srgb,#000 18%,transparent)}
+.modbar .done-view button{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:calc(var(--radius) - 6px);color:color-mix(in srgb,#fff 72%,transparent);font-size:12px;font-weight:500;white-space:nowrap;transition:background .12s,color .12s}
+.modbar .done-view button:hover{color:#fff;background:color-mix(in srgb,#fff 12%,transparent)}
+.modbar .done-view button.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
+.modbar .done-view+.bedit{margin-left:0}
 .col.done-col{background:color-mix(in srgb,var(--sel) 55%,#fff)}
 .col.done-col .col-head{background:color-mix(in srgb,var(--sel) 80%,#fff)}
 .col.done-col .done-empty{padding:16px 8px;text-align:center;color:var(--mute);font-size:13px}
@@ -262,6 +263,9 @@ const TYPES=[
 let folders=[],p=0,m=0,g="Masterboard";
 const LAST_TAB_KEY="projectoire:lastTab";
 const SESSION_KEY="projectoire:session";
+const COMPLETED_VIEW_KEY="projectoire:completedView";
+const COMPLETED_VIEWS=["hide","virtual","inplace"];
+const completedViewByScope=new Map();
 function loadLastTabs(){
   try{return JSON.parse(localStorage.getItem(LAST_TAB_KEY)||"{}")||{}}catch{return{}}
 }
@@ -270,6 +274,26 @@ function saveLastTab(slug,tabSlug){
   const map=loadLastTabs();
   map[slug]=tabSlug;
   try{localStorage.setItem(LAST_TAB_KEY,JSON.stringify(map))}catch{}
+}
+function loadCompletedViews(){
+  try{return JSON.parse(localStorage.getItem(COMPLETED_VIEW_KEY)||"{}")||{}}catch{return{}}
+}
+function getCompletedView(scope){
+  if(completedViewByScope.has(scope)){
+    const cached=completedViewByScope.get(scope);
+    return COMPLETED_VIEWS.includes(cached)?cached:"hide";
+  }
+  const stored=loadCompletedViews()[scope];
+  const mode=COMPLETED_VIEWS.includes(stored)?stored:"hide";
+  completedViewByScope.set(scope,mode);
+  return mode;
+}
+function setCompletedView(scope,mode){
+  if(!COMPLETED_VIEWS.includes(mode))mode="hide";
+  completedViewByScope.set(scope,mode);
+  const map=loadCompletedViews();
+  map[scope]=mode;
+  try{localStorage.setItem(COMPLETED_VIEW_KEY,JSON.stringify(map))}catch{}
 }
 function rememberCurrentTab(){
   const pr=folders[p];
@@ -672,15 +696,34 @@ function makeTaskCard(row,folder,mod,opts){
   if(opts?.src)k.append(el("span","src",opts.src));
   return k;
 }
-function completedBtn(scope){
-  const on=!!showCompletedByScope.get(scope);
-  const btn=el("button","done-toggle"+(on?" on":""));
-  btn.type="button";
-  btn.textContent=on?"Hide completed":"Show completed";
-  btn.title=on?"Hide completed column":"Show completed column";
-  btn.setAttribute("aria-pressed",on?"true":"false");
-  btn.onclick=()=>{showCompletedByScope.set(scope,!on);render()};
-  return btn;
+function completedViewBtn(scope){
+  const mode=getCompletedView(scope);
+  const wrap=el("div","done-view");
+  wrap.setAttribute("role","group");
+  wrap.setAttribute("aria-label","Completed tasks view");
+  [
+    {id:"hide",label:"Hide",title:"Hide completed"},
+    {id:"virtual",label:"Column",title:"Completed column"},
+    {id:"inplace",label:"In columns",title:"Show in columns"}
+  ].forEach(opt=>{
+    const btn=el("button",mode===opt.id?"on":"");
+    btn.type="button";
+    btn.textContent=opt.label;
+    btn.title=opt.title;
+    btn.setAttribute("aria-pressed",mode===opt.id?"true":"false");
+    btn.onclick=()=>{if(mode===opt.id)return;setCompletedView(scope,opt.id);render()};
+    wrap.append(btn);
+  });
+  return wrap;
+}
+function columnRows(rows,mode){
+  const list=rows.slice();
+  if(mode==="inplace"){
+    const open=[],done=[];
+    list.forEach(r=>(isDone(r)?done:open).push(r));
+    return open.concat(done);
+  }
+  return list.filter(r=>!isDone(r));
 }
 function fillDoneGroups(body,items){
   if(!items.length){
@@ -721,7 +764,7 @@ function renderBoard(x,tabC){
   v.style.setProperty("--tab",tabC);
   const scope=boardKey(folders[p],x);
   const bar=el("div","modbar");
-  bar.append(completedBtn(scope),boardEditBtn());
+  bar.append(completedViewBtn(scope),boardEditBtn());
   v.append(bar,board(d,folders[p],x));
 }
 const COVER_DEFS=[
@@ -850,7 +893,6 @@ function allBoards(){
 }
 const masterOff=new Set();
 const colCollapsed=new Set();
-const showCompletedByScope=new Map();
 let boardEdit=false;
 function colCollapseKey(scope,s){return scope+"\0"+s}
 async function renameBoardColumn(folder,mod,from,to){
@@ -1005,7 +1047,7 @@ function renderMasterBoard(tabC){
   const v=$("view");v.className="db";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
   const bar=globalBar("Masterboard");
-  bar.append(completedBtn("master"),boardEditBtn());
+  bar.append(completedViewBtn("master"),boardEditBtn());
   v.append(bar,masterBoard());
 }
 function renderCalendar(tabC){
@@ -1023,8 +1065,10 @@ function masterBoard(){
   const wrap=el("div","mb");
   const b=el("div","board"+(boardEdit?" editing":""));
   const tasks=allBoardTasks().filter(t=>!masterOff.has(boardKey(t.folder,t.mod)));
+  const mode=getCompletedView("master");
   stages.forEach((s,i)=>{
-    const visible=tasks.filter(t=>t.row.ms===s&&!isDone(t.row));
+    const stageTasks=tasks.filter(t=>t.row.ms===s);
+    const visible=columnRows(stageTasks.map(t=>t.row),mode).map(row=>stageTasks.find(t=>t.row===row)).filter(Boolean);
     b.append(boardCol(s,visible.length,"master",async()=>{
       if(!drag||boardEdit)return;
       const row=drag.row||drag;
@@ -1049,7 +1093,7 @@ function masterBoard(){
       onMove:(name,dir)=>moveMasterColumn(name,dir)
     }));
   });
-  if(showCompletedByScope.get("master")){
+  if(mode==="virtual"){
     const doneItems=tasks.filter(t=>isDone(t.row)).map(t=>({
       row:t.row,folder:t.folder,mod:t.mod,
       color:t.folder.color||PC[t.fi%PC.length],
@@ -1253,8 +1297,9 @@ function board(d,folder,mod){
   const b=el("div","board"+(boardEdit?" editing":""));
   const scope=boardKey(folder||folders[p],mod||folders[p].mods[m]);
   const f=folder||folders[p],md=mod||folders[p].mods[m];
+  const mode=getCompletedView(scope);
   cols.forEach((s,i)=>{
-    const list=d.rows.filter(r=>r.s===s&&!isDone(r));
+    const list=columnRows((d.rows||[]).filter(r=>r.s===s),mode);
     b.append(boardCol(s,list.length,scope,async()=>{
       if(!drag||boardEdit)return;
       const row=drag.row||drag;
@@ -1283,7 +1328,7 @@ function board(d,folder,mod){
       onMove:(name,dir)=>moveBoardColumn(f,md,name,dir)
     }));
   });
-  if(showCompletedByScope.get(scope)){
+  if(mode==="virtual"){
     const doneItems=(d.rows||[]).filter(isDone).map(row=>({
       row,folder:f,mod:md,color:f.color||PC[0],dragPayload:row
     }));
