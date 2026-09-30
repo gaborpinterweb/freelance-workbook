@@ -23,6 +23,7 @@ export default function SettingsDialog({
   onClose,
   onResetSeed,
   onResetEmpty,
+  onResetFirstLaunch,
 }) {
   const [tab, setTab] = useState("appearance");
   const [resetting, setResetting] = useState(null);
@@ -72,6 +73,13 @@ export default function SettingsDialog({
       "empty",
       "Reset to empty workspace?\n\nThis deletes all projects, tasks, and timelogs. Your changes will be lost.",
       onResetEmpty
+    );
+
+  const handleResetFirstLaunch = () =>
+    runReset(
+      "first-launch",
+      "Reset to first launch?\n\nThis restores seed data, clears saved views and settings, and reloads the app. Your changes will be lost.",
+      onResetFirstLaunch
     );
 
   return (
@@ -175,6 +183,20 @@ export default function SettingsDialog({
                       onClick={handleResetEmpty}
                     >
                       {resetting === "empty" ? "Resetting…" : "Reset"}
+                    </button>
+                  </div>
+                  <div className="settings-row">
+                    <div className="settings-row-copy">
+                      <b>Reset to first launch</b>
+                      <span>Restore seed data, clear UI state, and reload</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="settings-row-btn settings-row-btn-danger"
+                      disabled={!!resetting}
+                      onClick={handleResetFirstLaunch}
+                    >
+                      {resetting === "first-launch" ? "Resetting…" : "Reset"}
                     </button>
                   </div>
                 </div>

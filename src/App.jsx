@@ -40,6 +40,7 @@ import {
   slugifyClient,
   loadWorkspaceVisibility,
   saveWorkspaceVisibility,
+  clearClientAppState,
 } from "./utils.js";
 import Sidebar from "./components/Sidebar.jsx";
 import TabBar from "./components/TabBar.jsx";
@@ -1114,6 +1115,12 @@ export default function App() {
             setTimelogFilter(null);
             setTrashRefresh((n) => n + 1);
             setTimelogRefresh((n) => n + 1);
+          }}
+          onResetFirstLaunch={async () => {
+            await resetWorkspaceToSeed();
+            clearClientAppState();
+            window.location.reload();
+            await new Promise(() => {});
           }}
         />
       )}

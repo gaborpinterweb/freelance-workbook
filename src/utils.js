@@ -256,6 +256,17 @@ export function saveWorkspaceVisibility(map) {
   } catch {}
 }
 
+export function clearClientAppState() {
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("freelance-workbook:")) keys.push(key);
+    }
+    keys.forEach((key) => localStorage.removeItem(key));
+  } catch {}
+}
+
 export function colCollapseKey(scope, s) {
   return scope + "\0" + s;
 }
