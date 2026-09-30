@@ -41,6 +41,7 @@ import Board, { DatabaseView } from "./components/Board.jsx";
 import Cover from "./components/Cover.jsx";
 import Calendar from "./components/Calendar.jsx";
 import Timelogs from "./components/Timelogs.jsx";
+import Trash from "./components/Trash.jsx";
 import CardDialog from "./components/CardDialog.jsx";
 
 export default function App() {
@@ -753,13 +754,17 @@ export default function App() {
               refreshKey={timelogRefresh}
             />
           )}
+          {loaded && !loadError && !draftProject && g === "Trash" && (
+            <Trash tabC={GACC} />
+          )}
           {loaded &&
             !loadError &&
             !draftProject &&
             g &&
             g !== "Masterboard" &&
             g !== "Calendar" &&
-            g !== "Timelogs" && (
+            g !== "Timelogs" &&
+            g !== "Trash" && (
               <div id="view" className="mod" style={{ ["--tab"]: GACC }}>
                 <div className="modbar gbar">
                   <b>{g}</b>

@@ -38,7 +38,7 @@ export default function Sidebar({
       <div className="side-scroll">
         <h2>Workspace</h2>
         <div id="globals">
-          {["Masterboard", "Timelogs", "Calendar"].map((n) => (
+          {["Masterboard", "Timelogs", "Calendar", "Trash"].map((n) => (
             <button
               key={n}
               type="button"

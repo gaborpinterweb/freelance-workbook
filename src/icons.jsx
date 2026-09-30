@@ -48,6 +48,10 @@ export const IC = {
     '<rect x="3" y="3.5" width="10" height="10" rx="1.5"/><path d="M3 6.5h10M6 2.5v2M10 2.5v2M6.5 9h3"/>',
     "#9a5b2e",
   ],
+  Trash: [
+    '<path d="M3.5 5.5h9M6 5.5V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5M5 5.5l.6 7h4.8l.6-7M6.5 8v3M9.5 8v3"/>',
+    "#9a5b2e",
+  ],
   project: [
     '<rect x="2.5" y="2.5" width="11" height="11" rx="3"/><path d="M6 6h4M6 9h2.5"/>',
     "",
