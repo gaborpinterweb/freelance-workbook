@@ -21,7 +21,8 @@ export const POMO_KEY = "freelance-workbook:pomodoro";
 export const WORKSPACE_VIS_KEY = "freelance-workbook:workspaceVisibility";
 export const LAUNCH_SEEN_KEY = "freelance-workbook:launchSeen";
 export const WORKSPACE_ITEMS = ["Masterboard", "Timelogs", "Calendar", "Trash"];
-export const SIDEBAR_VIS_ITEMS = [...WORKSPACE_ITEMS, "Archived"];
+/** Only Archived is hideable; workspace items are always shown. */
+export const SIDEBAR_VIS_ITEMS = ["Archived"];
 export const POMO_DURATION_SEC = 25 * 60;
 export const COMPLETED_VIEWS = ["hide", "virtual", "inplace"];
 export const GACC = "#9a5b2e";
@@ -233,9 +234,7 @@ export function globalLabel(name) {
 }
 
 export function defaultWorkspaceVisibility() {
-  return Object.fromEntries(
-    SIDEBAR_VIS_ITEMS.map((id) => [id, id !== "Archived"])
-  );
+  return Object.fromEntries(SIDEBAR_VIS_ITEMS.map((id) => [id, false]));
 }
 
 export function loadWorkspaceVisibility() {

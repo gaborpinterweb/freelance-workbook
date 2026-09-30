@@ -54,7 +54,6 @@ import Timelogs from "./components/Timelogs.jsx";
 import Trash from "./components/Trash.jsx";
 import CardDialog from "./components/CardDialog.jsx";
 import SettingsDialog from "./components/SettingsDialog.jsx";
-import SuperEmpty from "./components/SuperEmpty.jsx";
 import LaunchDialog from "./components/LaunchDialog.jsx";
 
 export default function App() {
@@ -143,13 +142,11 @@ export default function App() {
 
       if (opts.initial) {
         const sess = loadSession();
-        const vis = loadWorkspaceVisibility();
-        const visibleGlobals = WORKSPACE_ITEMS.filter((id) => vis[id]);
         let nextG = "Masterboard";
         let nextP = 0;
         if (sess && "g" in sess) nextG = sess.g || null;
-        if (nextG && !visibleGlobals.includes(nextG)) {
-          nextG = visibleGlobals[0] || null;
+        if (nextG && !WORKSPACE_ITEMS.includes(nextG)) {
+          nextG = "Masterboard";
         }
         if (sess?.project) {
           const pi = next.findIndex((f) => f.slug === sess.project);
@@ -630,21 +627,9 @@ export default function App() {
     (coverEdit && coverDraft && coverDraft.color) ||
     folder?.color ||
     PC[p % PC.length];
-  const visibleWorkspaceItems = WORKSPACE_ITEMS.filter((id) => workspaceVis[id]);
-
   const applyWorkspaceVisibility = useCallback((nextVis) => {
     saveWorkspaceVisibility(nextVis);
     setWorkspaceVis(nextVis);
-    const visible = WORKSPACE_ITEMS.filter((id) => nextVis[id]);
-    const current = gRef.current;
-    if (current && !visible.includes(current)) {
-      const nextG = visible[0] || null;
-      setG(nextG);
-      gRef.current = nextG;
-      if (!nextG) {
-        setBoardEdit(false);
-      }
-    }
     if (!nextVis.Archived) {
       const list = foldersRef.current;
       const pi = pRef.current;
@@ -662,72 +647,53 @@ export default function App() {
   }, []);
 
   const tabC = projC;
-  const hasActiveProject = folders.some((f) => !f.archived);
-  const isSuperEmpty =
-    loaded &&
-    !loadError &&
-    !draftProject &&
-    visibleWorkspaceItems.length === 0 &&
-    !hasActiveProject;
   const isGlobal = !!g && !draftProject;
 
   void uiTick; // force re-render when Sets mutate
 
   return (
     <>
-      {!isSuperEmpty && (
-        <Sidebar
-          folders={folders}
-          p={p}
-          g={g}
-          draftProject={draftProject}
-          coverEdit={coverEdit}
-          coverDraft={coverDraft}
-          activePomo={activePomo}
-          workspaceItems={visibleWorkspaceItems}
-          showArchived={!!workspaceVis.Archived}
-          onSelectGlobal={(n) => {
-            discardDraft();
-            discardCoverEdit();
-            setBoardEdit(false);
-            setG(n);
-          }}
-          onSelectProject={(i) => {
-            discardDraft();
-            discardCoverEdit();
-            setG(null);
-            setP(i);
-            setM(restoreTabIndex(folders[i]));
-            setBoardEdit(false);
-          }}
-          onAddProject={startNewProject}
-          onStopPomo={stopPomodoro}
-          onOpenPomoCard={() => {
-            if (!activePomo) return;
-            const hit = findCardBySlugs(
-              folders,
-              activePomo.project,
-              activePomo.board,
-              activePomo.card
-            );
-            if (hit) openItem(hit.row);
-          }}
-          onOpenSettings={() => setSettingsOpen(true)}
-        />
-      )}
-      <main
-        className={
-          isSuperEmpty ? "super-empty-view" : isGlobal ? "global-view" : undefined
-        }
-      >
+      <Sidebar
+        folders={folders}
+        p={p}
+        g={g}
+        draftProject={draftProject}
+        coverEdit={coverEdit}
+        coverDraft={coverDraft}
+        activePomo={activePomo}
+        workspaceItems={WORKSPACE_ITEMS}
+        showArchived={!!workspaceVis.Archived}
+        onSelectGlobal={(n) => {
+          discardDraft();
+          discardCoverEdit();
+          setBoardEdit(false);
+          setG(n);
+        }}
+        onSelectProject={(i) => {
+          discardDraft();
+          discardCoverEdit();
+          setG(null);
+          setP(i);
+          setM(restoreTabIndex(folders[i]));
+          setBoardEdit(false);
+        }}
+        onAddProject={startNewProject}
+        onStopPomo={stopPomodoro}
+        onOpenPomoCard={() => {
+          if (!activePomo) return;
+          const hit = findCardBySlugs(
+            folders,
+            activePomo.project,
+            activePomo.board,
+            activePomo.card
+          );
+          if (hit) openItem(hit.row);
+        }}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+      <main className={isGlobal ? "global-view" : undefined}>
         <div className="stage">
-          {isSuperEmpty && (
-            <SuperEmpty
-              onCreateProject={startNewProject}
-              onOpenSettings={() => setSettingsOpen(true)}
-            />
-          )}
-          {!isSuperEmpty && !isGlobal && (
+          {!isGlobal && (
             <TabBar
               folder={folder}
               mods={mods}
@@ -794,14 +760,14 @@ export default function App() {
               </div>
             </div>
           )}
-          {!isSuperEmpty && loaded && !loadError && draftProject && (
+          {loaded && !loadError && draftProject && (
             <Cover
               draftProject={draftProject}
               onCoverDraftChange={setDraftProject}
               onCommitDraft={commitDraftProject}
             />
           )}
-          {!isSuperEmpty && loaded && !loadError && !draftProject && g === "Masterboard" && (
+          {loaded && !loadError && !draftProject && g === "Masterboard" && (
             <Board
               mode="master"
               folder={folder}
@@ -825,10 +791,10 @@ export default function App() {
               locateRow={(r) => locateRow(foldersRef.current, r)}
             />
           )}
-          {!isSuperEmpty && loaded && !loadError && !draftProject && g === "Calendar" && (
+          {loaded && !loadError && !draftProject && g === "Calendar" && (
             <Calendar tabC={GACC} />
           )}
-          {!isSuperEmpty && loaded && !loadError && !draftProject && g === "Timelogs" && (
+          {loaded && !loadError && !draftProject && g === "Timelogs" && (
             <Timelogs
               tabC={GACC}
               timelogFilter={timelogFilter}
@@ -840,7 +806,7 @@ export default function App() {
               refreshKey={timelogRefresh}
             />
           )}
-          {!isSuperEmpty && loaded && !loadError && !draftProject && g === "Trash" && (
+          {loaded && !loadError && !draftProject && g === "Trash" && (
             <Trash
               tabC={GACC}
               refreshKey={trashRefresh}
@@ -857,8 +823,7 @@ export default function App() {
               }}
             />
           )}
-          {!isSuperEmpty &&
-            loaded &&
+          {loaded &&
             !loadError &&
             !draftProject &&
             g &&
@@ -882,21 +847,18 @@ export default function App() {
                 </div>
               </div>
             )}
-          {!isSuperEmpty && loaded && !loadError && !draftProject && !g && !folder && (
+          {loaded && !loadError && !draftProject && !g && !folder && (
             <div id="view" className="mod">
               <div className="empty">
                 <h2>You have no active projects</h2>
-                <p>
-                  Create a project from the sidebar, or turn a workspace view back
-                  on in Settings → Appearance.
-                </p>
+                <p>Create a project from the sidebar to get started.</p>
                 <button type="button" className="cta" onClick={startNewProject}>
                   New project
                 </button>
               </div>
             </div>
           )}
-          {!isSuperEmpty && loaded && !loadError && !draftProject && !g && folder && x?.[0] === "Cover" && (
+          {loaded && !loadError && !draftProject && !g && folder && x?.[0] === "Cover" && (
             <Cover
               folder={folder}
               mod={x}
@@ -912,8 +874,7 @@ export default function App() {
               onSave={(patch) => saveCover(folder, x, patch)}
             />
           )}
-          {!isSuperEmpty &&
-            loaded &&
+          {loaded &&
             !loadError &&
             !draftProject &&
             !g &&
@@ -948,8 +909,7 @@ export default function App() {
                 keepNav={keepNav}
               />
             )}
-          {!isSuperEmpty &&
-            loaded &&
+          {loaded &&
             !loadError &&
             !draftProject &&
             !g &&
@@ -964,8 +924,7 @@ export default function App() {
                 onApplyWorkspace={applyWorkspace}
               />
             )}
-          {!isSuperEmpty &&
-            loaded &&
+          {loaded &&
             !loadError &&
             !draftProject &&
             !g &&
@@ -988,7 +947,7 @@ export default function App() {
                 </div>
               </div>
             )}
-          {!isSuperEmpty && loaded && !loadError && !draftProject && !g && folder && !x && (
+          {loaded && !loadError && !draftProject && !g && folder && !x && (
             <div id="view" className="mod" style={{ ["--tab"]: tabC }}>
               <div className="modbar" />
               <div
@@ -1003,7 +962,7 @@ export default function App() {
               </div>
             </div>
           )}
-          {!isSuperEmpty && archived && !g && !draftProject && folder && (
+          {archived && !g && !draftProject && folder && (
             <div className="archive-ribbon">
               <span>This project is archived and cannot be modified.</span>
               <button type="button" onClick={() => confirmUnarchiveProject(folder)}>
@@ -1022,8 +981,6 @@ export default function App() {
           folders={folders}
           stages={stages}
           g={g}
-          showMasterColumn={!!workspaceVis.Masterboard}
-          showTimelogs={!!workspaceVis.Timelogs}
           onClose={(result) => {
             if (result?.draftRemember) {
               setCardDraft({
