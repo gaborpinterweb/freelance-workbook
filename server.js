@@ -11,11 +11,6 @@ const DEFAULT_DB_COLS = [
   { id: "r", label: "Role", type: "text" },
   { id: "s", label: "Stage", type: "stage" },
 ];
-const PRIORITIES = ["none", "low", "medium", "high"];
-function normalizePriority(v) {
-  const p = String(v || "none").toLowerCase().trim();
-  return PRIORITIES.includes(p) ? p : "none";
-}
 
 function slugify(s) {
   return String(s || "")
@@ -66,6 +61,10 @@ function readDir(dir) {
   }
 }
 
+function isDemoValue(v) {
+  return v === true || String(v || "").toLowerCase() === "true";
+}
+
 function readBoards(projDir) {
   const boards = [];
   const boardsDir = path.join(projDir, "boards");
@@ -75,24 +74,27 @@ function readBoards(projDir) {
     const bMeta = parseFm(fs.existsSync(path.join(bDir, "board.md"))
       ? fs.readFileSync(path.join(bDir, "board.md"), "utf8")
       : "");
-    const columns = (bMeta.data.columns || "Low priority, Medium priority, High priority")
+    const columns = (bMeta.data.columns || "Design, Frontend dev, Backend dev, Content")
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
     const cards = [];
     for (const file of readDir(path.join(bDir, "cards")).filter((f) => f.endsWith(".md")).sort()) {
       const { data, body } = parseFm(fs.readFileSync(path.join(bDir, "cards", file), "utf8"));
-      cards.push({
+      const card = {
         slug: file.replace(/\.md$/, ""),
         title: data.title || file.replace(/\.md$/, ""),
-        status: data.status || columns[0] || "Medium priority",
+        status: data.status || columns[0] || "Design",
         master: data.master || "Backlog",
-        priority: normalizePriority(data.priority),
         doneAt: data.doneAt || "",
         body,
-      });
+      };
+      if (isDemoValue(data.isDemo)) card.isDemo = true;
+      cards.push(card);
     }
-    boards.push({ slug: bSlug, name: bMeta.data.name || bSlug, columns, cards });
+    const board = { slug: bSlug, name: bMeta.data.name || bSlug, columns, cards };
+    if (isDemoValue(bMeta.data.isDemo)) board.isDemo = true;
+    boards.push(board);
   }
   return boards;
 }
@@ -125,24 +127,12 @@ function readDatabases(projDir) {
   return databases;
 }
 
-function todayISO() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
-}
-
 function readCover(meta) {
-  let fields = String(meta.data.fields || "created")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (!fields.includes("created")) fields = ["created", ...fields];
-  const values = {
-    created: meta.data.created || todayISO(),
-    deadline: meta.data.deadline || "",
-    goal: meta.data.goal || "",
-    description: meta.body || "",
+  return {
+    values: {
+      description: meta.body || "",
+    },
   };
-  return { fields, values };
 }
 
 function writeProject(project, patch) {
@@ -151,21 +141,15 @@ function writeProject(project, patch) {
   const name = patch.name != null ? patch.name : prev.data.name || project;
   const color = patch.color != null ? patch.color : prev.data.color || "#9a5b2e";
   const cover = patch.cover || readCover(prev);
-  const fields = cover.fields && cover.fields.length ? cover.fields.slice() : ["created"];
-  if (!fields.includes("created")) fields.unshift("created");
-  const values = Object.assign(
-    { created: todayISO(), deadline: "", goal: "", description: "" },
-    cover.values || {}
-  );
-  if (!values.created) values.created = todayISO();
-  const data = { name, color, fields: fields.join(",") };
-  fields.forEach((f) => {
-    if (f === "description") return;
-    data[f] = values[f] != null ? String(values[f]).replace(/\n/g, " ") : "";
-  });
-  const body = fields.includes("description") ? values.description || "" : "";
+  const description =
+    cover.values && cover.values.description != null
+      ? String(cover.values.description)
+      : prev.body || "";
+  const data = { name, color };
+  const demo = patch.isDemo != null ? patch.isDemo : prev.data.isDemo;
+  if (isDemoValue(demo)) data.isDemo = true;
   fs.mkdirSync(path.join(ROOT, project), { recursive: true });
-  fs.writeFileSync(file, dumpFm(data, body));
+  fs.writeFileSync(file, dumpFm(data, description));
 }
 
 function readWorkspaceMeta() {
@@ -232,6 +216,7 @@ function readWorkspace() {
       slug,
       name: pmeta.data.name || slug,
       color: pmeta.data.color || "#9a5b2e",
+      isDemo: isDemoValue(pmeta.data.isDemo) || undefined,
       cover: readCover(pmeta),
       boards: readBoards(projDir),
       databases: readDatabases(projDir),
@@ -252,15 +237,17 @@ function writeCard(project, board, card) {
   const dir = path.join(ROOT, project, "boards", board, "cards");
   fs.mkdirSync(dir, { recursive: true });
   const slug = card.slug || slugify(card.title);
-  const priority = normalizePriority(card.priority);
+  const file = cardPath(project, board, slug);
+  const prev = fs.existsSync(file) ? parseFm(fs.readFileSync(file, "utf8")).data : {};
   const data = {
     title: card.title || slug,
-    status: card.status || "Medium priority",
+    status: card.status || "Design",
     master: card.master || "Backlog",
   };
-  if (priority !== "none") data.priority = priority;
   if (card.doneAt) data.doneAt = card.doneAt;
-  fs.writeFileSync(cardPath(project, board, slug), dumpFm(data, card.body || ""));
+  const demo = card.isDemo != null ? card.isDemo : prev.isDemo;
+  if (isDemoValue(demo)) data.isDemo = true;
+  fs.writeFileSync(file, dumpFm(data, card.body || ""));
   return slug;
 }
 
@@ -291,20 +278,23 @@ function createBoard(project, name) {
   const bSlug = slugify(name);
   const dir = path.join(ROOT, project, "boards", bSlug);
   fs.mkdirSync(path.join(dir, "cards"), { recursive: true });
-  fs.writeFileSync(path.join(dir, "board.md"), dumpFm({ name, columns: "Low priority, Medium priority, High priority" }));
+  fs.writeFileSync(path.join(dir, "board.md"), dumpFm({ name, columns: "Design, Frontend dev, Backend dev, Content" }));
   return bSlug;
 }
 
-function writeBoard(project, board, { name, columns }) {
+function writeBoard(project, board, { name, columns, isDemo }) {
   const dir = path.join(ROOT, project, "boards", board);
   fs.mkdirSync(path.join(dir, "cards"), { recursive: true });
   const file = path.join(dir, "board.md");
   const prev = fs.existsSync(file) ? parseFm(fs.readFileSync(file, "utf8")).data : {};
   const cols = Array.isArray(columns) ? columns.filter(Boolean) : String(columns || "").split(",").map((s) => s.trim()).filter(Boolean);
-  fs.writeFileSync(
-    file,
-    dumpFm({ name: name || prev.name || board, columns: cols.join(", ") })
-  );
+  const data = {
+    name: name || prev.name || board,
+    columns: cols.join(", "),
+  };
+  const demo = isDemo != null ? isDemo : prev.isDemo;
+  if (isDemoValue(demo)) data.isDemo = true;
+  fs.writeFileSync(file, dumpFm(data));
 }
 
 function renameBoardStatuses(project, board, from, to) {

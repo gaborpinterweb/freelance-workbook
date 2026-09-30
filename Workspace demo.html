@@ -147,10 +147,6 @@ select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4
 .card b,.card span{display:block}.card span{color:var(--mute);font-size:13px}
 .card b{display:flex;align-items:center;gap:8px;min-width:0;width:100%}
 .card .card-check{flex:none;width:16px;height:16px;margin:0;accent-color:var(--acc);cursor:pointer}
-.card .card-prio{flex:none;font-weight:700;letter-spacing:-.04em;line-height:1}
-.dlg select.prio-high{color:#d12c2c;font-weight:600}
-.dlg select.prio-high option{color:var(--ink);font-weight:400}
-.dlg select.prio-high option[value="high"]{color:#d12c2c;font-weight:600}
 .card .card-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font-size:inherit;font-weight:inherit}
 .card.done .card-name{text-decoration:line-through;opacity:.72}
 .card .src{font-size:12px;color:var(--mute);margin-top:4px}
@@ -169,21 +165,11 @@ select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4
 .gcard em{font-style:normal;font-size:12px;background:var(--sel);border-radius:4px;padding:2px 6px;width:fit-content}
 .cover{height:90px;display:grid;place-items:center;font-size:32px;font-weight:600;background:var(--sel);color:var(--acc)}
 .cover-page{flex:1;min-height:0;overflow:auto;background:var(--tab);padding:36px 40px 48px;color:#fff}
-.cover-page h1{margin:0 0 28px;font-size:32px;font-weight:650;letter-spacing:-.02em;color:#fff;max-width:640px}
-.cover-rows{display:flex;flex-direction:column;gap:14px;max-width:640px}
-.cover-row{display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:start}
-.cover-row label{font-size:13px;font-weight:600;color:color-mix(in srgb,#fff 72%,transparent);padding-top:8px}
-.cover-row input,.cover-row textarea{font:inherit;color:#fff;background:color-mix(in srgb,#000 18%,transparent);border:1px solid color-mix(in srgb,#fff 18%,transparent);border-radius:calc(var(--radius) - 4px);padding:7px 10px;width:100%;box-sizing:border-box}
-.cover-row textarea{min-height:88px;resize:vertical;line-height:1.45}
-.cover-row input::placeholder,.cover-row textarea::placeholder{color:color-mix(in srgb,#fff 45%,transparent)}
-.cover-row input:focus,.cover-row textarea:focus{outline:2px solid color-mix(in srgb,#fff 40%,transparent);outline-offset:1px;border-color:color-mix(in srgb,#fff 35%,transparent);background:color-mix(in srgb,#000 26%,transparent)}
-.cover-row input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.7}
-.cover-add{position:relative;margin-top:18px;width:fit-content}
-.cover-add>button{color:color-mix(in srgb,#fff 78%,transparent);font-weight:600;font-size:13px;padding:6px 10px;border-radius:calc(var(--radius) - 4px)}
-.cover-add>button:hover{background:color-mix(in srgb,#fff 14%,transparent);color:#fff}
-.cover-add .pop{min-width:180px}
-.cover-add .pop button{padding:8px 10px}
-.cover-add .pop small{margin-top:2px}
+.cover-fields{display:flex;flex-direction:column;gap:12px;max-width:640px}
+.cover-fields .cover-title{font:inherit;font-size:32px;font-weight:650;letter-spacing:-.02em;color:#fff;background:transparent;border:0;border-radius:calc(var(--radius) - 4px);padding:4px 6px;margin:0 -6px;width:calc(100% + 12px);box-sizing:border-box}
+.cover-fields .cover-desc{font:inherit;font-size:15px;line-height:1.5;color:#fff;background:transparent;border:0;border-radius:calc(var(--radius) - 4px);padding:6px;margin:0 -6px;width:calc(100% + 12px);min-height:120px;resize:vertical;box-sizing:border-box}
+.cover-fields .cover-title::placeholder,.cover-fields .cover-desc::placeholder{color:color-mix(in srgb,#fff 45%,transparent)}
+.cover-fields .cover-title:focus,.cover-fields .cover-desc:focus{outline:2px solid color-mix(in srgb,#fff 35%,transparent);outline-offset:1px;background:color-mix(in srgb,#000 18%,transparent)}
 .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:40px 24px;text-align:center}
 .empty h2{margin:0;font-size:20px;font-weight:600;color:var(--ink)}
 .empty p{margin:0 0 12px;font-size:14px;color:var(--mute);max-width:340px;line-height:1.45}
@@ -255,8 +241,8 @@ function loadStages(list){
   stages=list.map(s=>typeof s==="string"?s:s.name).filter(Boolean);
 }
 const TYPES=[
- {t:"Board",title:"Board",sub:"Kanban columns and cards"},
- {t:"Database",title:"Database",sub:"Tables and structured records"},
+ {t:"Board",title:"Task board",sub:"Kanban columns and cards"},
+ {t:"Database",title:"Database",sub:"Tables and structured records",off:true},
  {t:"Files",title:"Files",sub:"Assets, kits, and uploads",off:true},
  {t:"Docs",title:"Docs",sub:"Knowledge base notes and briefs",off:true},
  {t:"Links",title:"Links",sub:"Stakeholders and key references",off:true},
@@ -329,21 +315,8 @@ const $=id=>document.getElementById(id);
 function fromApi(data){
   if(data.stages&&data.stages.length)loadStages(data.stages);
   return (data.projects||[]).map(pr=>{
-    const cover=pr.cover||{fields:["created"],values:{created:new Date().toISOString().slice(0,10),deadline:"",goal:"",description:""}};
-    const mods=[["Cover","Cover",{slug:"cover",fields:cover.fields.slice(),values:Object.assign({created:"",deadline:"",goal:"",description:""},cover.values)}]];
-    (pr.databases||[]).forEach(d=>{
-      mods.push(["Database",d.name,{
-        slug:d.slug,
-        cols:(d.columns||[]).map(c=>({id:c.id,label:c.label,type:c.type||"text"})),
-        cur:0,
-        views:[{n:"Table",t:"table"},{n:"Gallery",t:"gallery"}],
-        rows:(d.items||[]).map(it=>{
-          const row={slug:it.slug,body:it.body||""};
-          Object.assign(row,it.fields||{});
-          return row;
-        })
-      }]);
-    });
+    const cover=pr.cover||{values:{description:""}};
+    const mods=[["Cover","Cover",{slug:"cover",values:{description:(cover.values&&cover.values.description)||""}}]];
     (pr.boards||[]).forEach(b=>{
       mods.push(["Board",b.name,{
         slug:b.slug,
@@ -351,7 +324,7 @@ function fromApi(data){
         rows:(b.cards||[]).map(c=>{
           const msRaw=c.master||c.status;
           const ms=stages.includes(msRaw)?msRaw:(stages.includes(c.status)?c.status:stages[0]);
-          return{n:c.title,s:c.status,ms,slug:c.slug,priority:normalizePriority(c.priority),doneAt:c.doneAt||"",body:c.body||""};
+          return{n:c.title,s:c.status,ms,slug:c.slug,doneAt:c.doneAt||"",body:c.body||""};
         })
       }]);
     });
@@ -394,7 +367,6 @@ async function saveCard(row,folder,mod){
       title:row.n||"Untitled",
       status:row.s||(mod[2].columns||stages)[0]||stages[0],
       master:row.ms||stages[0],
-      priority:normalizePriority(row.priority),
       doneAt:row.doneAt||"",
       body:row.body||""
     })
@@ -627,7 +599,7 @@ TYPES.forEach(({t,title,sub,off})=>{
   b.append(mi,mt);
   if(off){b.disabled=true;b.title="Coming soon"}
   else b.onclick=async()=>{
-    const name=(prompt(t+" name")||"").trim();
+    const name=(prompt(title+" name")||"").trim();
     if(!name)return;
     const path=t==="Board"?"/api/board":"/api/database";
     const res=await fetch(path,{
@@ -644,10 +616,13 @@ TYPES.forEach(({t,title,sub,off})=>{
   };
   $("menu").append(b);
 });
+function globalLabel(name){
+  return ({Masterboard:"Master board"})[name]||name;
+}
 function globalBar(name){
   const bar=el("div","modbar gbar");
   const i=el("span");i.innerHTML=icon(name);
-  bar.append(i,el("b","",name));
+  bar.append(i,el("b","",globalLabel(name)));
   return bar;
 }
 function boardEditBtn(){
@@ -660,19 +635,6 @@ function boardEditBtn(){
   return edit;
 }
 function isDone(row){return !!(row&&row.doneAt)}
-const PRIORITIES=[
-  {id:"none",label:"No priority",marks:"",color:""},
-  {id:"low",label:"! Low priority",marks:"!",color:"#c9a227"},
-  {id:"medium",label:"!! Medium priority",marks:"!!",color:"#e67e22"},
-  {id:"high",label:"!!! High priority",marks:"!!!",color:"#d12c2c"}
-];
-function normalizePriority(v){
-  const p=String(v||"none").toLowerCase().trim();
-  return PRIORITIES.some(x=>x.id===p)?p:"none";
-}
-function priorityInfo(v){
-  return PRIORITIES.find(x=>x.id===normalizePriority(v))||PRIORITIES[0];
-}
 function dayKey(iso){
   const d=new Date(iso);
   if(Number.isNaN(d.getTime()))return"unknown";
@@ -708,12 +670,6 @@ function cardTitle(name,row,folder,mod){
     render();
   };
   b.append(check);
-  const prio=priorityInfo(row.priority);
-  if(prio.marks){
-    const mark=el("span","card-prio",prio.marks);
-    mark.style.color=prio.color;
-    b.append(mark);
-  }
   b.append(el("span","card-name",name||"Untitled"));
   return b;
 }
@@ -792,7 +748,7 @@ function globals(){
   ["Masterboard","Timelogs","Calendar"].forEach(n=>{
     const k=el("button","bm"+(g===n?" on":"")),i=el("span");
     i.innerHTML=icon(n);i.style.color=GACC;
-    k.append(i,el("span","",n));k.onclick=()=>{boardEdit=false;g=n;render()};box.append(k);
+    k.append(i,el("span","",globalLabel(n)));k.onclick=()=>{boardEdit=false;g=n;render()};box.append(k);
   });
 }
 function renderBoard(x,tabC){
@@ -804,12 +760,6 @@ function renderBoard(x,tabC){
   bar.append(completedViewBtn(scope),boardEditBtn());
   v.append(bar,board(d,folders[p],x));
 }
-const COVER_DEFS=[
-  {id:"created",label:"Created At",type:"date"},
-  {id:"deadline",label:"Deadline",type:"date",add:true},
-  {id:"goal",label:"Goal",type:"text",add:true},
-  {id:"description",label:"Description",type:"textarea",add:true}
-];
 async function saveCover(folder,mod){
   if(!folder||!mod||mod[0]!=="Cover")return;
   const data=await fetch("/api/project",{
@@ -819,79 +769,45 @@ async function saveCover(folder,mod){
       project:folder.slug,
       name:folder.name,
       color:folder.color,
-      cover:{fields:mod[2].fields,values:mod[2].values}
+      cover:{values:{description:(mod[2].values&&mod[2].values.description)||""}}
     })
   }).then(r=>r.json());
   const keepM=mod[2].slug;
   folders=fromApi(data);
   p=Math.max(0,folders.findIndex(f=>f.slug===folder.slug));
   m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===keepM));
+  render();
 }
 function renderCover(folder,mod,tabC){
-  const d=mod[2]||(mod[2]={fields:["created"],values:{created:new Date().toISOString().slice(0,10)}});
-  if(!d.fields)d.fields=["created"];
-  if(!d.values)d.values={};
-  if(!d.values.created)d.values.created=new Date().toISOString().slice(0,10);
+  const d=mod[2]||(mod[2]={values:{description:""}});
+  if(!d.values)d.values={description:""};
   const v=$("view");v.className="mod cover-view";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
   const page=el("div","cover-page");
-  page.append(el("h1","",folder.name));
-  const rows=el("div","cover-rows");
-  const paintRows=()=>{
-    rows.innerHTML="";
-    d.fields.forEach(id=>{
-      const def=COVER_DEFS.find(x=>x.id===id)||{id,label:id,type:"text"};
-      const row=el("div","cover-row");
-      row.append(el("label","",def.label));
-      let input;
-      if(def.type==="textarea"){
-        input=document.createElement("textarea");
-        input.value=d.values[id]||"";
-        input.rows=4;
-      }else{
-        input=document.createElement("input");
-        input.type=def.type==="date"?"date":"text";
-        input.value=d.values[id]||"";
-      }
-      input.oninput=()=>{d.values[id]=input.value};
-      input.onchange=async()=>{d.values[id]=input.value;await saveCover(folder,mod)};
-      row.append(input);
-      rows.append(row);
-    });
+  const fields=el("div","cover-fields");
+
+  const title=document.createElement("input");
+  title.className="cover-title";
+  title.type="text";
+  title.value=folder.name||"";
+  title.placeholder="Untitled";
+  title.oninput=()=>{folder.name=title.value};
+  title.onchange=async()=>{
+    folder.name=(title.value||"").trim()||folder.name;
+    title.value=folder.name;
+    await saveCover(folder,mod);
   };
-  paintRows();
-  page.append(rows);
-  const addWrap=el("div","cover-add");
-  const addBtn=el("button","","Add row");
-  const pop=el("div","pop");
-  const refreshPop=()=>{
-    pop.innerHTML="";
-    COVER_DEFS.filter(x=>x.add&&!d.fields.includes(x.id)).forEach(def=>{
-      const b=el("button");
-      b.append(document.createTextNode(def.label),el("small","",def.type));
-      b.onclick=async e=>{
-        e.stopPropagation();
-        d.fields.push(def.id);
-        if(def.type==="date"&&!d.values[def.id])d.values[def.id]=new Date().toISOString().slice(0,10);
-        else if(d.values[def.id]==null)d.values[def.id]="";
-        pop.style.display="none";
-        paintRows();
-        refreshPop();
-        addWrap.style.display=COVER_DEFS.some(x=>x.add&&!d.fields.includes(x.id))?"":"none";
-        await saveCover(folder,mod);
-      };
-      pop.append(b);
-    });
-  };
-  refreshPop();
-  addBtn.onclick=e=>{
-    e.stopPropagation();
-    document.querySelectorAll(".pop").forEach(e=>e.style.display="none");
-    pop.style.display=pop.style.display==="block"?"none":"block";
-  };
-  if(!COVER_DEFS.some(x=>x.add&&!d.fields.includes(x.id)))addWrap.style.display="none";
-  addWrap.append(addBtn,pop);
-  page.append(addWrap);
+
+  const desc=document.createElement("textarea");
+  desc.className="cover-desc";
+  desc.value=d.values.description||"";
+  desc.placeholder="Describe this project...";
+  desc.rows=5;
+  desc.oninput=()=>{d.values.description=desc.value};
+  desc.onchange=async()=>{d.values.description=desc.value;await saveCover(folder,mod)};
+
+  fields.append(title,desc);
+  page.append(fields);
   v.append(page);
 }
 function renderDb(x,tabC){
@@ -1226,7 +1142,7 @@ function masterBoard(){
       open.forEach(t=>{
         body.append(makeTaskCard(t.row,t.folder,t.mod,{
           color:t.folder.color||PC[t.fi%PC.length],
-          src:t.folder.name+" › "+t.mod[1],
+          src:t.folder.name+" · "+t.mod[1],
           dragPayload:t
         }));
       });
@@ -1246,7 +1162,7 @@ function masterBoard(){
         fillDoneGroups(body,done.map(t=>({
           row:t.row,folder:t.folder,mod:t.mod,
           color:t.folder.color||PC[t.fi%PC.length],
-          src:t.folder.name+" › "+t.mod[1],
+          src:t.folder.name+" · "+t.mod[1],
           dragPayload:t
         })),{showEmpty:false});
       }
@@ -1265,7 +1181,7 @@ function masterBoard(){
     const doneItems=tasks.filter(t=>isDone(t.row)).map(t=>({
       row:t.row,folder:t.folder,mod:t.mod,
       color:t.folder.color||PC[t.fi%PC.length],
-      src:t.folder.name+" › "+t.mod[1],
+      src:t.folder.name+" · "+t.mod[1],
       dragPayload:t
     }));
     appendCompletedCol(b,"master",doneItems,async()=>{
@@ -1278,10 +1194,11 @@ function masterBoard(){
     });
   }
   const foot=el("div","mb-foot");
-  allBoards().forEach(({mod,color,key})=>{
-    const btn=el("button",masterOff.has(key)?"off":"",mod[1]);
+  allBoards().forEach(({folder,mod,color,key})=>{
+    const label=`${folder.name} · ${mod[1]}`;
+    const btn=el("button",masterOff.has(key)?"off":"",label);
     btn.style.background=pastel(color);
-    btn.title=mod[1];
+    btn.title=label;
     btn.onclick=()=>{masterOff.has(key)?masterOff.delete(key):masterOff.add(key);render()};
     foot.append(btn);
   });
@@ -1340,27 +1257,6 @@ function openItem(r){
   }else{
     const n=el("input","title");n.value=r.n||"";n.placeholder="Untitled";n.oninput=()=>r.n=n.value;
     if(!r.ms)r.ms=r.s||stages[0];
-    r.priority=normalizePriority(r.priority);
-    const prioritySel=el("select");
-    const paintPrioritySel=()=>{
-      const info=priorityInfo(prioritySel.value);
-      prioritySel.classList.toggle("prio-high",info.id==="high");
-      prioritySel.style.color=info.color||"";
-      prioritySel.style.fontWeight=info.id==="high"?"600":"";
-    };
-    PRIORITIES.forEach(o=>{
-      const op=el("option","",o.label);
-      op.value=o.id;
-      op.selected=o.id===r.priority;
-      if(o.color)op.style.color=o.color;
-      if(o.id==="high")op.style.fontWeight="600";
-      prioritySel.append(op);
-    });
-    prioritySel.onchange=()=>{
-      r.priority=normalizePriority(prioritySel.value);
-      paintPrioritySel();
-    };
-    paintPrioritySel();
     const boardCol=el("select");
     const fillBoardCol=()=>{
       const cols=curLoc?.mod[2]?.columns||stages;
@@ -1417,7 +1313,7 @@ function openItem(r){
     paintPtab();
     ptab.append(ptabBtn,pop);
     dlg.append(n,props);
-    props.append(f("Board",ptab),f("Board column",boardCol),f("Masterboard column",masterCol),f("Priority",prioritySel));
+    props.append(f("Task board",ptab),f("Task board column",boardCol),f("Master board column",masterCol));
   }
   const x=el("button","x","Save");x.onclick=()=>close(true);
   dlg.append(desc,x);ov.append(dlg);
