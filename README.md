@@ -1,4 +1,4 @@
-# Malom
+# Freelance Manager
 
 Local workspace for freelance projects — markdown vault under `projects/`, served by `server.js`.
 

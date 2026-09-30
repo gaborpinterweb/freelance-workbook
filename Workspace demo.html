@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Malom</title>
+<title>Freelance Manager</title>
 <style>
 :root{--bg:#f0ede8;--bar:#fbf9f5;--card:#fbf9f5;--col:#e6e2db;--line:#dcd7cd;--ink:#33261c;--mute:#7c6b58;--acc:#9a5b2e;--sel:#e8e3d9;
 --side:#160e08;--side-ink:#f0e6d6;--side-mute:#a08d78;--side-sel:#2c1e14;--radius:14px;
@@ -43,7 +43,7 @@ aside .side-scroll{flex:1;min-height:0;overflow:auto}
 .brand-mark{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--side-ink) 10%,transparent);color:var(--side-ink)}
 .brand-mark svg{display:block}
 .brand-text{min-width:0}
-.brand-text b{display:block;font-size:15px;font-weight:650;letter-spacing:.01em;color:var(--side-ink);line-height:1.2}
+.brand-text b{display:block;font-size:13px;font-weight:650;letter-spacing:.01em;color:var(--side-ink);line-height:1.2}
 .brand-text span{display:block;font-size:11px;color:var(--side-mute);margin-top:2px}
 main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--side);min-height:0}
 main.global-view{background:var(--side)}
@@ -270,7 +270,7 @@ td.open{width:1%}.open button{color:var(--acc);font-size:13px}
 <aside>
   <div class="brand">
     <span class="brand-mark" id="brand-mark" aria-hidden="true"></span>
-    <div class="brand-text"><b>Malom</b><span>v0.1.0</span></div>
+    <div class="brand-text"><b>Freelance Manager</b><span>v0.1.0</span></div>
   </div>
   <div class="side-scroll">
     <h2>Workspace</h2><div id="globals"></div>
@@ -325,10 +325,10 @@ const TYPES=[
 let folders=[],p=0,m=0,g="Masterboard";
 let draftProject=null;
 let cardDraft={n:"",body:"",s:"",ms:"",doneAt:""};
-const LAST_TAB_KEY="malom:lastTab";
-const SESSION_KEY="malom:session";
-const COMPLETED_VIEW_KEY="malom:completedView";
-const POMO_KEY="malom:pomodoro";
+const LAST_TAB_KEY="freelance-manager:lastTab";
+const SESSION_KEY="freelance-manager:session";
+const COMPLETED_VIEW_KEY="freelance-manager:completedView";
+const POMO_KEY="freelance-manager:pomodoro";
 const POMO_DURATION_SEC=25*60;
 const COMPLETED_VIEWS=["hide","virtual","inplace"];
 const completedViewByScope=new Map();
@@ -914,12 +914,12 @@ const IC={
  project:['<rect x="2.5" y="2.5" width="11" height="11" rx="3"/><path d="M6 6h4M6 9h2.5"/>',""],
  folder:['<path d="M4 2.5h7.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 4 2.5z"/><path d="M6.5 5h4M6.5 7.5h4M6.5 10h2.5"/>',""],
  settings:['<circle cx="8" cy="8" r="2.2"/><path d="M8 2.5v1.2M8 12.3v1.2M2.5 8h1.2M12.3 8h1.2M3.9 3.9l.85.85M11.25 11.25l.85.85M3.9 12.1l.85-.85M11.25 4.75l.85-.85"/>',""],
- mill:['<path d="M7.2 14.2h1.6M6.4 14.2h3.2M8 9.2v5M8 8.2l-4.2-2.4M8 8.2l4.2-2.4M8 8.2l-2.4 4.2M8 8.2l2.4 4.2"/><circle cx="8" cy="8.2" r="1.15"/>',""],
+ brand:['<rect x="2.5" y="3" width="11" height="10" rx="2"/><path d="M5 7.5h6M5 10h4"/>',""],
  pencil:['<path d="M11.5 2.5l2 2L5.5 12.5H3.5v-2zM9.8 4.2l2 2"/>',""]};
 const GACC="#9a5b2e";
 const PC=["#6b4f8c","#2f7a6e","#b45a3c","#8a5c2e"];
 const icon=(t,size=16)=>`<svg viewBox="0 0 16 16" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${IC[t][0]}</svg>`;
-$("brand-mark").innerHTML=icon("mill",20);
+$("brand-mark").innerHTML=icon("brand",20);
 $("app-settings").querySelector("span").innerHTML=icon("settings");
 $("menu").innerHTML="";
 TYPES.forEach(({t,title,sub,off})=>{

@@ -632,6 +632,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Malom v0.1.0 at http://localhost:${PORT}`);
+  console.log(`Freelance Manager v0.1.0 at http://localhost:${PORT}`);
   console.log(`Projects vault: ${ROOT}`);
 });
