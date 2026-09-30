@@ -1,4 +1,6 @@
 export const STAGES = ["Backlog", "This week", "Today", "Tomorrow", "Next week"];
+export const APP_NAME = "Freelance Workbook";
+export const APP_VERSION = "0.1.0";
 
 export const TYPES = [
   { t: "Board", title: "Task board", sub: "Kanban columns and cards" },
@@ -16,6 +18,9 @@ export const LAST_TAB_KEY = "freelance-workbook:lastTab";
 export const SESSION_KEY = "freelance-workbook:session";
 export const COMPLETED_VIEW_KEY = "freelance-workbook:completedView";
 export const POMO_KEY = "freelance-workbook:pomodoro";
+export const WORKSPACE_VIS_KEY = "freelance-workbook:workspaceVisibility";
+export const WORKSPACE_ITEMS = ["Masterboard", "Timelogs", "Calendar", "Trash"];
+export const SIDEBAR_VIS_ITEMS = [...WORKSPACE_ITEMS, "Archived"];
 export const POMO_DURATION_SEC = 25 * 60;
 export const COMPLETED_VIEWS = ["hide", "virtual", "inplace"];
 export const GACC = "#9a5b2e";
@@ -212,7 +217,37 @@ export function matchesTimelogFilter(entry, filter) {
 }
 
 export function globalLabel(name) {
-  return ({ Masterboard: "Master board" })[name] || name;
+  return (
+    {
+      Masterboard: "Master board",
+      Archived: "Archived projects",
+    }[name] || name
+  );
+}
+
+export function defaultWorkspaceVisibility() {
+  return Object.fromEntries(SIDEBAR_VIS_ITEMS.map((id) => [id, true]));
+}
+
+export function loadWorkspaceVisibility() {
+  const defaults = defaultWorkspaceVisibility();
+  try {
+    const stored = JSON.parse(localStorage.getItem(WORKSPACE_VIS_KEY) || "null");
+    if (!stored || typeof stored !== "object") return defaults;
+    const next = { ...defaults };
+    SIDEBAR_VIS_ITEMS.forEach((id) => {
+      if (typeof stored[id] === "boolean") next[id] = stored[id];
+    });
+    return next;
+  } catch {
+    return defaults;
+  }
+}
+
+export function saveWorkspaceVisibility(map) {
+  try {
+    localStorage.setItem(WORKSPACE_VIS_KEY, JSON.stringify(map));
+  } catch {}
 }
 
 export function colCollapseKey(scope, s) {

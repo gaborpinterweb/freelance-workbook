@@ -143,3 +143,17 @@ export async function cardTimeSpentSec(project, board, card) {
     return 0;
   }
 }
+
+export async function exportWorkspace() {
+  const r = await fetch("/api/export");
+  if (!r.ok) throw new Error("export failed");
+  const blob = await r.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "userData.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}

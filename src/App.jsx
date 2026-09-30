@@ -18,6 +18,7 @@ import {
   GACC,
   COMPLETED_VIEWS,
   POMO_DURATION_SEC,
+  WORKSPACE_ITEMS,
   fromApi,
   normalizeFolders,
   loadStages,
@@ -34,6 +35,8 @@ import {
   findCardBySlugs,
   isProjectArchived,
   slugifyClient,
+  loadWorkspaceVisibility,
+  saveWorkspaceVisibility,
 } from "./utils.js";
 import Sidebar from "./components/Sidebar.jsx";
 import TabBar from "./components/TabBar.jsx";
@@ -43,6 +46,7 @@ import Calendar from "./components/Calendar.jsx";
 import Timelogs from "./components/Timelogs.jsx";
 import Trash from "./components/Trash.jsx";
 import CardDialog from "./components/CardDialog.jsx";
+import SettingsDialog from "./components/SettingsDialog.jsx";
 
 export default function App() {
   const [folders, setFolders] = useState([]);
@@ -74,6 +78,8 @@ export default function App() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [morePos, setMorePos] = useState({ top: 0, right: 8 });
   const [timelogRefresh, setTimelogRefresh] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [workspaceVis, setWorkspaceVis] = useState(() => loadWorkspaceVisibility());
 
   const masterOff = useRef(new Set());
   const colCollapsed = useRef(new Set());
@@ -126,9 +132,14 @@ export default function App() {
 
       if (opts.initial) {
         const sess = loadSession();
+        const vis = loadWorkspaceVisibility();
+        const visibleGlobals = WORKSPACE_ITEMS.filter((id) => vis[id]);
         let nextG = "Masterboard";
         let nextP = 0;
         if (sess && "g" in sess) nextG = sess.g || null;
+        if (nextG && !visibleGlobals.includes(nextG)) {
+          nextG = visibleGlobals[0] || null;
+        }
         if (sess?.project) {
           const pi = next.findIndex((f) => f.slug === sess.project);
           nextP = pi >= 0 ? pi : 0;
@@ -597,6 +608,37 @@ export default function App() {
     (coverEdit && coverDraft && coverDraft.color) ||
     folder?.color ||
     PC[p % PC.length];
+  const visibleWorkspaceItems = WORKSPACE_ITEMS.filter((id) => workspaceVis[id]);
+
+  const applyWorkspaceVisibility = useCallback((nextVis) => {
+    saveWorkspaceVisibility(nextVis);
+    setWorkspaceVis(nextVis);
+    const visible = WORKSPACE_ITEMS.filter((id) => nextVis[id]);
+    const current = gRef.current;
+    if (current && !visible.includes(current)) {
+      const nextG = visible[0] || null;
+      setG(nextG);
+      gRef.current = nextG;
+      if (!nextG) {
+        setBoardEdit(false);
+      }
+    }
+    if (!nextVis.Archived) {
+      const list = foldersRef.current;
+      const pi = pRef.current;
+      if (list[pi]?.archived) {
+        const firstActive = list.findIndex((f) => !f.archived);
+        if (firstActive >= 0) {
+          setG(null);
+          gRef.current = null;
+          setP(firstActive);
+          setM(restoreTabIndex(list[firstActive]));
+          setBoardEdit(false);
+        }
+      }
+    }
+  }, []);
+
   const tabC = projC;
   const isGlobal = !!g && !draftProject;
 
@@ -612,6 +654,8 @@ export default function App() {
         coverEdit={coverEdit}
         coverDraft={coverDraft}
         activePomo={activePomo}
+        workspaceItems={visibleWorkspaceItems}
+        showArchived={!!workspaceVis.Archived}
         onSelectGlobal={(n) => {
           discardDraft();
           discardCoverEdit();
@@ -638,6 +682,7 @@ export default function App() {
           );
           if (hit) openItem(hit.row);
         }}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
       <main className={isGlobal ? "global-view" : undefined}>
         <div className="stage">
@@ -980,6 +1025,14 @@ export default function App() {
               body: r.body || "",
             });
           }}
+        />
+      )}
+
+      {settingsOpen && (
+        <SettingsDialog
+          visibility={workspaceVis}
+          onChange={applyWorkspaceVisibility}
+          onClose={() => setSettingsOpen(false)}
         />
       )}
     </>

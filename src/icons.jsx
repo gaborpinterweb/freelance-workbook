@@ -71,6 +71,18 @@ export const IC = {
   pencil: ['<path d="M11.5 2.5l2 2L5.5 12.5H3.5v-2zM9.8 4.2l2 2"/>', ""],
   caret: ['<path d="M4 6l4 4 4-4"/>', ""],
   arrow: ['<path d="M6 4l4 4-4 4"/>', ""],
+  Appearance: [
+    '<rect x="2.5" y="2.5" width="5" height="5" rx="1"/><rect x="8.5" y="2.5" width="5" height="5" rx="1"/><rect x="2.5" y="8.5" width="5" height="5" rx="1"/><circle cx="11" cy="11" r="2.5"/>',
+    "",
+  ],
+  Workspace: [
+    '<path d="M3 4.5h4l1.2 1.5H13a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5.5a1 1 0 0 1 1-1z"/>',
+    "",
+  ],
+  About: [
+    '<circle cx="8" cy="8" r="5.5"/><path d="M8 7v4M8 5.2h.01"/>',
+    "",
+  ],
 };
 
 export function Icon({ name, size = 16 }) {

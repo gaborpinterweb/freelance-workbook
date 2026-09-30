@@ -15,43 +15,42 @@ export default function Sidebar({
   coverEdit,
   coverDraft,
   activePomo,
+  workspaceItems,
+  showArchived = true,
   onSelectGlobal,
   onSelectProject,
   onAddProject,
   onStopPomo,
   onOpenPomoCard,
+  onOpenSettings,
 }) {
   const active = folders.map((pr, i) => ({ pr, i })).filter((x) => !x.pr.archived);
   const archived = folders.map((pr, i) => ({ pr, i })).filter((x) => x.pr.archived);
+  const globals = workspaceItems || [];
 
   return (
     <aside>
-      <div className="brand">
-        <span className="brand-mark" aria-hidden="true">
-          <Icon name="brand" size={20} />
-        </span>
-        <div className="brand-text">
-          <b>Freelance Workbook</b>
-          <span>v0.1.0</span>
-        </div>
-      </div>
       <div className="side-scroll">
-        <h2>Workspace</h2>
-        <div id="globals">
-          {["Masterboard", "Timelogs", "Calendar", "Trash"].map((n) => (
-            <button
-              key={n}
-              type="button"
-              className={"bm" + (g === n ? " on" : "")}
-              onClick={() => onSelectGlobal(n)}
-            >
-              <span style={{ color: GACC }}>
-                <Icon name={n} />
-              </span>
-              <span>{globalLabel(n)}</span>
-            </button>
-          ))}
-        </div>
+        {globals.length > 0 && (
+          <>
+            <h2>Workspace</h2>
+            <div id="globals">
+              {globals.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={"bm" + (g === n ? " on" : "")}
+                  onClick={() => onSelectGlobal(n)}
+                >
+                  <span style={{ color: GACC }}>
+                    <Icon name={n} />
+                  </span>
+                  <span>{globalLabel(n)}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <div className="side-head">
           <h2>Projects</h2>
           <button
@@ -91,24 +90,26 @@ export default function Sidebar({
             );
           })}
         </div>
-        <div id="archived-wrap" hidden={!archived.length}>
-          <h2 className="side-muted">Archived projects</h2>
-          <div id="archived" className="archived-list">
-            {archived.map(({ pr, i }) => (
-              <button
-                key={pr.slug}
-                type="button"
-                className={"bm" + (i === p && !g && !draftProject ? " on" : "")}
-                onClick={() => onSelectProject(i)}
-              >
-                <span style={{ color: pr.color || PC[i % PC.length] }}>
-                  <Icon name={projectIconName(pr)} />
-                </span>
-                <span>{pr.name}</span>
-              </button>
-            ))}
+        {showArchived && (
+          <div id="archived-wrap" hidden={!archived.length}>
+            <h2 className="side-muted">Archived projects</h2>
+            <div id="archived" className="archived-list">
+              {archived.map(({ pr, i }) => (
+                <button
+                  key={pr.slug}
+                  type="button"
+                  className={"bm" + (i === p && !g && !draftProject ? " on" : "")}
+                  onClick={() => onSelectProject(i)}
+                >
+                  <span style={{ color: pr.color || PC[i % PC.length] }}>
+                    <Icon name={projectIconName(pr)} />
+                  </span>
+                  <span>{pr.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
       <div className="side-foot">
         <PomoBlock
@@ -116,7 +117,16 @@ export default function Sidebar({
           onStop={onStopPomo}
           onOpenCard={onOpenPomoCard}
         />
-        <button type="button" className="bm" id="app-settings" title="Settings">
+        <button
+          type="button"
+          className="bm"
+          id="app-settings"
+          title="Settings"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenSettings?.();
+          }}
+        >
           <span>
             <Icon name="settings" />
           </span>

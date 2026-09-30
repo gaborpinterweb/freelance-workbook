@@ -502,6 +502,16 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/workspace") {
       return json(res, 200, readWorkspace());
     }
+    if (req.method === "GET" && url.pathname === "/api/export") {
+      const body = JSON.stringify(store, null, 2) + "\n";
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Disposition": 'attachment; filename="userData.json"',
+        "Cache-Control": "no-store",
+      });
+      res.end(body);
+      return;
+    }
     if (req.method === "POST" && url.pathname === "/api/project") {
       const body = await readBody(req);
       const name = String(body.name || "").trim();
