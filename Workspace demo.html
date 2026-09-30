@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Tzak Tzak</title>
+<title>Malom</title>
 <style>
 :root{--bg:#f0ede8;--bar:#fbf9f5;--card:#fbf9f5;--col:#e6e2db;--line:#dcd7cd;--ink:#33261c;--mute:#7c6b58;--acc:#9a5b2e;--sel:#e8e3d9;
 --side:#160e08;--side-ink:#f0e6d6;--side-mute:#a08d78;--side-sel:#2c1e14;--radius:14px;
@@ -28,9 +28,12 @@ aside .side-scroll{flex:1;min-height:0;overflow:auto}
 .side-foot .bm{color:var(--side-mute)}
 .side-foot .bm:hover{color:var(--side-ink);background:var(--side-sel)}
 .side-foot .bm span:first-child{color:inherit}
-.brand{padding:10px 8px 4px}
-.brand b{display:block;font-size:13px;font-weight:650;letter-spacing:.01em;color:var(--side-ink)}
-.brand span{display:block;font-size:11px;color:var(--side-mute);margin-top:2px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px;flex:none}
+.brand-mark{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--side-ink) 10%,transparent);color:var(--side-ink)}
+.brand-mark svg{display:block}
+.brand-text{min-width:0}
+.brand-text b{display:block;font-size:15px;font-weight:650;letter-spacing:.01em;color:var(--side-ink);line-height:1.2}
+.brand-text span{display:block;font-size:11px;color:var(--side-mute);margin-top:2px}
 main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--side);min-height:0}
 main.global-view{background:var(--side)}
 .stage{flex:1;min-height:0;min-width:0;display:flex;flex-direction:column;margin:0 8px 8px 0;border-radius:0 var(--radius) var(--radius) var(--radius);overflow:hidden}
@@ -213,6 +216,10 @@ aside small{display:block;color:var(--mute);font-size:12px;font-weight:400}
 .dlg input.title{font-size:20px;font-weight:600;border:0;padding:0;background:transparent;width:100%}
 .dlg.tint input.title,.dlg input.title:hover,.dlg input.title:focus{background:transparent;border-color:transparent}
 .dlg input.title:focus{outline:none}
+.dlg input.title.done{text-decoration:line-through;opacity:.72}
+.dlg .title-row{display:flex;align-items:center;gap:10px;width:100%}
+.dlg .title-row .card-check{flex:none;width:18px;height:18px;margin:0;accent-color:var(--acc);cursor:pointer}
+.dlg .title-row input.title{flex:1;min-width:0}
 .dlg select{cursor:pointer;appearance:none;background-image:none}
 .dlg .ptab{position:relative;width:100%}
 .dlg .ptab-btn{display:inline-flex;align-items:center;gap:8px;text-align:left;cursor:pointer;max-width:100%}
@@ -237,6 +244,10 @@ td.open{width:1%}.open button{color:var(--acc);font-size:13px}
 </head>
 <body>
 <aside>
+  <div class="brand">
+    <span class="brand-mark" id="brand-mark" aria-hidden="true"></span>
+    <div class="brand-text"><b>Malom</b><span>v0.1.0</span></div>
+  </div>
   <div class="side-scroll">
     <h2>Workspace</h2><div id="globals"></div>
     <div class="side-head">
@@ -251,7 +262,6 @@ td.open{width:1%}.open button{color:var(--acc);font-size:13px}
   </div>
   <div class="side-foot">
     <button type="button" class="bm" id="app-settings" title="Settings"><span></span><span>Settings</span></button>
-    <div class="brand"><b>Tzak Tzak</b><span>v0.1.0</span></div>
   </div>
 </aside>
 <main>
@@ -282,10 +292,10 @@ const TYPES=[
 ];
 let folders=[],p=0,m=0,g="Masterboard";
 let draftProject=null;
-let cardDraft={n:"",body:"",s:"",ms:""};
-const LAST_TAB_KEY="projectoire:lastTab";
-const SESSION_KEY="projectoire:session";
-const COMPLETED_VIEW_KEY="projectoire:completedView";
+let cardDraft={n:"",body:"",s:"",ms:"",doneAt:""};
+const LAST_TAB_KEY="malom:lastTab";
+const SESSION_KEY="malom:session";
+const COMPLETED_VIEW_KEY="malom:completedView";
 const COMPLETED_VIEWS=["hide","virtual","inplace"];
 const completedViewByScope=new Map();
 function loadLastTabs(){
@@ -445,7 +455,7 @@ async function moveCard(row,from,to){
 function slugifyClient(s){
   return String(s||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"item";
 }
-async function createCard(folder,mod,{title,status,master,body}={}){
+async function createCard(folder,mod,{title,status,master,body,doneAt}={}){
   if(isProjectArchived(folder))return;
   const boardCol=status||(mod[2].columns||stages)[0];
   const masterCol=master&&stages.includes(master)?master:stages[0];
@@ -459,7 +469,8 @@ async function createCard(folder,mod,{title,status,master,body}={}){
       title:name,
       status:boardCol,
       master:masterCol,
-      body:body||""
+      body:body||"",
+      doneAt:doneAt||""
     })
   });
   const data=await res.json();
@@ -472,12 +483,13 @@ function rememberCardDraft(row,loc){
     body:row?.body||"",
     s:row?.s||"",
     ms:row?.ms||"",
+    doneAt:row?.doneAt||"",
     project:loc?.folder?.slug||"",
     board:loc?.mod?.[2]?.slug||""
   };
 }
 function clearCardDraft(){
-  cardDraft={n:"",body:"",s:"",ms:"",project:"",board:""};
+  cardDraft={n:"",body:"",s:"",ms:"",doneAt:"",project:"",board:""};
 }
 function startNewCard(folder,mod,{status,master}={}){
   if(!folder||!mod||mod[0]!=="Board")return;
@@ -488,7 +500,7 @@ function startNewCard(folder,mod,{status,master}={}){
     body:cardDraft.body||"",
     s:status||(cols.includes(cardDraft.s)?cardDraft.s:cols[0]),
     ms:master||(stages.includes(cardDraft.ms)?cardDraft.ms:stages[0]),
-    doneAt:"",
+    doneAt:cardDraft.doneAt||"",
     slug:null
   };
   openItem(row,{draft:true,folder,mod});
@@ -864,10 +876,12 @@ const IC={
  project:['<rect x="2.5" y="2.5" width="11" height="11" rx="3"/><path d="M6 6h4M6 9h2.5"/>',""],
  folder:['<path d="M4 2.5h7.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 4 2.5z"/><path d="M6.5 5h4M6.5 7.5h4M6.5 10h2.5"/>',""],
  settings:['<circle cx="8" cy="8" r="2.2"/><path d="M8 2.5v1.2M8 12.3v1.2M2.5 8h1.2M12.3 8h1.2M3.9 3.9l.85.85M11.25 11.25l.85.85M3.9 12.1l.85-.85M11.25 4.75l.85-.85"/>',""],
+ mill:['<path d="M7.2 14.2h1.6M6.4 14.2h3.2M8 9.2v5M8 8.2l-4.2-2.4M8 8.2l4.2-2.4M8 8.2l-2.4 4.2M8 8.2l2.4 4.2"/><circle cx="8" cy="8.2" r="1.15"/>',""],
  pencil:['<path d="M11.5 2.5l2 2L5.5 12.5H3.5v-2zM9.8 4.2l2 2"/>',""]};
 const GACC="#9a5b2e";
 const PC=["#6b4f8c","#2f7a6e","#b45a3c","#8a5c2e"];
-const icon=t=>`<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${IC[t][0]}</svg>`;
+const icon=(t,size=16)=>`<svg viewBox="0 0 16 16" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${IC[t][0]}</svg>`;
+$("brand-mark").innerHTML=icon("mill",20);
 $("app-settings").querySelector("span").innerHTML=icon("settings");
 $("menu").innerHTML="";
 TYPES.forEach(({t,title,sub,off})=>{
@@ -1526,7 +1540,8 @@ function openItem(r,opts){
           title:r.n,
           status:r.s,
           master:r.ms,
-          body:r.body||""
+          body:r.body||"",
+          doneAt:r.doneAt||""
         });
         clearCardDraft();
         const keepG=g;
@@ -1575,7 +1590,24 @@ function openItem(r,opts){
       }
     });
   }else{
+    const titleRow=el("div","title-row");
+    const check=document.createElement("input");
+    check.type="checkbox";
+    check.className="card-check";
+    check.checked=isDone(r);
+    check.title=isDone(r)?"Mark active":"Mark completed";
     const n=el("input","title");n.value=r.n||"";n.placeholder="Untitled";n.oninput=()=>r.n=n.value;
+    const syncDoneUi=()=>{
+      check.checked=isDone(r);
+      check.title=isDone(r)?"Mark active":"Mark completed";
+      n.classList.toggle("done",isDone(r));
+    };
+    check.onchange=()=>{
+      r.doneAt=check.checked?new Date().toISOString():"";
+      syncDoneUi();
+    };
+    syncDoneUi();
+    titleRow.append(check,n);
     if(!r.ms)r.ms=r.s||stages[0];
     const boardCol=el("select");
     const fillBoardCol=()=>{
@@ -1632,7 +1664,7 @@ function openItem(r,opts){
     };
     paintPtab();
     ptab.append(ptabBtn,pop);
-    dlg.append(n,props);
+    dlg.append(titleRow,props);
     props.append(f("Task board",ptab),f("Task board column",boardCol),f("Master board column",masterCol));
   }
   const x=el("button","x","Save");x.onclick=()=>close(true);

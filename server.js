@@ -559,6 +559,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Tzak Tzak v0.1.0 at http://localhost:${PORT}`);
+  console.log(`Malom v0.1.0 at http://localhost:${PORT}`);
   console.log(`Projects vault: ${ROOT}`);
 });
