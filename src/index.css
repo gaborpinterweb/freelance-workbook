@@ -247,6 +247,14 @@ select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4
 .empty h2{margin:0;font-size:20px;font-weight:600;color:var(--ink)}
 .empty p{margin:0 0 12px;font-size:14px;color:var(--mute);max-width:340px;line-height:1.45}
 .empty .cta{font:inherit;color:#fff;background:var(--acc);border:0;border-radius:var(--radius);padding:10px 16px;cursor:pointer}
+main.super-empty-view{background:var(--side)}
+main.super-empty-view .stage{margin:8px;border-radius:var(--radius)}
+main.super-empty-view #view{margin:0;border-radius:0;overflow:hidden;background:var(--bg);flex:1;min-height:0}
+.super-empty{gap:10px}
+.super-empty-mark{display:grid;place-items:center;width:64px;height:64px;margin-bottom:4px;border-radius:16px;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink)}
+.super-empty-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:4px}
+.empty .cta-secondary{color:var(--ink);background:var(--sel)}
+.empty .cta-secondary:hover{background:color-mix(in srgb,var(--ink) 12%,var(--sel))}
 aside small{display:block;color:var(--mute);font-size:12px;font-weight:400}
 .bm{display:flex;align-items:center;gap:8px}
 .bm span:first-child{display:flex;flex:none}
