@@ -211,6 +211,12 @@ export function formatClock(iso) {
   return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
+export function formatTrashDate(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 export function matchesTimelogFilter(entry, filter) {
   if (!filter) return true;
   return entry.project === filter.project && entry.board === filter.board && entry.card === filter.card;

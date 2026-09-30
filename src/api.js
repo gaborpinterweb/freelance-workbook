@@ -21,6 +21,22 @@ export async function deleteCardApi(body) {
   return r.json();
 }
 
+export async function fetchTrash() {
+  const data = await fetch("/api/trash").then((r) => r.json());
+  return data.trash || [];
+}
+
+export async function restoreTrashApi(body) {
+  const r = await fetch("/api/trash/restore", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || "restore failed");
+  return data;
+}
+
 export async function postCard(body) {
   const r = await fetch("/api/card", {
     method: "POST",
@@ -151,9 +167,21 @@ export async function exportWorkspace() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "userData.json";
+  a.download = "userWorkspace.json";
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+export async function resetWorkspaceToSeed() {
+  const r = await fetch("/api/workspace/reset-seed", { method: "POST" });
+  if (!r.ok) throw new Error("reset failed");
+  return r.json();
+}
+
+export async function resetWorkspaceToEmpty() {
+  const r = await fetch("/api/workspace/reset-empty", { method: "POST" });
+  if (!r.ok) throw new Error("reset failed");
+  return r.json();
 }

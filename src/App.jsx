@@ -11,6 +11,9 @@ import {
   postDatabase,
   putItem,
   postTimelog,
+  resetWorkspaceToSeed,
+  resetWorkspaceToEmpty,
+  restoreTrashApi,
 } from "./api.js";
 import {
   STAGES,
@@ -78,6 +81,7 @@ export default function App() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [morePos, setMorePos] = useState({ top: 0, right: 8 });
   const [timelogRefresh, setTimelogRefresh] = useState(0);
+  const [trashRefresh, setTrashRefresh] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [workspaceVis, setWorkspaceVis] = useState(() => loadWorkspaceVisibility());
 
@@ -353,6 +357,7 @@ export default function App() {
         slug,
       });
       applyWorkspace(data, keepNav(folder.slug, mod[2].slug));
+      setTrashRefresh((n) => n + 1);
       return data;
     },
     [applyWorkspace, keepNav]
@@ -384,9 +389,15 @@ export default function App() {
       if (!to.mod[2].rows) to.mod[2].rows = [];
       if (!to.mod[2].rows.includes(row)) to.mod[2].rows.push(row);
       await saveCard(row, to.folder, to.mod);
-      await deleteCard(from.folder, from.mod, oldSlug);
+      const data = await deleteCardApi({
+        project: from.folder.slug,
+        board: from.mod[2].slug,
+        slug: oldSlug,
+        permanent: true,
+      });
+      applyWorkspace(data, keepNav(to.folder.slug, to.mod[2].slug));
     },
-    [saveCard, deleteCard]
+    [saveCard, applyWorkspace, keepNav]
   );
 
   const createCard = useCallback(
@@ -800,7 +811,21 @@ export default function App() {
             />
           )}
           {loaded && !loadError && !draftProject && g === "Trash" && (
-            <Trash tabC={GACC} />
+            <Trash
+              tabC={GACC}
+              refreshKey={trashRefresh}
+              onRestore={async (entry) => {
+                const data = await restoreTrashApi({ slug: entry.slug });
+                applyWorkspace(data, {
+                  keepNav: {
+                    project: data.project,
+                    board: data.board,
+                    g: "Trash",
+                  },
+                });
+                setTrashRefresh((n) => n + 1);
+              }}
+            />
           )}
           {loaded &&
             !loadError &&
@@ -1033,6 +1058,30 @@ export default function App() {
           visibility={workspaceVis}
           onChange={applyWorkspaceVisibility}
           onClose={() => setSettingsOpen(false)}
+          onResetSeed={async () => {
+            const data = await resetWorkspaceToSeed();
+            applyWorkspace(data, { initial: true });
+            setBoardEdit(false);
+            setDraftProject(null);
+            setCoverEdit(false);
+            setCoverDraft(null);
+            setDialog(null);
+            setTimelogFilter(null);
+            setTrashRefresh((n) => n + 1);
+            setTimelogRefresh((n) => n + 1);
+          }}
+          onResetEmpty={async () => {
+            const data = await resetWorkspaceToEmpty();
+            applyWorkspace(data, { initial: true });
+            setBoardEdit(false);
+            setDraftProject(null);
+            setCoverEdit(false);
+            setCoverDraft(null);
+            setDialog(null);
+            setTimelogFilter(null);
+            setTrashRefresh((n) => n + 1);
+            setTimelogRefresh((n) => n + 1);
+          }}
         />
       )}
     </>

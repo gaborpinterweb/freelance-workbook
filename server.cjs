@@ -3,8 +3,10 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const LAUNCH_DATA = path.join(__dirname, "launchData.json");
-const USER_DATA = path.join(__dirname, "userData.json");
+const SEED_WORKSPACE = path.join(__dirname, "seedWorkspace.json");
+const USER_WORKSPACE = path.join(__dirname, "userWorkspace.json");
+const LEGACY_SEED = path.join(__dirname, "launchData.json");
+const LEGACY_USER = path.join(__dirname, "userData.json");
 const PORT = 3456;
 const DIST = path.join(__dirname, "dist");
 const MIME = {
@@ -80,10 +82,19 @@ function atomicWrite(file, doc) {
   fs.renameSync(tmp, file);
 }
 
-function loadLaunchData() {
-  const result = readJsonFile(LAUNCH_DATA);
+function migrateLegacyWorkspaceFiles() {
+  if (!fs.existsSync(SEED_WORKSPACE) && fs.existsSync(LEGACY_SEED)) {
+    fs.renameSync(LEGACY_SEED, SEED_WORKSPACE);
+  }
+  if (!fs.existsSync(USER_WORKSPACE) && fs.existsSync(LEGACY_USER)) {
+    fs.renameSync(LEGACY_USER, USER_WORKSPACE);
+  }
+}
+
+function loadSeedWorkspace() {
+  const result = readJsonFile(SEED_WORKSPACE);
   if (!result.ok) {
-    console.error(`Fatal: launchData.json is ${result.reason} (${LAUNCH_DATA})`);
+    console.error(`Fatal: seedWorkspace.json is ${result.reason} (${SEED_WORKSPACE})`);
     process.exit(1);
   }
   return deepClone(result.doc);
@@ -91,18 +102,44 @@ function loadLaunchData() {
 
 function saveStore() {
   if (!store) throw new Error("store not initialized");
-  atomicWrite(USER_DATA, store);
+  atomicWrite(USER_WORKSPACE, store);
 }
 
 function ensureStore() {
-  const user = readJsonFile(USER_DATA);
+  migrateLegacyWorkspaceFiles();
+  const user = readJsonFile(USER_WORKSPACE);
   if (user.ok) {
     store = deepClone(user.doc);
-    return { reseeded: false };
+    ensureTrash();
+    const purged = purgeExpiredTrash();
+    if (purged) saveStore();
+    return { reseeded: false, purged };
   }
-  store = loadLaunchData();
+  store = loadSeedWorkspace();
+  ensureTrash();
   saveStore();
-  return { reseeded: true, reason: user.reason };
+  return { reseeded: true, reason: user.reason, purged: 0 };
+}
+
+function resetToSeedWorkspace() {
+  store = loadSeedWorkspace();
+  ensureTrash();
+  saveStore();
+}
+
+function emptyWorkspaceDoc() {
+  return {
+    version: 1,
+    stages: DEFAULT_STAGES.slice(),
+    projects: [],
+    timelogs: [],
+    trash: [],
+  };
+}
+
+function resetToEmptyWorkspace() {
+  store = emptyWorkspaceDoc();
+  saveStore();
 }
 
 function findProject(slug) {
@@ -305,12 +342,125 @@ function writeCard(projectSlug, boardSlug, card) {
   return slug;
 }
 
-function deleteCard(projectSlug, boardSlug, cardSlug) {
+function ensureTrash() {
+  if (!store.trash) store.trash = [];
+  if (!Array.isArray(store.trash)) store.trash = [];
+}
+
+function uniqueTrashSlug(base) {
+  ensureTrash();
+  const root = slugify(base) || "card";
+  let slug = "trash-" + root;
+  let i = 2;
+  while (store.trash.some((t) => t.slug === slug)) slug = "trash-" + root + "-" + i++;
+  return slug;
+}
+
+function softDeleteCard(projectSlug, boardSlug, cardSlug) {
+  const project = findProject(projectSlug);
+  const board = findBoard(project, boardSlug);
+  if (!board || !board.cards) return false;
+  const idx = board.cards.findIndex((c) => c.slug === cardSlug);
+  if (idx < 0) return false;
+  const [card] = board.cards.splice(idx, 1);
+  ensureTrash();
+  const entry = {
+    slug: uniqueTrashSlug(card.slug || card.title || "card"),
+    deletedAt: new Date().toISOString(),
+    project: projectSlug,
+    board: boardSlug,
+    card: card.slug || "",
+    title: card.title || card.slug || "Untitled",
+    status: card.status || "",
+    master: card.master || "",
+    body: card.body || "",
+    doneAt: card.doneAt || "",
+    projectName: project.name || projectSlug,
+    boardName: board.name || boardSlug,
+    color: project.color || "#9a5b2e",
+  };
+  if (isDemoValue(card.isDemo)) entry.isDemo = true;
+  store.trash.push(entry);
+  return true;
+}
+
+function hardDeleteCard(projectSlug, boardSlug, cardSlug) {
   const project = findProject(projectSlug);
   const board = findBoard(project, boardSlug);
   if (!board || !board.cards) return;
   const idx = board.cards.findIndex((c) => c.slug === cardSlug);
   if (idx >= 0) board.cards.splice(idx, 1);
+}
+
+function deleteCard(projectSlug, boardSlug, cardSlug, { permanent = false } = {}) {
+  if (permanent) return hardDeleteCard(projectSlug, boardSlug, cardSlug);
+  return softDeleteCard(projectSlug, boardSlug, cardSlug);
+}
+
+function readTrash() {
+  ensureTrash();
+  return store.trash
+    .slice()
+    .sort((a, b) => String(b.deletedAt || "").localeCompare(String(a.deletedAt || "")))
+    .map((t) => ({
+      slug: t.slug,
+      deletedAt: t.deletedAt || "",
+      project: t.project || "",
+      board: t.board || "",
+      card: t.card || "",
+      title: t.title || t.card || "Untitled",
+      status: t.status || "",
+      master: t.master || "",
+      body: t.body || "",
+      doneAt: t.doneAt || "",
+      projectName: t.projectName || t.project || "",
+      boardName: t.boardName || t.board || "",
+      color: t.color || "#9a5b2e",
+      isDemo: isDemoValue(t.isDemo) || undefined,
+    }));
+}
+
+function restoreTrashItem(trashSlug) {
+  ensureTrash();
+  const idx = store.trash.findIndex((t) => t.slug === trashSlug);
+  if (idx < 0) return { ok: false, error: "not found" };
+  const item = store.trash[idx];
+  const project = findProject(item.project);
+  const board = findBoard(project, item.board);
+  if (!project || !board) return { ok: false, error: "original board not found" };
+  if (projectIsArchived(item.project)) return { ok: false, error: "project is archived" };
+  store.trash.splice(idx, 1);
+  if (!board.cards) board.cards = [];
+  let slug = item.card || slugify(item.title) || "card";
+  if (board.cards.some((c) => c.slug === slug)) slug = uniqueCardSlug(board, item.title || slug);
+  const cols = Array.isArray(board.columns) && board.columns.length ? board.columns : DEFAULT_BOARD_COLS;
+  const status = cols.includes(item.status) ? item.status : cols[0];
+  const stages = Array.isArray(store.stages) && store.stages.length ? store.stages : DEFAULT_STAGES;
+  const master = stages.includes(item.master) ? item.master : stages[0];
+  const card = {
+    slug,
+    title: item.title || slug,
+    status,
+    master,
+    body: item.body || "",
+  };
+  if (item.doneAt) card.doneAt = item.doneAt;
+  if (isDemoValue(item.isDemo)) card.isDemo = true;
+  board.cards.push(card);
+  return { ok: true, project: item.project, board: item.board, slug };
+}
+
+const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+function purgeExpiredTrash() {
+  ensureTrash();
+  const cutoff = Date.now() - TRASH_RETENTION_MS;
+  const before = store.trash.length;
+  store.trash = store.trash.filter((item) => {
+    const t = Date.parse(item.deletedAt);
+    return Number.isFinite(t) && t >= cutoff;
+  });
+  return before - store.trash.length;
 }
 
 function createBoard(projectSlug, name) {
@@ -506,11 +656,19 @@ const server = http.createServer(async (req, res) => {
       const body = JSON.stringify(store, null, 2) + "\n";
       res.writeHead(200, {
         "Content-Type": "application/json; charset=utf-8",
-        "Content-Disposition": 'attachment; filename="userData.json"',
+        "Content-Disposition": 'attachment; filename="userWorkspace.json"',
         "Cache-Control": "no-store",
       });
       res.end(body);
       return;
+    }
+    if (req.method === "POST" && url.pathname === "/api/workspace/reset-seed") {
+      resetToSeedWorkspace();
+      return json(res, 200, readWorkspace());
+    }
+    if (req.method === "POST" && url.pathname === "/api/workspace/reset-empty") {
+      resetToEmptyWorkspace();
+      return json(res, 200, readWorkspace());
     }
     if (req.method === "POST" && url.pathname === "/api/project") {
       const body = await readBody(req);
@@ -568,9 +726,23 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req);
       if (!body.project || !body.board || !body.slug) return json(res, 400, { error: "missing fields" });
       if (projectIsArchived(body.project)) return json(res, 403, { error: "project is archived" });
-      deleteCard(body.project, body.board, body.slug);
+      deleteCard(body.project, body.board, body.slug, { permanent: !!body.permanent });
       saveStore();
       return json(res, 200, readWorkspace());
+    }
+    if (req.method === "GET" && url.pathname === "/api/trash") {
+      return json(res, 200, { trash: readTrash() });
+    }
+    if (req.method === "POST" && url.pathname === "/api/trash/restore") {
+      const body = await readBody(req);
+      if (!body.slug) return json(res, 400, { error: "missing fields" });
+      const result = restoreTrashItem(body.slug);
+      if (!result.ok) {
+        const status = result.error === "not found" ? 404 : result.error === "project is archived" ? 403 : 400;
+        return json(res, status, { error: result.error });
+      }
+      saveStore();
+      return json(res, 200, { slug: result.slug, project: result.project, board: result.board, ...readWorkspace() });
     }
     if (req.method === "POST" && url.pathname === "/api/card") {
       const body = await readBody(req);
@@ -707,7 +879,8 @@ const server = http.createServer(async (req, res) => {
 const boot = ensureStore();
 server.listen(PORT, () => {
   console.log(`Freelance Workbook v0.1.0 at http://localhost:${PORT}`);
-  console.log(`User data: ${USER_DATA}`);
-  console.log(`Launch data (read-only): ${LAUNCH_DATA}`);
-  if (boot.reseeded) console.log(`Seeded userData.json from launchData.json (${boot.reason})`);
+  console.log(`User workspace: ${USER_WORKSPACE}`);
+  console.log(`Seed workspace (read-only): ${SEED_WORKSPACE}`);
+  if (boot.reseeded) console.log(`Seeded userWorkspace.json from seedWorkspace.json (${boot.reason})`);
+  if (boot.purged) console.log(`Purged ${boot.purged} trash item(s) older than 30 days`);
 });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Icon } from "../icons.jsx";
-import { exportWorkspace } from "../api.js";
+import { exportWorkspace, resetWorkspaceToSeed } from "../api.js";
 import {
   APP_NAME,
   APP_VERSION,
@@ -17,8 +17,15 @@ const TABS = [
   { id: "about", label: "About", icon: "About" },
 ];
 
-export default function SettingsDialog({ visibility, onChange, onClose }) {
+export default function SettingsDialog({
+  visibility,
+  onChange,
+  onClose,
+  onResetSeed,
+  onResetEmpty,
+}) {
   const [tab, setTab] = useState("appearance");
+  const [resetting, setResetting] = useState(null);
 
   useEffect(() => {
     const esc = (e) => {
@@ -39,6 +46,33 @@ export default function SettingsDialog({ visibility, onChange, onClose }) {
       alert("Could not export workspace.");
     }
   };
+
+  const runReset = async (kind, message, action) => {
+    if (!confirm(message)) return;
+    setResetting(kind);
+    try {
+      await action?.();
+      onClose();
+    } catch {
+      alert("Could not reset workspace.");
+    } finally {
+      setResetting(null);
+    }
+  };
+
+  const handleResetSeed = () =>
+    runReset(
+      "seed",
+      "Reset to seed workspace?\n\nThis replaces all current data with seedWorkspace.json. Your changes will be lost.",
+      onResetSeed
+    );
+
+  const handleResetEmpty = () =>
+    runReset(
+      "empty",
+      "Reset to empty workspace?\n\nThis deletes all projects, tasks, and timelogs. Your changes will be lost.",
+      onResetEmpty
+    );
 
   return (
     <div
@@ -88,29 +122,64 @@ export default function SettingsDialog({ visibility, onChange, onClose }) {
           )}
 
           {tab === "data" && (
-            <section className="settings-section">
-              <h3 className="settings-heading">Backup</h3>
-              <div className="settings-rows">
-                <div className="settings-row">
-                  <div className="settings-row-copy">
-                    <b>Export data</b>
-                    <span>Download your userData.json backup</span>
+            <>
+              <section className="settings-section">
+                <h3 className="settings-heading">Backup</h3>
+                <div className="settings-rows">
+                  <div className="settings-row">
+                    <div className="settings-row-copy">
+                      <b>Export data</b>
+                      <span>Download your userWorkspace.json backup</span>
+                    </div>
+                    <button type="button" className="settings-row-btn" onClick={handleExport}>
+                      Export
+                    </button>
                   </div>
-                  <button type="button" className="settings-row-btn" onClick={handleExport}>
-                    Export
-                  </button>
-                </div>
-                <div className="settings-row">
-                  <div className="settings-row-copy">
-                    <b>Import data</b>
-                    <span>Restore from a userData.json file</span>
+                  <div className="settings-row">
+                    <div className="settings-row-copy">
+                      <b>Import data</b>
+                      <span>Restore from a userWorkspace.json file</span>
+                    </div>
+                    <button type="button" className="settings-row-btn" disabled>
+                      Import
+                    </button>
                   </div>
-                  <button type="button" className="settings-row-btn" disabled>
-                    Import
-                  </button>
                 </div>
-              </div>
-            </section>
+              </section>
+              <section className="settings-section">
+                <h3 className="settings-heading">Developer</h3>
+                <div className="settings-rows">
+                  <div className="settings-row">
+                    <div className="settings-row-copy">
+                      <b>Reset to seed workspace</b>
+                      <span>Replace all data with seedWorkspace.json</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="settings-row-btn settings-row-btn-danger"
+                      disabled={!!resetting}
+                      onClick={handleResetSeed}
+                    >
+                      {resetting === "seed" ? "Resetting…" : "Reset"}
+                    </button>
+                  </div>
+                  <div className="settings-row">
+                    <div className="settings-row-copy">
+                      <b>Reset to empty workspace</b>
+                      <span>Clear all projects, tasks, and timelogs</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="settings-row-btn settings-row-btn-danger"
+                      disabled={!!resetting}
+                      onClick={handleResetEmpty}
+                    >
+                      {resetting === "empty" ? "Resetting…" : "Reset"}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </>
           )}
 
           {tab === "about" && (

@@ -28,16 +28,16 @@ npm run dev        # Vite on :5173, proxies /api → :3456
 
 | File | Role |
 |------|------|
-| [`launchData.json`](launchData.json) | Read-only seed for a fresh start. The app never writes this file. |
-| [`userData.json`](userData.json) | Live workspace. All edits are saved here. |
+| [`seedWorkspace.json`](seedWorkspace.json) | Read-only seed for a fresh start. The app never writes this file. |
+| [`userWorkspace.json`](userWorkspace.json) | Live workspace. All edits are saved here. |
 
-On startup, if `userData.json` is missing, empty, or corrupt/invalid, the server deep-clones `launchData.json` into a new `userData.json`.
+On startup, if `userWorkspace.json` is missing, empty, or corrupt/invalid, the server deep-clones `seedWorkspace.json` into a new `userWorkspace.json`.
 
-Restore the demo: delete `userData.json` and restart `npm start`.
+Restore the demo: Settings → Data → **Reset to seed workspace**, or delete `userWorkspace.json` and restart `npm start`.
 
 ## Demo data (`isDemo`)
 
-The seed is sample freelancer work. Every **project**, **task board**, and **task card** in `launchData.json` is marked:
+The seed is sample freelancer work. Every **project**, **task board**, and **task card** in `seedWorkspace.json` is marked:
 
 ```json
 "isDemo": true
@@ -54,7 +54,7 @@ New users start from this demo state. A button should:
 1. Delete all projects with `isDemo: true` (and their boards/cards), **or** delete only boards/cards flagged `isDemo` inside mixed projects if that model is preferred later.
 2. Leave anything without `isDemo` untouched.
 
-Until that exists, restore via deleting `userData.json` (see above).
+Until that exists, restore via Settings → Data → **Reset to seed workspace**, or by deleting `userWorkspace.json` (see above).
 
 ## Seed snapshot (revert target)
 

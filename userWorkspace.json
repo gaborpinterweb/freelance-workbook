@@ -29,6 +29,7 @@
               "title": "Landing hero copy",
               "status": "Content",
               "master": "Today",
+              "doneAt": "",
               "body": "Finalize headline, subcopy, and CTA for the Aurora waitlist page.",
               "isDemo": true
             },
@@ -37,6 +38,7 @@
               "title": "Launch day checklist",
               "status": "Backend dev",
               "master": "This week",
+              "doneAt": "",
               "body": "DNS cutover, Product Hunt draft, social posts, and rollback notes.",
               "isDemo": true
             },
@@ -45,7 +47,7 @@
               "title": "Onboarding email sequence",
               "status": "Content",
               "master": "Next week",
-              "doneAt": "",
+              "doneAt": "2026-09-30T10:56:10.281Z",
               "body": "Day 0 / 2 / 5 welcome emails in Loops for early access users.",
               "isDemo": true
             },
@@ -72,6 +74,7 @@
               "title": "Waitlist signup flow",
               "status": "Backend dev",
               "master": "Today",
+              "doneAt": "",
               "body": "Wire Formspark → Notion, confirmation email, and success state.",
               "isDemo": true
             }
@@ -80,8 +83,7 @@
         }
       ],
       "databases": [],
-      "isDemo": true,
-      "icon": "folder"
+      "isDemo": true
     },
     {
       "slug": "cove-brand-redesign",
@@ -121,6 +123,7 @@
               "title": "Webflow component library",
               "status": "Webflow",
               "master": "Next week",
+              "doneAt": "",
               "body": "Buttons, cards, nav, and footer as Webflow components.",
               "isDemo": true
             },
@@ -129,6 +132,7 @@
               "title": "Homepage wireframes",
               "status": "Design",
               "master": "Today",
+              "doneAt": "",
               "body": "Desktop + mobile wires for hero, stays grid, and booking CTA.",
               "isDemo": true
             },
@@ -146,6 +150,7 @@
               "title": "Type & color system",
               "status": "Design",
               "master": "This week",
+              "doneAt": "",
               "body": "Document scales, tokens, and Figma styles for the new brand."
             }
           ],
@@ -174,6 +179,7 @@
               "title": "Accessibility pass",
               "status": "Design",
               "master": "Backlog",
+              "doneAt": "",
               "body": "Contrast, focus states, and alt text before client QA.",
               "isDemo": true
             },
@@ -196,19 +202,13 @@
               "isDemo": true
             },
             {
-              "slug": "ia-sitemap",
-              "title": "IA & sitemap",
-              "status": "Design",
-              "master": "Today",
-              "body": "Propose nav structure: Services, Industries, Insights, About, Contact."
-            },
-            {
               "slug": "lead-form",
               "title": "Lead form + CRM hook",
               "status": "Content",
               "master": "This week",
               "body": "HubSpot form embed, thank-you page, and UTM capture.",
-              "isDemo": true
+              "isDemo": true,
+              "doneAt": "2026-09-30T10:56:01.392Z"
             },
             {
               "slug": "services-page",
@@ -216,6 +216,13 @@
               "status": "Content",
               "master": "This week",
               "body": "Four service blocks with outcomes; pull quotes from past proposals."
+            },
+            {
+              "slug": "ia-sitemap",
+              "title": "IA & sitemap",
+              "status": "Design",
+              "master": "Today",
+              "body": "Propose nav structure: Services, Industries, Insights, About, Contact."
             }
           ],
           "isDemo": true
@@ -242,17 +249,9 @@
             {
               "slug": "catalog-export",
               "title": "Catalog export & clean-up",
-              "status": "Theme",
+              "status": "Data & apps",
               "master": "Today",
               "body": "Export products/variants, fix missing SKUs, map metafields for Shopify.",
-              "isDemo": true
-            },
-            {
-              "slug": "checkout-apps",
-              "title": "Checkout & apps install",
-              "status": "Data & apps",
-              "master": "This week",
-              "body": "Klaviyo, Judge.me, and Shop Pay; smoke-test gift cards and discounts.",
               "isDemo": true
             },
             {
@@ -262,14 +261,6 @@
               "master": "Next week",
               "doneAt": "2026-09-29T13:36:09.622Z",
               "body": "Import customers without passwords; send reset email after cutover.",
-              "isDemo": true
-            },
-            {
-              "slug": "dawn-theme-setup",
-              "title": "Dawn theme customization",
-              "status": "Theme",
-              "master": "This week",
-              "body": "Brand colors, PDP layout, and mega-menu to match their lookbook.",
               "isDemo": true
             },
             {
@@ -288,6 +279,14 @@
               "doneAt": "2026-09-29T13:36:11.006Z",
               "body": "CSV of old Woo paths → new Shopify handles; keep top 200 SEO pages.",
               "isDemo": true
+            },
+            {
+              "slug": "checkout-apps",
+              "title": "Checkout & apps install",
+              "status": "Data & apps",
+              "master": "This week",
+              "body": "Klaviyo, Judge.me, and Shop Pay; smoke-test gift cards and discounts.",
+              "isDemo": true
             }
           ],
           "isDemo": true
@@ -295,28 +294,6 @@
       ],
       "databases": [],
       "isDemo": true
-    },
-    {
-      "slug": "my-client",
-      "name": "Hello bello",
-      "color": "#2f7a6e",
-      "description": "hi",
-      "boards": [
-        {
-          "slug": "asd",
-          "name": "asd",
-          "columns": [
-            "Design",
-            "Frontend dev",
-            "Backend dev",
-            "Content"
-          ],
-          "cards": []
-        }
-      ],
-      "databases": [],
-      "icon": "Docs",
-      "archived": true
     }
   ],
   "timelogs": [
@@ -333,20 +310,7 @@
       "startedAt": "2026-09-30T04:25:49.304Z",
       "endedAt": "2026-09-30T04:26:25.887Z",
       "durationSec": 36
-    },
-    {
-      "slug": "2026-09-30-aurora-app-launch-landing-hero-copy",
-      "project": "aurora-app-launch",
-      "board": "launch",
-      "card": "landing-hero-copy",
-      "title": "Landing hero copy",
-      "projectName": "Aurora",
-      "boardName": "Launch",
-      "color": "#b45a3c",
-      "kind": "pomodoro",
-      "startedAt": "2026-09-30T08:00:00.000Z",
-      "endedAt": "2026-09-30T08:25:00.000Z",
-      "durationSec": 1500
     }
-  ]
+  ],
+  "trash": []
 }
