@@ -65,6 +65,30 @@ function isDemoValue(v) {
   return v === true || String(v || "").toLowerCase() === "true";
 }
 
+function isArchivedValue(v) {
+  return v === true || String(v || "").toLowerCase() === "true";
+}
+
+function rmRecursive(dir) {
+  if (!fs.existsSync(dir)) return;
+  for (const name of fs.readdirSync(dir)) {
+    const full = path.join(dir, name);
+    if (fs.statSync(full).isDirectory()) rmRecursive(full);
+    else fs.unlinkSync(full);
+  }
+  fs.rmdirSync(dir);
+}
+
+function projectMeta(slug) {
+  const file = path.join(ROOT, slug, "project.md");
+  if (!fs.existsSync(file)) return { data: {}, body: "" };
+  return parseFm(fs.readFileSync(file, "utf8"));
+}
+
+function projectIsArchived(slug) {
+  return isArchivedValue(projectMeta(slug).data.archived);
+}
+
 function readBoards(projDir) {
   const boards = [];
   const boardsDir = path.join(projDir, "boards");
@@ -148,8 +172,40 @@ function writeProject(project, patch) {
   const data = { name, color };
   const demo = patch.isDemo != null ? patch.isDemo : prev.data.isDemo;
   if (isDemoValue(demo)) data.isDemo = true;
+  const archived = patch.archived != null ? patch.archived : prev.data.archived;
+  if (isArchivedValue(archived)) data.archived = true;
   fs.mkdirSync(path.join(ROOT, project), { recursive: true });
   fs.writeFileSync(file, dumpFm(data, description));
+}
+
+function deleteProject(project) {
+  const dir = path.join(ROOT, project);
+  if (!project || project.includes("..") || project.includes("/") || project.includes("\\")) return false;
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return false;
+  rmRecursive(dir);
+  return true;
+}
+
+function uniqueProjectSlug(name) {
+  const base = slugify(name) || "project";
+  let slug = base;
+  let i = 2;
+  while (fs.existsSync(path.join(ROOT, slug))) {
+    slug = base + "-" + i++;
+  }
+  return slug;
+}
+
+function createProject({ name, color, cover }) {
+  const title = String(name || "").trim() || "Untitled";
+  const slug = uniqueProjectSlug(title);
+  writeProject(slug, {
+    name: title,
+    color: color || "#9a5b2e",
+    cover: cover || { values: { description: "" } },
+    isDemo: false,
+  });
+  return slug;
 }
 
 function readWorkspaceMeta() {
@@ -217,6 +273,7 @@ function readWorkspace() {
       name: pmeta.data.name || slug,
       color: pmeta.data.color || "#9a5b2e",
       isDemo: isDemoValue(pmeta.data.isDemo) || undefined,
+      archived: isArchivedValue(pmeta.data.archived) || undefined,
       cover: readCover(pmeta),
       boards: readBoards(projDir),
       databases: readDatabases(projDir),
@@ -350,25 +407,55 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/workspace") {
       return json(res, 200, readWorkspace());
     }
+    if (req.method === "POST" && url.pathname === "/api/project") {
+      const body = await readBody(req);
+      const name = String(body.name || "").trim();
+      if (!name) return json(res, 400, { error: "missing fields" });
+      const slug = createProject({
+        name,
+        color: body.color,
+        cover: body.cover,
+      });
+      return json(res, 201, { slug, ...readWorkspace() });
+    }
     if (req.method === "PUT" && url.pathname === "/api/project") {
       const body = await readBody(req);
       if (!body.project) return json(res, 400, { error: "missing fields" });
+      if (!fs.existsSync(path.join(ROOT, body.project))) {
+        return json(res, 404, { error: "project not found" });
+      }
+      if (projectIsArchived(body.project) && body.archived !== false) {
+        if (body.archived === true) {
+          writeProject(body.project, { archived: true });
+          return json(res, 200, readWorkspace());
+        }
+        return json(res, 403, { error: "project is archived" });
+      }
       writeProject(body.project, {
         name: body.name,
         color: body.color,
         cover: body.cover,
+        archived: body.archived,
       });
+      return json(res, 200, readWorkspace());
+    }
+    if (req.method === "DELETE" && url.pathname === "/api/project") {
+      const body = await readBody(req);
+      if (!body.project) return json(res, 400, { error: "missing fields" });
+      if (!deleteProject(body.project)) return json(res, 404, { error: "project not found" });
       return json(res, 200, readWorkspace());
     }
     if (req.method === "PUT" && url.pathname === "/api/card") {
       const body = await readBody(req);
       if (!body.project || !body.board || !body.title) return json(res, 400, { error: "missing fields" });
+      if (projectIsArchived(body.project)) return json(res, 403, { error: "project is archived" });
       const slug = writeCard(body.project, body.board, body);
       return json(res, 200, { slug, ...readWorkspace() });
     }
     if (req.method === "DELETE" && url.pathname === "/api/card") {
       const body = await readBody(req);
       if (!body.project || !body.board || !body.slug) return json(res, 400, { error: "missing fields" });
+      if (projectIsArchived(body.project)) return json(res, 403, { error: "project is archived" });
       const file = cardPath(body.project, body.board, body.slug);
       if (fs.existsSync(file)) fs.unlinkSync(file);
       return json(res, 200, readWorkspace());
@@ -376,6 +463,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/card") {
       const body = await readBody(req);
       if (!body.project || !body.board || !body.title) return json(res, 400, { error: "missing fields" });
+      if (projectIsArchived(body.project)) return json(res, 403, { error: "project is archived" });
       let slug = slugify(body.title);
       let i = 2;
       while (fs.existsSync(cardPath(body.project, body.board, slug))) {
@@ -387,12 +475,14 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/board") {
       const body = await readBody(req);
       if (!body.project || !body.name) return json(res, 400, { error: "missing fields" });
+      if (projectIsArchived(body.project)) return json(res, 403, { error: "project is archived" });
       const slug = createBoard(body.project, body.name);
       return json(res, 201, { slug, ...readWorkspace() });
     }
     if (req.method === "PUT" && url.pathname === "/api/board") {
       const body = await readBody(req);
       if (!body.project || !body.board || !body.columns) return json(res, 400, { error: "missing fields" });
+      if (projectIsArchived(body.project)) return json(res, 403, { error: "project is archived" });
       const file = path.join(ROOT, body.project, "boards", body.board, "board.md");
       const prev = fs.existsSync(file) ? parseFm(fs.readFileSync(file, "utf8")).data : {};
       writeBoard(body.project, body.board, {
