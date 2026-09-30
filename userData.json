@@ -213,7 +213,6 @@
               "title": "Lead form + CRM hook",
               "status": "Content",
               "master": "This week",
-              "doneAt": "",
               "body": "HubSpot form embed, thank-you page, and UTM capture.",
               "isDemo": true
             },
@@ -307,11 +306,24 @@
     },
     {
       "slug": "my-client",
-      "name": "My Client",
-      "color": "#123456",
+      "name": "Hello bello",
+      "color": "#2f7a6e",
       "description": "hi",
-      "boards": [],
-      "databases": []
+      "boards": [
+        {
+          "slug": "asd",
+          "name": "asd",
+          "columns": [
+            "Design",
+            "Frontend dev",
+            "Backend dev",
+            "Content"
+          ],
+          "cards": []
+        }
+      ],
+      "databases": [],
+      "icon": "Docs"
     }
   ],
   "timelogs": [

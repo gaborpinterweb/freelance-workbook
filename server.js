@@ -130,6 +130,7 @@ function projectToApi(p) {
     slug: p.slug,
     name: p.name || p.slug,
     color: p.color || "#9a5b2e",
+    icon: p.icon || "folder",
     cover: { values: { description: p.description || "" } },
     boards: (p.boards || []).map((b) => {
       const board = {
@@ -216,6 +217,11 @@ function writeProject(projectSlug, patch) {
   if (!p) return false;
   if (patch.name != null) p.name = patch.name;
   if (patch.color != null) p.color = patch.color;
+  if (patch.icon != null) {
+    const icon = String(patch.icon || "").trim();
+    if (icon) p.icon = icon;
+    else delete p.icon;
+  }
   if (patch.cover) {
     const desc =
       patch.cover.values && patch.cover.values.description != null
@@ -233,21 +239,24 @@ function writeProject(projectSlug, patch) {
   return true;
 }
 
-function createProject({ name, color, cover }) {
+function createProject({ name, color, icon, cover }) {
   const title = String(name || "").trim() || "Untitled";
   const slug = uniqueProjectSlug(title);
   const description =
     cover && cover.values && cover.values.description != null
       ? String(cover.values.description)
       : "";
-  store.projects.push({
+  const project = {
     slug,
     name: title,
     color: color || "#9a5b2e",
     description,
     boards: [],
     databases: [],
-  });
+  };
+  const iconName = String(icon || "").trim();
+  if (iconName) project.icon = iconName;
+  store.projects.push(project);
   return slug;
 }
 
@@ -488,6 +497,7 @@ const server = http.createServer(async (req, res) => {
       const slug = createProject({
         name,
         color: body.color,
+        icon: body.icon,
         cover: body.cover,
       });
       saveStore();
@@ -510,6 +520,7 @@ const server = http.createServer(async (req, res) => {
       writeProject(body.project, {
         name: body.name,
         color: body.color,
+        icon: body.icon,
         cover: body.cover,
         archived: body.archived,
       });
