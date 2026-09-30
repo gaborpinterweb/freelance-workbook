@@ -28,6 +28,17 @@ aside .side-scroll{flex:1;min-height:0;overflow:auto}
 .side-foot .bm{color:var(--side-mute)}
 .side-foot .bm:hover{color:var(--side-ink);background:var(--side-sel)}
 .side-foot .bm span:first-child{color:inherit}
+.pomo-block{display:none;margin-bottom:10px;padding:10px 8px;border-radius:calc(var(--radius) - 4px);background:var(--side-sel)}
+.pomo-block.on{display:block}
+.pomo-time{font-size:28px;font-weight:650;letter-spacing:.02em;text-align:center;font-variant-numeric:tabular-nums;color:var(--side-ink);line-height:1.15;margin-bottom:8px}
+.pomo-block .pomo-mini{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:calc(var(--radius) - 6px);border:1px solid color-mix(in srgb,var(--pc,#9a5b2e) 35%,transparent);background:color-mix(in srgb,var(--pc,#9a5b2e) 32%,#fff);color:var(--ink);margin-bottom:8px;cursor:pointer}
+.pomo-block .pomo-mini:hover{filter:brightness(1.03);background:color-mix(in srgb,var(--pc,#9a5b2e) 32%,#fff)}
+.pomo-block .pomo-mini b{display:block;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.pomo-block .pomo-mini .meta{display:flex;align-items:center;gap:6px;margin-top:4px;min-width:0;font-size:11px;color:var(--mute)}
+.pomo-block .pomo-mini .meta span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pomo-block .pomo-mini .dot{width:8px;height:8px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px #0002}
+.pomo-block .pomo-stop{display:block;width:100%;text-align:center;padding:7px 8px;border-radius:calc(var(--radius) - 6px);font-size:13px;font-weight:600;color:var(--side-ink);background:color-mix(in srgb,var(--side-ink) 12%,transparent)}
+.pomo-block .pomo-stop:hover{background:color-mix(in srgb,var(--side-ink) 18%,transparent);color:var(--side-ink)}
 .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px;flex:none}
 .brand-mark{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--side-ink) 10%,transparent);color:var(--side-ink)}
 .brand-mark svg{display:block}
@@ -127,11 +138,24 @@ aside .side-muted{margin-top:20px}
 .ch-msg b{display:block;font-size:13px;margin-bottom:2px}
 .ch-msg p{margin:0;font-size:14px;color:var(--ink)}
 .ch-msg time{font-size:11px;color:var(--mute);font-weight:400;margin-left:8px}
-.log{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
-.log .entry{display:grid;grid-template-columns:88px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.log{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:0;background:var(--bg)}
+.log .empty-log{padding:40px 24px;text-align:center;color:var(--mute);font-size:14px}
+.log .entry{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
 .log .entry time{font-size:12px;color:var(--mute);padding-top:2px}
-.log .entry p{margin:0;font-size:14px}
-.log .add{align-self:flex-start;color:var(--acc);font-weight:600;padding:6px 0}
+.log .entry .who{min-width:0}
+.log .entry .who button{display:block;width:100%;text-align:left;padding:0;border:0;background:none;cursor:pointer;color:inherit}
+.log .entry .who b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log .entry .who b:hover{color:var(--acc)}
+.log .entry .meta{display:flex;align-items:center;gap:6px;margin-top:4px;min-width:0;font-size:12px;color:var(--mute)}
+.log .entry .meta span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log .entry .dot{width:8px;height:8px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px #0002}
+.log .entry .dur{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);padding-top:2px;white-space:nowrap}
+.dlg .actions{display:flex;flex-direction:column;gap:8px;align-self:stretch}
+.dlg .pomo-start{align-self:stretch;padding:8px 14px;border-radius:calc(var(--radius) - 4px);background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc);font-weight:600}
+.dlg .pomo-start:hover{background:color-mix(in srgb,var(--acc) 22%,transparent)}
+.dlg.tint .pomo-start{background:color-mix(in srgb,#fff 55%,transparent);color:var(--ink)}
+.dlg.tint .pomo-start:hover{background:color-mix(in srgb,#fff 72%,transparent)}
+.dlg .actions .x{align-self:flex-end}
 .wrap{position:relative}
 .pop{display:none;position:absolute;top:100%;left:0;z-index:2;background:var(--card);border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:4px;box-shadow:0 4px 16px #0002}
 .pop button{display:block;width:100%;text-align:left;color:var(--ink)}
@@ -261,6 +285,14 @@ td.open{width:1%}.open button{color:var(--acc);font-size:13px}
     </div>
   </div>
   <div class="side-foot">
+    <div class="pomo-block" id="pomo-block" hidden>
+      <div class="pomo-time" id="pomo-time">25:00</div>
+      <button type="button" class="pomo-mini" id="pomo-mini" title="Open card">
+        <b id="pomo-card-title">Task</b>
+        <span class="meta"><span class="dot" id="pomo-card-dot"></span><span id="pomo-card-meta">Project · Board</span></span>
+      </button>
+      <button type="button" class="pomo-stop" id="pomo-stop">Stop pomodoro</button>
+    </div>
     <button type="button" class="bm" id="app-settings" title="Settings"><span></span><span>Settings</span></button>
   </div>
 </aside>
@@ -296,8 +328,13 @@ let cardDraft={n:"",body:"",s:"",ms:"",doneAt:""};
 const LAST_TAB_KEY="malom:lastTab";
 const SESSION_KEY="malom:session";
 const COMPLETED_VIEW_KEY="malom:completedView";
+const POMO_KEY="malom:pomodoro";
+const POMO_DURATION_SEC=25*60;
 const COMPLETED_VIEWS=["hide","virtual","inplace"];
 const completedViewByScope=new Map();
+let activePomo=null;
+let pomoTick=null;
+let pomoFinishing=false;
 function loadLastTabs(){
   try{return JSON.parse(localStorage.getItem(LAST_TAB_KEY)||"{}")||{}}catch{return{}}
 }
@@ -716,6 +753,7 @@ function render(){
     document.querySelector("main").classList.add("global-view");
     if(g==="Masterboard")renderMasterBoard(c);
     else if(g==="Calendar")renderCalendar(c);
+    else if(g==="Timelogs")renderTimelogs(c);
     else{
       $("view").className="mod";$("view").style.setProperty("--tab",c);$("view").innerHTML="";
       $("view").append(globalBar(g),Object.assign(el("div","", "This is the "+g.toLowerCase()+" page."),{style:"padding:20px;color:var(--mute);font-size:18px;text-align:center"}));
@@ -1428,6 +1466,179 @@ function renderCalendar(tabC){
   );
   v.append(globalBar("Calendar"),empty);
 }
+function formatDuration(sec){
+  const s=Math.max(0,Math.floor(sec||0));
+  const h=Math.floor(s/3600);
+  const m=Math.floor((s%3600)/60);
+  const r=s%60;
+  if(h)return h+":"+String(m).padStart(2,"0")+":"+String(r).padStart(2,"0");
+  return m+":"+String(r).padStart(2,"0");
+}
+function formatClock(iso){
+  const d=new Date(iso);
+  if(Number.isNaN(d.getTime()))return"—";
+  return d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});
+}
+async function fetchTimelogs(){
+  const data=await fetch("/api/timelogs").then(r=>r.json());
+  return data.timelogs||[];
+}
+async function renderTimelogs(tabC){
+  const v=$("view");v.className="mod";v.innerHTML="";
+  v.style.setProperty("--tab",tabC);
+  v.append(globalBar("Timelogs"));
+  const list=el("div","log");
+  list.append(Object.assign(el("div","empty-log","Loading…"),{id:"timelog-loading"}));
+  v.append(list);
+  let entries=[];
+  try{entries=await fetchTimelogs()}catch{entries=[]}
+  if(g!=="Timelogs")return;
+  list.innerHTML="";
+  if(!entries.length){
+    list.append(el("div","empty-log","No timelogs yet. Start a pomodoro from a card."));
+    return;
+  }
+  entries.forEach(entry=>{
+    const row=el("div","entry");
+    const when=el("time","",formatClock(entry.endedAt||entry.startedAt));
+    when.dateTime=entry.endedAt||entry.startedAt||"";
+    const who=el("div","who");
+    const open=el("button");
+    open.type="button";
+    open.append(el("b","",entry.title||"Untitled"));
+    open.onclick=()=>{
+      const hit=findCardBySlugs(entry.project,entry.board,entry.card);
+      if(hit)openItem(hit.row);
+    };
+    const meta=el("div","meta");
+    const dot=el("span","dot");dot.style.background=entry.color||GACC;
+    meta.append(dot,el("span","",(entry.projectName||entry.project||"Project")+" · "+(entry.boardName||entry.board||"Board")));
+    who.append(open,meta);
+    row.append(when,who,el("div","dur",formatDuration(entry.durationSec)));
+    list.append(row);
+  });
+}
+function findCardBySlugs(project,board,card){
+  const folder=folders.find(f=>f.slug===project);
+  if(!folder)return null;
+  const mod=folder.mods.find(m=>m[0]==="Board"&&m[2]?.slug===board);
+  if(!mod)return null;
+  const row=(mod[2].rows||[]).find(r=>r.slug===card);
+  return row?{row,folder,mod}:null;
+}
+function loadPomo(){
+  try{return JSON.parse(localStorage.getItem(POMO_KEY)||"null")}catch{return null}
+}
+function savePomo(session){
+  try{
+    if(session)localStorage.setItem(POMO_KEY,JSON.stringify(session));
+    else localStorage.removeItem(POMO_KEY);
+  }catch{}
+}
+function pomoRemainingSec(session){
+  if(!session)return 0;
+  const started=new Date(session.startedAt).getTime();
+  if(Number.isNaN(started))return 0;
+  const planned=session.durationSec||POMO_DURATION_SEC;
+  const elapsed=Math.floor((Date.now()-started)/1000);
+  return Math.max(0,planned-elapsed);
+}
+function pomoElapsedSec(session){
+  if(!session)return 0;
+  const started=new Date(session.startedAt).getTime();
+  if(Number.isNaN(started))return 0;
+  return Math.max(0,Math.floor((Date.now()-started)/1000));
+}
+function paintPomoBlock(){
+  const block=$("pomo-block");
+  if(!block)return;
+  if(!activePomo){
+    block.classList.remove("on");
+    block.hidden=true;
+    return;
+  }
+  block.hidden=false;
+  block.classList.add("on");
+  const rem=pomoRemainingSec(activePomo);
+  $("pomo-time").textContent=formatDuration(rem);
+  $("pomo-card-title").textContent=activePomo.title||"Untitled";
+  $("pomo-card-meta").textContent=(activePomo.projectName||"Project")+" · "+(activePomo.boardName||"Board");
+  const color=activePomo.color||GACC;
+  $("pomo-card-dot").style.background=color;
+  $("pomo-mini").style.setProperty("--pc",color);
+}
+function ensurePomoTicker(){
+  if(pomoTick)return;
+  pomoTick=setInterval(()=>{
+    if(!activePomo){clearInterval(pomoTick);pomoTick=null;paintPomoBlock();return}
+    paintPomoBlock();
+    if(pomoRemainingSec(activePomo)<=0)stopPomodoro();
+  },1000);
+}
+async function startPomodoro({project,board,card,title,projectName,boardName,color}){
+  if(!project||!board||!card)return;
+  if(activePomo)await stopPomodoro();
+  activePomo={
+    project,board,card,
+    title:title||"Untitled",
+    projectName:projectName||project,
+    boardName:boardName||board,
+    color:color||GACC,
+    kind:"pomodoro",
+    startedAt:new Date().toISOString(),
+    durationSec:POMO_DURATION_SEC
+  };
+  savePomo(activePomo);
+  paintPomoBlock();
+  ensurePomoTicker();
+}
+async function stopPomodoro(){
+  if(!activePomo||pomoFinishing)return;
+  pomoFinishing=true;
+  const session=activePomo;
+  const endedAt=new Date().toISOString();
+  const planned=session.durationSec||POMO_DURATION_SEC;
+  const durationSec=Math.min(planned,Math.max(1,pomoElapsedSec(session)));
+  activePomo=null;
+  savePomo(null);
+  paintPomoBlock();
+  try{
+    await fetch("/api/timelog",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        project:session.project,
+        board:session.board,
+        card:session.card,
+        title:session.title,
+        projectName:session.projectName,
+        boardName:session.boardName,
+        color:session.color,
+        kind:session.kind||"pomodoro",
+        startedAt:session.startedAt,
+        endedAt,
+        durationSec
+      })
+    });
+  }catch{}
+  pomoFinishing=false;
+  if(g==="Timelogs")renderTimelogs(GACC);
+}
+function initPomodoro(){
+  activePomo=loadPomo();
+  if(activePomo&&pomoRemainingSec(activePomo)<=0){
+    stopPomodoro();
+    return;
+  }
+  paintPomoBlock();
+  if(activePomo)ensurePomoTicker();
+  $("pomo-stop").onclick=()=>stopPomodoro();
+  $("pomo-mini").onclick=()=>{
+    if(!activePomo)return;
+    const hit=findCardBySlugs(activePomo.project,activePomo.board,activePomo.card);
+    if(hit)openItem(hit.row);
+  };
+}
 function masterBoard(){
   const wrap=el("div","mb");
   const b=el("div","board"+(boardEdit?" editing":""));
@@ -1667,8 +1878,27 @@ function openItem(r,opts){
     dlg.append(titleRow,props);
     props.append(f("Task board",ptab),f("Task board column",boardCol),f("Master board column",masterCol));
   }
+  const actions=el("div","actions");
+  if(!isDraft&&curLoc?.mod[0]==="Board"&&r.slug){
+    const pomoBtn=el("button","pomo-start","Start pomodoro");
+    pomoBtn.type="button";
+    pomoBtn.onclick=async()=>{
+      await startPomodoro({
+        project:curLoc.folder.slug,
+        board:curLoc.mod[2].slug,
+        card:r.slug,
+        title:r.n||"Untitled",
+        projectName:curLoc.folder.name,
+        boardName:curLoc.mod[1],
+        color:curLoc.folder.color||PC[0]
+      });
+      close(true);
+    };
+    actions.append(pomoBtn);
+  }
   const x=el("button","x","Save");x.onclick=()=>close(true);
-  dlg.append(desc,x);ov.append(dlg);
+  actions.append(x);
+  dlg.append(desc,actions);ov.append(dlg);
   ov.onmousedown=e=>{
     if(e.target===ov)close(isDraft?false:true);
     else if(!e.target.closest?.(".ptab"))document.querySelectorAll(".dlg .ptab .pop").forEach(p=>p.style.display="none");
@@ -1792,6 +2022,7 @@ $("add-project").onclick=e=>{
   e.stopPropagation();
   startNewProject();
 };
+initPomodoro();
 reload().catch(err=>{
   $("view").innerHTML=`<div style="padding:24px;color:var(--mute)">Start the app with <code>npm start</code>, then open <code>http://localhost:3456</code>.<br><br>${err}</div>`;
   globals();

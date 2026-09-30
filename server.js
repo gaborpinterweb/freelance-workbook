@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 
 const ROOT = path.join(__dirname, "projects");
+const TIMELOGS = path.join(__dirname, "timelogs");
 const PORT = 3456;
 const HTML = path.join(__dirname, "Workspace demo.html");
 const DEFAULT_DB_COLS = [
@@ -286,6 +287,67 @@ function cardPath(project, board, slug) {
   return path.join(ROOT, project, "boards", board, "cards", slug + ".md");
 }
 
+function timelogPath(slug) {
+  return path.join(TIMELOGS, slug + ".md");
+}
+
+function readTimelogs() {
+  if (!fs.existsSync(TIMELOGS)) return [];
+  const entries = [];
+  for (const file of readDir(TIMELOGS).filter((f) => f.endsWith(".md"))) {
+    const { data } = parseFm(fs.readFileSync(path.join(TIMELOGS, file), "utf8"));
+    const durationSec = Math.max(0, parseInt(data.durationSec, 10) || 0);
+    entries.push({
+      slug: file.replace(/\.md$/, ""),
+      project: data.project || "",
+      board: data.board || "",
+      card: data.card || "",
+      title: data.title || data.card || "Untitled",
+      projectName: data.projectName || data.project || "",
+      boardName: data.boardName || data.board || "",
+      color: data.color || "#9a5b2e",
+      kind: data.kind || "pomodoro",
+      startedAt: data.startedAt || "",
+      endedAt: data.endedAt || "",
+      durationSec,
+    });
+  }
+  entries.sort((a, b) => String(b.endedAt || b.startedAt).localeCompare(String(a.endedAt || a.startedAt)));
+  return entries;
+}
+
+function writeTimelog(entry) {
+  fs.mkdirSync(TIMELOGS, { recursive: true });
+  const startedAt = entry.startedAt || new Date().toISOString();
+  const endedAt = entry.endedAt || new Date().toISOString();
+  const durationSec = Math.max(0, parseInt(entry.durationSec, 10) || 0);
+  const base = slugify(
+    [
+      String(startedAt).slice(0, 10),
+      entry.project || "project",
+      entry.card || entry.title || "session",
+    ].join("-")
+  );
+  let slug = base;
+  let i = 2;
+  while (fs.existsSync(timelogPath(slug))) slug = base + "-" + i++;
+  const data = {
+    project: entry.project || "",
+    board: entry.board || "",
+    card: entry.card || "",
+    title: entry.title || entry.card || "Untitled",
+    projectName: entry.projectName || entry.project || "",
+    boardName: entry.boardName || entry.board || "",
+    color: entry.color || "#9a5b2e",
+    kind: entry.kind || "pomodoro",
+    startedAt,
+    endedAt,
+    durationSec,
+  };
+  fs.writeFileSync(timelogPath(slug), dumpFm(data));
+  return { slug, ...data, durationSec };
+}
+
 function itemPath(project, database, slug) {
   return path.join(ROOT, project, "databases", database, "items", slug + ".md");
 }
@@ -546,6 +608,17 @@ const server = http.createServer(async (req, res) => {
       }
       writeItem(body.project, body.database, { slug, fields, body: body.body || "" }, cols);
       return json(res, 201, { slug, ...readWorkspace() });
+    }
+    if (req.method === "GET" && url.pathname === "/api/timelogs") {
+      return json(res, 200, { timelogs: readTimelogs() });
+    }
+    if (req.method === "POST" && url.pathname === "/api/timelog") {
+      const body = await readBody(req);
+      if (!body.project || !body.card || !body.startedAt || !body.endedAt) {
+        return json(res, 400, { error: "missing fields" });
+      }
+      const entry = writeTimelog(body);
+      return json(res, 201, { entry, timelogs: readTimelogs() });
     }
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
       const html = fs.readFileSync(HTML);
