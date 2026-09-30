@@ -16,7 +16,7 @@ export default function Sidebar({
   coverDraft,
   activePomo,
   workspaceItems,
-  showArchived = true,
+  showArchived = false,
   onSelectGlobal,
   onSelectProject,
   onAddProject,

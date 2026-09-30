@@ -19,6 +19,7 @@ export const SESSION_KEY = "freelance-workbook:session";
 export const COMPLETED_VIEW_KEY = "freelance-workbook:completedView";
 export const POMO_KEY = "freelance-workbook:pomodoro";
 export const WORKSPACE_VIS_KEY = "freelance-workbook:workspaceVisibility";
+export const LAUNCH_SEEN_KEY = "freelance-workbook:launchSeen";
 export const WORKSPACE_ITEMS = ["Masterboard", "Timelogs", "Calendar", "Trash"];
 export const SIDEBAR_VIS_ITEMS = [...WORKSPACE_ITEMS, "Archived"];
 export const POMO_DURATION_SEC = 25 * 60;
@@ -232,7 +233,9 @@ export function globalLabel(name) {
 }
 
 export function defaultWorkspaceVisibility() {
-  return Object.fromEntries(SIDEBAR_VIS_ITEMS.map((id) => [id, true]));
+  return Object.fromEntries(
+    SIDEBAR_VIS_ITEMS.map((id) => [id, id !== "Archived"])
+  );
 }
 
 export function loadWorkspaceVisibility() {
@@ -264,6 +267,20 @@ export function clearClientAppState() {
       if (key && key.startsWith("freelance-workbook:")) keys.push(key);
     }
     keys.forEach((key) => localStorage.removeItem(key));
+  } catch {}
+}
+
+export function hasSeenLaunch() {
+  try {
+    return localStorage.getItem(LAUNCH_SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function markLaunchSeen() {
+  try {
+    localStorage.setItem(LAUNCH_SEEN_KEY, "1");
   } catch {}
 }
 

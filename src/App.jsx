@@ -41,6 +41,9 @@ import {
   loadWorkspaceVisibility,
   saveWorkspaceVisibility,
   clearClientAppState,
+  hasSeenLaunch,
+  markLaunchSeen,
+  defaultWorkspaceVisibility,
 } from "./utils.js";
 import Sidebar from "./components/Sidebar.jsx";
 import TabBar from "./components/TabBar.jsx";
@@ -52,6 +55,7 @@ import Trash from "./components/Trash.jsx";
 import CardDialog from "./components/CardDialog.jsx";
 import SettingsDialog from "./components/SettingsDialog.jsx";
 import SuperEmpty from "./components/SuperEmpty.jsx";
+import LaunchDialog from "./components/LaunchDialog.jsx";
 
 export default function App() {
   const [folders, setFolders] = useState([]);
@@ -86,6 +90,7 @@ export default function App() {
   const [trashRefresh, setTrashRefresh] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [workspaceVis, setWorkspaceVis] = useState(() => loadWorkspaceVisibility());
+  const [launchOpen, setLaunchOpen] = useState(false);
 
   const masterOff = useRef(new Set());
   const colCollapsed = useRef(new Set());
@@ -233,6 +238,10 @@ export default function App() {
       setLoaded(true);
     });
   }, [reload]);
+
+  useEffect(() => {
+    if (loaded && !loadError && !hasSeenLaunch()) setLaunchOpen(true);
+  }, [loaded, loadError]);
 
   useEffect(() => {
     saveSession(g, folders, p);
@@ -1087,6 +1096,15 @@ export default function App() {
         />
       )}
 
+      {launchOpen && (
+        <LaunchDialog
+          onStart={() => {
+            markLaunchSeen();
+            setLaunchOpen(false);
+          }}
+        />
+      )}
+
       {settingsOpen && (
         <SettingsDialog
           visibility={workspaceVis}
@@ -1119,6 +1137,7 @@ export default function App() {
           onResetFirstLaunch={async () => {
             await resetWorkspaceToSeed();
             clearClientAppState();
+            saveWorkspaceVisibility(defaultWorkspaceVisibility());
             window.location.reload();
             await new Promise(() => {});
           }}
