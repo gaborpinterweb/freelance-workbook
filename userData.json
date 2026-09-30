@@ -73,7 +73,6 @@
               "title": "Waitlist signup flow",
               "status": "Backend dev",
               "master": "Today",
-              "doneAt": "",
               "body": "Wire Formspark → Notion, confirmation email, and success state.",
               "isDemo": true
             }
@@ -82,7 +81,8 @@
         }
       ],
       "databases": [],
-      "isDemo": true
+      "isDemo": true,
+      "icon": "folder"
     },
     {
       "slug": "cove-brand-redesign",
@@ -149,7 +149,6 @@
               "title": "Type & color system",
               "status": "Design",
               "master": "This week",
-              "doneAt": "",
               "body": "Document scales, tokens, and Figma styles for the new brand."
             }
           ],
@@ -178,7 +177,6 @@
               "title": "Accessibility pass",
               "status": "Design",
               "master": "Backlog",
-              "doneAt": "",
               "body": "Contrast, focus states, and alt text before client QA.",
               "isDemo": true
             },
@@ -205,7 +203,6 @@
               "title": "IA & sitemap",
               "status": "Design",
               "master": "Today",
-              "doneAt": "",
               "body": "Propose nav structure: Services, Industries, Insights, About, Contact."
             },
             {
@@ -250,7 +247,6 @@
               "title": "Catalog export & clean-up",
               "status": "Data & apps",
               "master": "Today",
-              "doneAt": "",
               "body": "Export products/variants, fix missing SKUs, map metafields for Shopify.",
               "isDemo": true
             },
@@ -276,7 +272,6 @@
               "title": "Dawn theme customization",
               "status": "Theme",
               "master": "This week",
-              "doneAt": "",
               "body": "Brand colors, PDP layout, and mega-menu to match their lookbook.",
               "isDemo": true
             },
@@ -323,7 +318,8 @@
         }
       ],
       "databases": [],
-      "icon": "Docs"
+      "icon": "Docs",
+      "archived": true
     }
   ],
   "timelogs": [

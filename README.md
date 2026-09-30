@@ -1,5 +1,13 @@
 # Freelance Workbook
 
+## Quick overview (all WIP)
+
+- Free, open-source, offline
+- Available for macOS and Windows
+- Task boards, time tracking, knowledge base, links and more 
+
+## Description
+
 Local workspace for freelance projects. Data lives in two JSON files at the repo root; `server.js` serves the UI and API.
 
 ```bash
