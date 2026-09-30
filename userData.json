@@ -1,0 +1,347 @@
+{
+  "version": 1,
+  "stages": [
+    "Backlog",
+    "This week",
+    "Today",
+    "Tomorrow",
+    "Next week"
+  ],
+  "projects": [
+    {
+      "slug": "aurora-app-launch",
+      "name": "Aurora app launch",
+      "color": "#b45a3c",
+      "description": "Freelance engagement to ship the Aurora mobile app landing, waitlist, and launch assets for a Series A client.",
+      "boards": [
+        {
+          "slug": "launch",
+          "name": "Launch",
+          "columns": [
+            "Design",
+            "Frontend dev",
+            "Backend dev",
+            "Content"
+          ],
+          "cards": [
+            {
+              "slug": "landing-hero-copy",
+              "title": "Landing hero copy",
+              "status": "Content",
+              "master": "Today",
+              "body": "Finalize headline, subcopy, and CTA for the Aurora waitlist page.",
+              "isDemo": true
+            },
+            {
+              "slug": "launch-day-checklist",
+              "title": "Launch day checklist",
+              "status": "Backend dev",
+              "master": "This week",
+              "doneAt": "",
+              "body": "DNS cutover, Product Hunt draft, social posts, and rollback notes.",
+              "isDemo": true
+            },
+            {
+              "slug": "onboarding-email",
+              "title": "Onboarding email sequence",
+              "status": "Content",
+              "master": "Next week",
+              "doneAt": "",
+              "body": "Day 0 / 2 / 5 welcome emails in Loops for early access users.",
+              "isDemo": true
+            },
+            {
+              "slug": "press-kit",
+              "title": "Press kit PDF",
+              "status": "Content",
+              "master": "This week",
+              "doneAt": "2026-09-29T13:36:08.339Z",
+              "body": "Logo pack, screenshots, founder bios, and one-pager for journalists.",
+              "isDemo": true
+            },
+            {
+              "slug": "pricing-section",
+              "title": "Pricing section",
+              "status": "Frontend dev",
+              "master": "Backlog",
+              "doneAt": "2026-09-29T13:36:35.222Z",
+              "body": "Three-tier layout with annual toggle; sync numbers with founder.",
+              "isDemo": true
+            },
+            {
+              "slug": "waitlist-flow",
+              "title": "Waitlist signup flow",
+              "status": "Backend dev",
+              "master": "Today",
+              "doneAt": "",
+              "body": "Wire Formspark → Notion, confirmation email, and success state.",
+              "isDemo": true
+            }
+          ],
+          "isDemo": true
+        }
+      ],
+      "databases": [],
+      "isDemo": true
+    },
+    {
+      "slug": "cove-brand-redesign",
+      "name": "Cove brand redesign",
+      "color": "#6b4f8c",
+      "description": "Brand and marketing site redesign for Cove, a boutique hospitality studio. New visual system, homepage, and case study templates.",
+      "boards": [
+        {
+          "slug": "brand",
+          "name": "Brand",
+          "columns": [
+            "Design",
+            "Webflow",
+            "Content"
+          ],
+          "cards": [
+            {
+              "slug": "asset-handoff",
+              "title": "Asset handoff pack",
+              "status": "Content",
+              "master": "Backlog",
+              "doneAt": "",
+              "body": "Logo SVG/PNG, brand PDF, and usage guidelines for their team.",
+              "isDemo": true
+            },
+            {
+              "slug": "case-study-template",
+              "title": "Case study template",
+              "status": "Content",
+              "master": "This week",
+              "doneAt": "",
+              "body": "Reusable layout for property stories; first pass on Casa Verde.",
+              "isDemo": true
+            },
+            {
+              "slug": "component-library",
+              "title": "Webflow component library",
+              "status": "Webflow",
+              "master": "Next week",
+              "doneAt": "",
+              "body": "Buttons, cards, nav, and footer as Webflow components.",
+              "isDemo": true
+            },
+            {
+              "slug": "homepage-wireframes",
+              "title": "Homepage wireframes",
+              "status": "Design",
+              "master": "Today",
+              "doneAt": "",
+              "body": "Desktop + mobile wires for hero, stays grid, and booking CTA.",
+              "isDemo": true
+            },
+            {
+              "slug": "moodboard-signoff",
+              "title": "Moodboard sign-off",
+              "status": "Design",
+              "master": "Today",
+              "doneAt": "2026-09-29T14:10:00.000Z",
+              "body": "Present 3 directions; lock type, color, and photography style with the client.",
+              "isDemo": true
+            },
+            {
+              "slug": "type-color-system",
+              "title": "Type & color system",
+              "status": "Design",
+              "master": "This week",
+              "doneAt": "",
+              "body": "Document scales, tokens, and Figma styles for the new brand."
+            }
+          ],
+          "isDemo": true
+        }
+      ],
+      "databases": [],
+      "isDemo": true
+    },
+    {
+      "slug": "meridian-site-redesign",
+      "name": "Meridian site redesign",
+      "color": "#2f7a6e",
+      "description": "Marketing site redesign for Meridian Advisory — clearer positioning, service pages, and lead capture.",
+      "boards": [
+        {
+          "slug": "website",
+          "name": "Website",
+          "columns": [
+            "Design",
+            "Content"
+          ],
+          "cards": [
+            {
+              "slug": "accessibility-pass",
+              "title": "Accessibility pass",
+              "status": "Design",
+              "master": "Backlog",
+              "doneAt": "",
+              "body": "Contrast, focus states, and alt text before client QA.",
+              "isDemo": true
+            },
+            {
+              "slug": "blog-templates",
+              "title": "Insights blog templates",
+              "status": "Design",
+              "master": "Next week",
+              "doneAt": "",
+              "body": "Article and author layouts in the new design system.",
+              "isDemo": true
+            },
+            {
+              "slug": "discovery-workshop",
+              "title": "Discovery workshop notes",
+              "status": "Content",
+              "master": "Today",
+              "doneAt": "2026-09-29T14:28:16.951Z",
+              "body": "Synthesize goals, audiences, and must-have pages from the kickoff call.",
+              "isDemo": true
+            },
+            {
+              "slug": "ia-sitemap",
+              "title": "IA & sitemap",
+              "status": "Design",
+              "master": "Today",
+              "doneAt": "",
+              "body": "Propose nav structure: Services, Industries, Insights, About, Contact."
+            },
+            {
+              "slug": "lead-form",
+              "title": "Lead form + CRM hook",
+              "status": "Content",
+              "master": "This week",
+              "doneAt": "",
+              "body": "HubSpot form embed, thank-you page, and UTM capture.",
+              "isDemo": true
+            },
+            {
+              "slug": "services-page",
+              "title": "Services page draft",
+              "status": "Content",
+              "master": "This week",
+              "body": "Four service blocks with outcomes; pull quotes from past proposals."
+            }
+          ],
+          "isDemo": true
+        }
+      ],
+      "databases": [],
+      "isDemo": true
+    },
+    {
+      "slug": "shopify-store-migration",
+      "name": "Shopify store migration",
+      "color": "#8a5c2e",
+      "description": "Migrate North & Co. from WooCommerce to Shopify Plus — catalog, redirects, theme, and checkout apps.",
+      "boards": [
+        {
+          "slug": "migration",
+          "name": "Migration",
+          "columns": [
+            "Theme",
+            "Data & apps",
+            "SEO"
+          ],
+          "cards": [
+            {
+              "slug": "catalog-export",
+              "title": "Catalog export & clean-up",
+              "status": "Data & apps",
+              "master": "Today",
+              "doneAt": "",
+              "body": "Export products/variants, fix missing SKUs, map metafields for Shopify.",
+              "isDemo": true
+            },
+            {
+              "slug": "checkout-apps",
+              "title": "Checkout & apps install",
+              "status": "Data & apps",
+              "master": "This week",
+              "body": "Klaviyo, Judge.me, and Shop Pay; smoke-test gift cards and discounts.",
+              "isDemo": true
+            },
+            {
+              "slug": "customer-accounts",
+              "title": "Customer account migration",
+              "status": "Data & apps",
+              "master": "Next week",
+              "doneAt": "2026-09-29T13:36:09.622Z",
+              "body": "Import customers without passwords; send reset email after cutover.",
+              "isDemo": true
+            },
+            {
+              "slug": "dawn-theme-setup",
+              "title": "Dawn theme customization",
+              "status": "Theme",
+              "master": "This week",
+              "doneAt": "",
+              "body": "Brand colors, PDP layout, and mega-menu to match their lookbook.",
+              "isDemo": true
+            },
+            {
+              "slug": "go-live-rehearsal",
+              "title": "Go-live rehearsal",
+              "status": "Theme",
+              "master": "Backlog",
+              "body": "Dry run on staging: DNS, payment, and order notifications.",
+              "isDemo": true
+            },
+            {
+              "slug": "url-redirect-map",
+              "title": "URL redirect map",
+              "status": "SEO",
+              "master": "Today",
+              "doneAt": "2026-09-29T13:36:11.006Z",
+              "body": "CSV of old Woo paths → new Shopify handles; keep top 200 SEO pages.",
+              "isDemo": true
+            }
+          ],
+          "isDemo": true
+        }
+      ],
+      "databases": [],
+      "isDemo": true
+    },
+    {
+      "slug": "my-client",
+      "name": "My Client",
+      "color": "#123456",
+      "description": "hi",
+      "boards": [],
+      "databases": []
+    }
+  ],
+  "timelogs": [
+    {
+      "slug": "2026-09-30-shopify-store-migration-checkout-apps",
+      "project": "shopify-store-migration",
+      "board": "migration",
+      "card": "checkout-apps",
+      "title": "Checkout & apps install",
+      "projectName": "Shopify store migration",
+      "boardName": "Migration",
+      "color": "#8a5c2e",
+      "kind": "pomodoro",
+      "startedAt": "2026-09-30T04:25:49.304Z",
+      "endedAt": "2026-09-30T04:26:25.887Z",
+      "durationSec": 36
+    },
+    {
+      "slug": "2026-09-30-aurora-app-launch-landing-hero-copy",
+      "project": "aurora-app-launch",
+      "board": "launch",
+      "card": "landing-hero-copy",
+      "title": "Landing hero copy",
+      "projectName": "Aurora",
+      "boardName": "Launch",
+      "color": "#b45a3c",
+      "kind": "pomodoro",
+      "startedAt": "2026-09-30T08:00:00.000Z",
+      "endedAt": "2026-09-30T08:25:00.000Z",
+      "durationSec": 1500
+    }
+  ]
+}

@@ -1,23 +1,34 @@
 # Freelance Manager
 
-Local workspace for freelance projects — markdown vault under `projects/`, served by `server.js`.
+Local workspace for freelance projects. Data lives in two JSON files at the repo root; `server.js` serves the UI and API.
 
 ```bash
 npm start
 # → http://localhost:3456
 ```
 
+## Storage
+
+| File | Role |
+|------|------|
+| [`launchData.json`](launchData.json) | Read-only seed for a fresh start. The app never writes this file. |
+| [`userData.json`](userData.json) | Live workspace. All edits are saved here. |
+
+On startup, if `userData.json` is missing, empty, or corrupt/invalid, the server deep-clones `launchData.json` into a new `userData.json`.
+
+Restore the demo: delete `userData.json` and restart `npm start`.
+
 ## Demo data (`isDemo`)
 
-The seeded vault is sample freelancer work. Every **project**, **task board (tab)**, and **task card** in that seed is marked with an invisible frontmatter flag:
+The seed is sample freelancer work. Every **project**, **task board**, and **task card** in `launchData.json` is marked:
 
-```yaml
-isDemo: true
+```json
+"isDemo": true
 ```
 
 - Not shown in the UI.
 - Exposed on the API (`project.isDemo`, `board.isDemo`, `card.isDemo`) so a future “Remove demo data” control can delete only flagged items and leave user-created work alone.
-- User-created projects / boards / cards must **omit** `isDemo` (or set it false). Writes preserve an existing `isDemo: true` when editing demo entities so saves don’t strip the flag.
+- User-created projects / boards / cards omit `isDemo`. Writes preserve an existing `isDemo: true` when editing demo entities so saves don’t strip the flag.
 
 ### Planned UX (not implemented yet)
 
@@ -25,13 +36,12 @@ New users start from this demo state. A button should:
 
 1. Delete all projects with `isDemo: true` (and their boards/cards), **or** delete only boards/cards flagged `isDemo` inside mixed projects if that model is preferred later.
 2. Leave anything without `isDemo` untouched.
-3. Optionally clear leftover hidden `databases/` folders under demo project slugs.
 
-Until that exists, restore the seed via git (see below).
+Until that exists, restore via deleting `userData.json` (see above).
 
 ## Seed snapshot (revert target)
 
-Master board stages (`projects/workspace.md`):
+Master board stages:
 
 `Backlog, This week, Today, Tomorrow, Next week`
 
@@ -86,20 +96,9 @@ Master board stages (`projects/workspace.md`):
 | `customer-accounts` | Customer account migration | Data & apps | Next week | yes |
 | `go-live-rehearsal` | Go-live rehearsal | Theme | Backlog | |
 
-Cover copy for each project lives in `projects/<slug>/project.md` (body = description).
+Project descriptions live in each project’s `description` field in the JSON.
 
 ### Notes
 
-- Database tabs are hidden in the UI; some projects still have leftover `databases/` folders from earlier prototypes. They are not part of the active demo surface and are not flagged with `isDemo`.
+- Database tabs are hidden in the UI; the API still supports nested `databases` / items in the JSON store for later use.
 - New task boards default to columns `Design, Frontend dev, Backend dev, Content` until customized.
-
-## Restoring this state
-
-From a clean git history that contains this seed:
-
-```bash
-git checkout -- projects/
-# or reset the whole repo to the commit that introduced / last updated this seed
-```
-
-After restore, restart `npm start` if the server was running with a different vault in memory (reads are from disk per request, so a refresh is usually enough).
