@@ -282,6 +282,7 @@ const TYPES=[
 ];
 let folders=[],p=0,m=0,g="Masterboard";
 let draftProject=null;
+let cardDraft={n:"",body:"",s:"",ms:""};
 const LAST_TAB_KEY="projectoire:lastTab";
 const SESSION_KEY="projectoire:session";
 const COMPLETED_VIEW_KEY="projectoire:completedView";
@@ -444,25 +445,53 @@ async function moveCard(row,from,to){
 function slugifyClient(s){
   return String(s||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"item";
 }
-async function createCard(folder,mod,title,status,master){
+async function createCard(folder,mod,{title,status,master,body}={}){
   if(isProjectArchived(folder))return;
   const boardCol=status||(mod[2].columns||stages)[0];
   const masterCol=master&&stages.includes(master)?master:stages[0];
+  const name=(title||"").trim()||"Untitled";
   const res=await fetch("/api/card",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       project:folder.slug,
       board:mod[2].slug,
-      title,
+      title:name,
       status:boardCol,
       master:masterCol,
-      body:""
+      body:body||""
     })
   });
   const data=await res.json();
   folders=fromApi(data);
   return data.slug;
+}
+function rememberCardDraft(row,loc){
+  cardDraft={
+    n:row?.n||"",
+    body:row?.body||"",
+    s:row?.s||"",
+    ms:row?.ms||"",
+    project:loc?.folder?.slug||"",
+    board:loc?.mod?.[2]?.slug||""
+  };
+}
+function clearCardDraft(){
+  cardDraft={n:"",body:"",s:"",ms:"",project:"",board:""};
+}
+function startNewCard(folder,mod,{status,master}={}){
+  if(!folder||!mod||mod[0]!=="Board")return;
+  if(isProjectArchived(folder))return;
+  const cols=mod[2].columns||stages;
+  const row={
+    n:cardDraft.n||"",
+    body:cardDraft.body||"",
+    s:status||(cols.includes(cardDraft.s)?cardDraft.s:cols[0]),
+    ms:master||(stages.includes(cardDraft.ms)?cardDraft.ms:stages[0]),
+    doneAt:"",
+    slug:null
+  };
+  openItem(row,{draft:true,folder,mod});
 }
 function masterCreateTarget(){
   const boards=allBoards().filter(b=>!masterOff.has(b.key));
@@ -1413,15 +1442,12 @@ function masterBoard(){
         }));
       });
       if(!boardEdit){
-        body.ondblclick=async e=>{
+        body.ondblclick=e=>{
           if(e.target.closest(".card,.day-group"))return;
           const target=masterCreateTarget();
           if(!target){alert("Enable at least one board in the footer to create a card.");return}
-          const title=(prompt("Task title")||"").trim();
-          if(!title)return;
           const boardStatus=(target.mod[2].columns||stages)[0];
-          await createCard(target.folder,target.mod,title,boardStatus,s);
-          render();
+          startNewCard(target.folder,target.mod,{status:boardStatus,master:s});
         };
       }
       if(mode==="inplace"&&done.length){
@@ -1471,9 +1497,12 @@ function masterBoard(){
   wrap.append(b,foot);
   return wrap;
 }
-function openItem(r){
-  const loc=locateRow(r);
-  let curLoc=loc?{folder:loc.folder,mod:loc.mod}:null;
+function openItem(r,opts){
+  const isDraft=!!(opts&&opts.draft);
+  const loc=isDraft?null:locateRow(r);
+  let curLoc=isDraft&&opts.folder&&opts.mod
+    ?{folder:opts.folder,mod:opts.mod}
+    :(loc?{folder:loc.folder,mod:loc.mod}:null);
   const ov=el("div","ov"),dlg=el("div","dlg");
   const tintDlg=()=>{
     if(!curLoc){dlg.classList.remove("tint");dlg.style.removeProperty("--pc");dlg.style.background="";return}
@@ -1484,6 +1513,31 @@ function openItem(r){
   };
   const esc=e=>e.key==="Escape"&&close(false);
   const close=async(save)=>{
+    if(isDraft){
+      rememberCardDraft(r,curLoc);
+      if(save){
+        if(!curLoc||curLoc.mod[0]!=="Board")return;
+        if(!(r.n||"").trim()){
+          alert("Add a task title first.");
+          dlg.querySelector("input.title")?.focus();
+          return;
+        }
+        await createCard(curLoc.folder,curLoc.mod,{
+          title:r.n,
+          status:r.s,
+          master:r.ms,
+          body:r.body||""
+        });
+        clearCardDraft();
+        const keepG=g;
+        p=Math.max(0,folders.findIndex(f=>f.slug===curLoc.folder.slug));
+        m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===curLoc.mod[2].slug));
+        g=keepG;
+      }
+      ov.remove();document.removeEventListener("keydown",esc);
+      render();
+      return;
+    }
     ov.remove();document.removeEventListener("keydown",esc);
     if(save&&curLoc){
       if(curLoc.mod[0]==="Board"){
@@ -1504,7 +1558,7 @@ function openItem(r){
   body.oninput=()=>r.body=body.value;
   desc.append(body);
   tintDlg();
-  if(loc?.mod[0]==="Database"){
+  if(!isDraft&&loc?.mod[0]==="Database"){
     const cols=loc.mod[2].cols||[];
     const titleCol=cols.find(c=>c.id==="n")||cols[0];
     const n=el("input","title");n.value=r[titleCol?.id]||"";n.placeholder="Untitled";
@@ -1584,7 +1638,7 @@ function openItem(r){
   const x=el("button","x","Save");x.onclick=()=>close(true);
   dlg.append(desc,x);ov.append(dlg);
   ov.onmousedown=e=>{
-    if(e.target===ov)close(true);
+    if(e.target===ov)close(isDraft?false:true);
     else if(!e.target.closest?.(".ptab"))document.querySelectorAll(".dlg .ptab .pop").forEach(p=>p.style.display="none");
   };
   document.addEventListener("keydown",esc);document.body.append(ov);dlg.querySelector("input")?.focus();
@@ -1661,13 +1715,9 @@ function board(d,folder,mod){
     },body=>{
       split.open.forEach(r=>body.append(makeTaskCard(r,f,md)));
       if(!boardEdit){
-        body.ondblclick=async e=>{
+        body.ondblclick=e=>{
           if(e.target.closest(".card,.day-group"))return;
-          const title=(prompt("Task title")||"").trim();
-          if(!title)return;
-          await createCard(f,md,title,s);
-          m=folders[p].mods.findIndex(x=>x[2]?.slug===md[2].slug);
-          render();
+          startNewCard(f,md,{status:s,master:stages[0]});
         };
       }
       if(mode==="inplace"&&split.done.length){
