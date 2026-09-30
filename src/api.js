@@ -114,6 +114,26 @@ export async function postTimelog(body) {
   return r.json();
 }
 
+export async function putTimelog(body) {
+  const r = await fetch("/api/timelog", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error("Could not update timelog");
+  return r.json();
+}
+
+export async function deleteTimelogApi(body) {
+  const r = await fetch("/api/timelog", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error("Could not delete timelog");
+  return r.json();
+}
+
 export async function putItem(body) {
   await fetch("/api/item", {
     method: "PUT",

@@ -584,6 +584,7 @@ function readTimelogs() {
     boardName: t.boardName || t.board || "",
     color: t.color || "#9a5b2e",
     kind: t.kind || "pomodoro",
+    note: typeof t.note === "string" ? t.note : "",
     startedAt: t.startedAt || "",
     endedAt: t.endedAt || "",
     durationSec: Math.max(0, parseInt(t.durationSec, 10) || 0),
@@ -615,12 +616,32 @@ function writeTimelog(entry) {
     boardName: entry.boardName || entry.board || "",
     color: entry.color || "#9a5b2e",
     kind: entry.kind || "pomodoro",
+    note: typeof entry.note === "string" ? entry.note : "",
     startedAt,
     endedAt,
     durationSec,
   };
   store.timelogs.push(data);
   return { ...data };
+}
+
+function updateTimelog(slug, patch) {
+  if (!store.timelogs) store.timelogs = [];
+  const idx = store.timelogs.findIndex((t) => t.slug === slug);
+  if (idx < 0) return null;
+  const cur = store.timelogs[idx];
+  if (patch && Object.prototype.hasOwnProperty.call(patch, "note")) {
+    cur.note = typeof patch.note === "string" ? patch.note : "";
+  }
+  store.timelogs[idx] = cur;
+  return { ...cur };
+}
+
+function deleteTimelog(slug) {
+  if (!store.timelogs) store.timelogs = [];
+  const before = store.timelogs.length;
+  store.timelogs = store.timelogs.filter((t) => t.slug !== slug);
+  return store.timelogs.length < before;
 }
 
 function json(res, code, obj) {
@@ -846,6 +867,21 @@ const server = http.createServer(async (req, res) => {
       const entry = writeTimelog(body);
       saveStore();
       return json(res, 201, { entry, timelogs: readTimelogs() });
+    }
+    if (req.method === "PUT" && url.pathname === "/api/timelog") {
+      const body = await readBody(req);
+      if (!body.slug) return json(res, 400, { error: "missing fields" });
+      const entry = updateTimelog(body.slug, { note: body.note });
+      if (!entry) return json(res, 404, { error: "timelog not found" });
+      saveStore();
+      return json(res, 200, { entry, timelogs: readTimelogs() });
+    }
+    if (req.method === "DELETE" && url.pathname === "/api/timelog") {
+      const body = await readBody(req);
+      if (!body.slug) return json(res, 400, { error: "missing fields" });
+      if (!deleteTimelog(body.slug)) return json(res, 404, { error: "timelog not found" });
+      saveStore();
+      return json(res, 200, { timelogs: readTimelogs() });
     }
     if (req.method === "GET") {
       const reqPath = url.pathname === "/" ? "/index.html" : url.pathname;

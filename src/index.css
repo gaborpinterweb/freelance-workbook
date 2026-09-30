@@ -127,17 +127,30 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .ch-msg b{display:block;font-size:13px;margin-bottom:2px}
 .ch-msg p{margin:0;font-size:14px;color:var(--ink)}
 .ch-msg time{font-size:11px;color:var(--mute);font-weight:400;margin-left:8px}
-.log{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:0;background:var(--bg)}
+.log{flex:1;overflow:auto;padding:16px 20px 24px;display:flex;flex-direction:column;gap:16px;background:var(--bg)}
 .log .empty-log{padding:40px 24px;text-align:center;color:var(--mute);font-size:14px}
 .log-filter{flex:none;display:flex;align-items:center;gap:10px;padding:10px 20px;background:color-mix(in srgb,var(--acc) 8%,var(--bg));border-bottom:1px solid var(--line);font-size:13px;color:var(--mute)}
 .log-filter b{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .log-filter .clear{flex:none;margin-left:auto;padding:4px 10px;border-radius:calc(var(--radius) - 6px);font-size:12px;font-weight:600;color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent)}
 .log-filter .clear:hover{background:color-mix(in srgb,var(--acc) 20%,transparent)}
 .log-note{flex:none;padding:10px 20px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--ink) 3%,var(--bg));font-size:13px;line-height:1.4;color:var(--mute)}
-.log .entry{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
-.log .entry time{font-size:12px;color:var(--mute);padding-top:2px}
+.log-day{flex:none;display:flex;flex-direction:column;gap:10px;padding:0 0 2px;border:1px solid var(--line);border-radius:calc(var(--radius) - 2px);background:var(--card);overflow:hidden}
+.log-day-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0;padding:11px 14px;background:color-mix(in srgb,var(--ink) 5%,var(--card));border-bottom:1px solid var(--line)}
+.log-day-head h3{margin:0;font-size:14px;font-weight:650;letter-spacing:.01em;color:var(--ink)}
+.log-day-head .log-agg{padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc);font-size:12px;font-weight:700}
+.log-agg{flex:none;font-size:13px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink)}
+.log-project{--pc:var(--acc);flex:none;margin:0 10px;border:1px solid color-mix(in srgb,var(--pc) 28%,var(--line));border-radius:calc(var(--radius) - 4px);background:color-mix(in srgb,var(--pc) 7%,var(--card));overflow:hidden}
+.log-project:last-child{margin-bottom:10px}
+.log-project-head{flex:none;display:flex;align-items:center;gap:8px;margin:0;padding:9px 12px;min-width:0;background:color-mix(in srgb,var(--pc) 12%,var(--card));border-bottom:1px solid color-mix(in srgb,var(--pc) 22%,var(--line))}
+.log-project-head .dot{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px #0002}
+.log-project-head b{flex:1;min-width:0;font-size:13px;font-weight:650;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-project-head .log-agg{font-size:12px;font-weight:700;color:color-mix(in srgb,var(--pc) 55%,var(--ink))}
+.log-project-body{flex:none;display:flex;flex-direction:column;padding:0 4px}
+.log .entry{flex:none;display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:start;margin:0 8px;padding:11px 8px;border-bottom:1px solid color-mix(in srgb,var(--pc) 14%,var(--line))}
+.log .entry:last-child{border-bottom:0}
+.log .entry time{font-size:12px;color:var(--mute);padding-top:2px;line-height:1.35;font-variant-numeric:tabular-nums}
 .log .entry .who{min-width:0}
-.log .entry .who button{display:block;width:100%;text-align:left;padding:0;border:0;background:none;cursor:pointer;color:inherit}
+.log .entry .who > button:not(.entry-note){display:block;width:100%;text-align:left;padding:0;border:0;background:none;cursor:pointer;color:inherit}
 .log .entry .who b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .log .entry .who b:hover{color:var(--acc)}
 .log .entry .meta{display:flex;align-items:center;gap:6px;margin-top:4px;min-width:0;font-size:12px;color:var(--mute)}
@@ -146,7 +159,21 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .log .entry .dur{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);padding-top:2px;white-space:nowrap}
 .log .entry .dur.muted{font-weight:500;color:var(--mute)}
 .log .entry .who > b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.log .trash-entry{align-items:center}
+.log .entry-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.log .entry-note{display:flex;align-items:flex-start;gap:6px;width:100%;margin-top:6px;padding:5px 8px;border:1px dashed color-mix(in srgb,var(--pc) 25%,var(--line));border-radius:calc(var(--radius) - 6px);background:color-mix(in srgb,var(--pc) 5%,var(--card));text-align:left;font:inherit;font-size:12px;line-height:1.4;color:var(--mute);cursor:pointer}
+.log .entry-note:hover{color:var(--ink);border-color:color-mix(in srgb,var(--pc) 40%,var(--line));background:color-mix(in srgb,var(--pc) 10%,var(--card))}
+.log .entry-note-text{flex:1;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.log .entry-note-edit{flex:none;display:grid;place-items:center;margin-top:1px;color:color-mix(in srgb,var(--mute) 85%,transparent)}
+.log .entry-note:hover .entry-note-edit{color:var(--ink)}
+.log .entry-note-empty{color:color-mix(in srgb,var(--mute) 70%,transparent);font-style:italic}
+.log .entry-note-empty:hover{color:var(--mute)}
+.log .entry-note-input{display:block;width:100%;margin-top:6px;padding:6px 8px;border:1px solid color-mix(in srgb,var(--pc) 35%,var(--line));border-radius:calc(var(--radius) - 6px);background:var(--card);color:var(--ink);font:inherit;font-size:12px;line-height:1.4;resize:vertical;min-height:44px}
+.log .entry-note-input:focus{outline:none;border-color:var(--acc)}
+.log .entry-delete{display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:calc(var(--radius) - 6px);background:transparent;color:var(--mute);cursor:pointer}
+.log .entry-delete:hover:not(:disabled){color:#b42318;background:color-mix(in srgb,#b42318 10%,transparent)}
+.log .entry-delete:disabled{opacity:.55;cursor:default}
+.log .trash-entry{align-items:center;grid-template-columns:118px 1fr auto;margin:0;border-bottom:1px solid var(--line)}
+.log .trash-entry:last-child{border-bottom:1px solid var(--line)}
 .log .trash-restore{flex:none;padding:6px 12px;border-radius:calc(var(--radius) - 6px);font:inherit;font-size:13px;font-weight:600;color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent)}
 .log .trash-restore:hover:not(:disabled){background:color-mix(in srgb,var(--acc) 20%,transparent)}
 .log .trash-restore:disabled{opacity:.55;cursor:default}

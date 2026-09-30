@@ -213,6 +213,79 @@ export function formatClock(iso) {
   return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
+export function timelogDayKey(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export function formatTimelogDay(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Unknown day";
+  return d.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/** Group newest-first by local day, then by project within each day. */
+export function groupTimelogsByDayAndProject(entries) {
+  const dayMap = new Map();
+  for (const entry of entries || []) {
+    const stamp = entry.endedAt || entry.startedAt || "";
+    const dayKey = timelogDayKey(stamp) || "unknown";
+    if (!dayMap.has(dayKey)) {
+      dayMap.set(dayKey, {
+        key: dayKey,
+        label: formatTimelogDay(stamp),
+        stamp,
+        totalSec: 0,
+        projects: new Map(),
+      });
+    }
+    const day = dayMap.get(dayKey);
+    const dur = Math.max(0, parseInt(entry.durationSec, 10) || 0);
+    day.totalSec += dur;
+    const projectKey = entry.project || entry.projectName || "project";
+    if (!day.projects.has(projectKey)) {
+      day.projects.set(projectKey, {
+        key: projectKey,
+        name: entry.projectName || entry.project || "Project",
+        color: entry.color || GACC,
+        totalSec: 0,
+        entries: [],
+      });
+    }
+    const project = day.projects.get(projectKey);
+    project.totalSec += dur;
+    if (!project.color && entry.color) project.color = entry.color;
+    project.entries.push(entry);
+  }
+
+  const days = [...dayMap.values()].sort((a, b) =>
+    String(b.key).localeCompare(String(a.key))
+  );
+  return days.map((day) => ({
+    key: day.key,
+    label: day.label,
+    totalSec: day.totalSec,
+    projects: [...day.projects.values()]
+      .map((p) => ({
+        ...p,
+        entries: p.entries.slice().sort((a, b) =>
+          String(b.endedAt || b.startedAt).localeCompare(
+            String(a.endedAt || a.startedAt)
+          )
+        ),
+      }))
+      .sort((a, b) => b.totalSec - a.totalSec || a.name.localeCompare(b.name)),
+  }));
+}
+
 export function formatTrashDate(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
