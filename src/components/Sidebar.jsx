@@ -1,0 +1,164 @@
+import { Icon, projectIconName } from "../icons.jsx";
+import {
+  GACC,
+  PC,
+  formatDuration,
+  globalLabel,
+  pomoRemainingSec,
+} from "../utils.js";
+
+export default function Sidebar({
+  folders,
+  p,
+  g,
+  draftProject,
+  coverEdit,
+  coverDraft,
+  activePomo,
+  onSelectGlobal,
+  onSelectProject,
+  onAddProject,
+  onStopPomo,
+  onOpenPomoCard,
+}) {
+  const active = folders.map((pr, i) => ({ pr, i })).filter((x) => !x.pr.archived);
+  const archived = folders.map((pr, i) => ({ pr, i })).filter((x) => x.pr.archived);
+
+  return (
+    <aside>
+      <div className="brand">
+        <span className="brand-mark" aria-hidden="true">
+          <Icon name="brand" size={20} />
+        </span>
+        <div className="brand-text">
+          <b>Freelance Workbook</b>
+          <span>v0.1.0</span>
+        </div>
+      </div>
+      <div className="side-scroll">
+        <h2>Workspace</h2>
+        <div id="globals">
+          {["Masterboard", "Timelogs", "Calendar"].map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={"bm" + (g === n ? " on" : "")}
+              onClick={() => onSelectGlobal(n)}
+            >
+              <span style={{ color: GACC }}>
+                <Icon name={n} />
+              </span>
+              <span>{globalLabel(n)}</span>
+            </button>
+          ))}
+        </div>
+        <div className="side-head">
+          <h2>Projects</h2>
+          <button
+            type="button"
+            className="side-add"
+            id="add-project"
+            title="New project"
+            aria-label="New project"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddProject();
+            }}
+          >
+            +
+          </button>
+        </div>
+        <div id="folders">
+          {active.map(({ pr, i }) => {
+            const editingHere = coverEdit && coverDraft && i === p && !g && !draftProject;
+            const icName = editingHere ? coverDraft.icon || "folder" : projectIconName(pr);
+            const icColor = editingHere
+              ? coverDraft.color || pr.color
+              : pr.color || PC[i % PC.length];
+            const label = editingHere ? coverDraft.name || pr.name : pr.name;
+            return (
+              <button
+                key={pr.slug}
+                type="button"
+                className={"bm" + (i === p && !g && !draftProject ? " on" : "")}
+                onClick={() => onSelectProject(i)}
+              >
+                <span style={{ color: icColor }}>
+                  <Icon name={icName} />
+                </span>
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div id="archived-wrap" hidden={!archived.length}>
+          <h2 className="side-muted">Archived projects</h2>
+          <div id="archived" className="archived-list">
+            {archived.map(({ pr, i }) => (
+              <button
+                key={pr.slug}
+                type="button"
+                className={"bm" + (i === p && !g && !draftProject ? " on" : "")}
+                onClick={() => onSelectProject(i)}
+              >
+                <span style={{ color: pr.color || PC[i % PC.length] }}>
+                  <Icon name={projectIconName(pr)} />
+                </span>
+                <span>{pr.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="side-foot">
+        <PomoBlock
+          activePomo={activePomo}
+          onStop={onStopPomo}
+          onOpenCard={onOpenPomoCard}
+        />
+        <button type="button" className="bm" id="app-settings" title="Settings">
+          <span>
+            <Icon name="settings" />
+          </span>
+          <span>Settings</span>
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function PomoBlock({ activePomo, onStop, onOpenCard }) {
+  if (!activePomo) {
+    return <div className="pomo-block" id="pomo-block" hidden />;
+  }
+  const rem = pomoRemainingSec(activePomo);
+  const color = activePomo.color || GACC;
+  return (
+    <div className="pomo-block on" id="pomo-block">
+      <div className="pomo-time" id="pomo-time">
+        {formatDuration(rem)}
+      </div>
+      <button
+        type="button"
+        className="pomo-mini"
+        id="pomo-mini"
+        title="Open card"
+        style={{ ["--pc"]: color }}
+        onClick={onOpenCard}
+      >
+        <b id="pomo-card-title">{activePomo.title || "Untitled"}</b>
+        <span className="meta">
+          <span className="dot" id="pomo-card-dot" style={{ background: color }} />
+          <span id="pomo-card-meta">
+            {(activePomo.projectName || "Project") +
+              " · " +
+              (activePomo.boardName || "Board")}
+          </span>
+        </span>
+      </button>
+      <button type="button" className="pomo-stop" id="pomo-stop" onClick={onStop}>
+        Stop pomodoro
+      </button>
+    </div>
+  );
+}

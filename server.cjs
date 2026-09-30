@@ -6,7 +6,19 @@ const path = require("path");
 const LAUNCH_DATA = path.join(__dirname, "launchData.json");
 const USER_DATA = path.join(__dirname, "userData.json");
 const PORT = 3456;
-const HTML = path.join(__dirname, "Workspace demo.html");
+const DIST = path.join(__dirname, "dist");
+const MIME = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".map": "application/json",
+};
 const DEFAULT_STAGES = ["Backlog", "This week", "Today", "Tomorrow", "Next week"];
 const DEFAULT_BOARD_COLS = ["Design", "Frontend dev", "Backend dev", "Content"];
 const DEFAULT_DB_COLS = [
@@ -653,10 +665,28 @@ const server = http.createServer(async (req, res) => {
       saveStore();
       return json(res, 201, { entry, timelogs: readTimelogs() });
     }
-    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
-      const html = fs.readFileSync(HTML);
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(html);
+    if (req.method === "GET") {
+      const reqPath = url.pathname === "/" ? "/index.html" : url.pathname;
+      if (reqPath.includes("..")) return json(res, 400, { error: "bad path" });
+      const filePath = path.join(DIST, reqPath);
+      if (filePath.startsWith(DIST) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        const ext = path.extname(filePath).toLowerCase();
+        const body = fs.readFileSync(filePath);
+        res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
+        return res.end(body);
+      }
+      // SPA fallback for non-API routes when dist is built
+      const indexHtml = path.join(DIST, "index.html");
+      if (fs.existsSync(indexHtml) && !reqPath.startsWith("/api")) {
+        const body = fs.readFileSync(indexHtml);
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        return res.end(body);
+      }
+      if (!fs.existsSync(DIST)) {
+        return json(res, 503, {
+          error: "Frontend not built. Run npm run build, then restart npm start.",
+        });
+      }
     }
     json(res, 404, { error: "not found" });
   } catch (e) {

@@ -8,11 +8,20 @@
 
 ## Description
 
-Local workspace for freelance projects. Data lives in two JSON files at the repo root; `server.js` serves the UI and API.
+Local workspace for freelance projects. Data lives in two JSON files at the repo root; `server.cjs` serves the React UI and API.
 
 ```bash
+npm install
+npm run build
 npm start
 # → http://localhost:3456
+```
+
+Dev (Vite HMR + API on :3456):
+
+```bash
+npm start          # API + static (build first)
+npm run dev        # Vite on :5173, proxies /api → :3456
 ```
 
 ## Storage

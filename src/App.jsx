@@ -1,0 +1,982 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  fetchWorkspace,
+  putCard,
+  deleteCardApi,
+  postCard,
+  putProject,
+  postProject,
+  deleteProjectApi,
+  postBoard,
+  postDatabase,
+  putItem,
+  postTimelog,
+} from "./api.js";
+import {
+  STAGES,
+  PC,
+  GACC,
+  COMPLETED_VIEWS,
+  POMO_DURATION_SEC,
+  fromApi,
+  normalizeFolders,
+  loadStages,
+  loadSession,
+  saveSession,
+  restoreTabIndex,
+  saveLastTab,
+  loadCompletedViews,
+  loadPomo,
+  savePomo,
+  pomoRemainingSec,
+  pomoElapsedSec,
+  locateRow,
+  findCardBySlugs,
+  isProjectArchived,
+  slugifyClient,
+} from "./utils.js";
+import Sidebar from "./components/Sidebar.jsx";
+import TabBar from "./components/TabBar.jsx";
+import Board, { DatabaseView } from "./components/Board.jsx";
+import Cover from "./components/Cover.jsx";
+import Calendar from "./components/Calendar.jsx";
+import Timelogs from "./components/Timelogs.jsx";
+import CardDialog from "./components/CardDialog.jsx";
+
+export default function App() {
+  const [folders, setFolders] = useState([]);
+  const [stages, setStages] = useState(STAGES.slice());
+  const [p, setP] = useState(0);
+  const [m, setM] = useState(0);
+  const [g, setG] = useState("Masterboard");
+  const [draftProject, setDraftProject] = useState(null);
+  const [coverEdit, setCoverEdit] = useState(false);
+  const [coverDraft, setCoverDraft] = useState(null);
+  const [cardDraft, setCardDraft] = useState({
+    n: "",
+    body: "",
+    s: "",
+    ms: "",
+    doneAt: "",
+    project: "",
+    board: "",
+  });
+  const [boardEdit, setBoardEdit] = useState(false);
+  const [activePomo, setActivePomo] = useState(null);
+  const [timelogFilter, setTimelogFilter] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+  const [loaded, setLoaded] = useState(false);
+  const [uiTick, setUiTick] = useState(0);
+  const [dialog, setDialog] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ left: 0, top: 0 });
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [morePos, setMorePos] = useState({ top: 0, right: 8 });
+  const [timelogRefresh, setTimelogRefresh] = useState(0);
+
+  const masterOff = useRef(new Set());
+  const colCollapsed = useRef(new Set());
+  const completedViewByScope = useRef(new Map());
+  const dragRef = useRef(null);
+  const pomoFinishing = useRef(false);
+  const foldersRef = useRef(folders);
+  const stagesRef = useRef(stages);
+  const pRef = useRef(p);
+  const mRef = useRef(m);
+  const gRef = useRef(g);
+  const activePomoRef = useRef(activePomo);
+
+  foldersRef.current = folders;
+  stagesRef.current = stages;
+  pRef.current = p;
+  mRef.current = m;
+  gRef.current = g;
+  activePomoRef.current = activePomo;
+
+  const bump = useCallback(() => setUiTick((n) => n + 1), []);
+
+  const discardCoverEdit = useCallback(() => {
+    setCoverEdit(false);
+    setCoverDraft(null);
+  }, []);
+
+  const discardDraft = useCallback(() => {
+    setDraftProject(null);
+  }, []);
+
+  const rememberCurrentTab = useCallback((foldersArg, pArg, mArg) => {
+    const pr = (foldersArg || foldersRef.current)[pArg ?? pRef.current];
+    const mod = pr?.mods?.[mArg ?? mRef.current];
+    if (pr && mod?.[2]?.slug) saveLastTab(pr.slug, mod[2].slug);
+  }, []);
+
+  const applyWorkspace = useCallback(
+    (data, opts = {}) => {
+      let nextStages = stagesRef.current;
+      const raw = fromApi(data, (list) => {
+        const loadedStages = loadStages(list);
+        if (loadedStages) nextStages = loadedStages;
+      });
+      setStages(nextStages);
+      stagesRef.current = nextStages;
+      const next = normalizeFolders(raw, nextStages);
+      setFolders(next);
+      foldersRef.current = next;
+
+      if (opts.initial) {
+        const sess = loadSession();
+        let nextG = "Masterboard";
+        let nextP = 0;
+        if (sess && "g" in sess) nextG = sess.g || null;
+        if (sess?.project) {
+          const pi = next.findIndex((f) => f.slug === sess.project);
+          nextP = pi >= 0 ? pi : 0;
+        }
+        const nextM = restoreTabIndex(next[nextP]);
+        setG(nextG);
+        setP(nextP);
+        setM(nextM);
+        gRef.current = nextG;
+        pRef.current = nextP;
+        mRef.current = nextM;
+      } else if (opts.project != null) {
+        let nextP = Math.max(
+          0,
+          next.findIndex((f) => f.slug === opts.project)
+        );
+        if (nextP < 0) nextP = 0;
+        let nextM = 0;
+        if (opts.board != null) {
+          nextM = Math.max(
+            0,
+            (next[nextP]?.mods || []).findIndex((mod) => mod[2]?.slug === opts.board)
+          );
+          if (nextM < 0) nextM = 0;
+        }
+        setP(nextP);
+        setM(nextM);
+        pRef.current = nextP;
+        mRef.current = nextM;
+        if (opts.g !== undefined) {
+          setG(opts.g);
+          gRef.current = opts.g;
+        }
+      } else if (opts.keepNav) {
+        const keepP = opts.keepNav.project ?? foldersRef.current[pRef.current]?.slug;
+        const keepM = opts.keepNav.board;
+        const keepG = opts.keepNav.g !== undefined ? opts.keepNav.g : gRef.current;
+        let nextP = Math.max(0, next.findIndex((f) => f.slug === keepP));
+        if (nextP < 0) nextP = 0;
+        let nextM = Math.max(
+          0,
+          (next[nextP]?.mods || []).findIndex((mod) => mod[2]?.slug === keepM)
+        );
+        if (nextM < 0) nextM = 0;
+        setP(nextP);
+        setM(nextM);
+        setG(keepG);
+        pRef.current = nextP;
+        mRef.current = nextM;
+        gRef.current = keepG;
+      }
+      bump();
+      return next;
+    },
+    [bump]
+  );
+
+  const keepNav = useCallback(
+    (project, board) => ({
+      keepNav: { project, board, g: gRef.current },
+    }),
+    []
+  );
+
+  const reload = useCallback(async () => {
+    const data = await fetchWorkspace();
+    const initial = !foldersRef.current.length;
+    if (initial) {
+      applyWorkspace(data, { initial: true });
+    } else {
+      applyWorkspace(data, {
+        keepNav: {
+          project: foldersRef.current[pRef.current]?.slug,
+          board: foldersRef.current[pRef.current]?.mods[mRef.current]?.[2]?.slug,
+          g: gRef.current,
+        },
+      });
+    }
+    setLoaded(true);
+  }, [applyWorkspace]);
+
+  useEffect(() => {
+    reload().catch((err) => {
+      setLoadError(String(err));
+      setLoaded(true);
+    });
+  }, [reload]);
+
+  useEffect(() => {
+    saveSession(g, folders, p);
+    if (!g) rememberCurrentTab(folders, p, m);
+  }, [g, folders, p, m, rememberCurrentTab]);
+
+  // Pomodoro init + ticker
+  useEffect(() => {
+    const session = loadPomo();
+    if (session && pomoRemainingSec(session) <= 0) {
+      (async () => {
+        setActivePomo(session);
+        activePomoRef.current = session;
+        await stopPomodoroInner(session);
+      })();
+      return;
+    }
+    if (session) {
+      setActivePomo(session);
+      activePomoRef.current = session;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!activePomo) return;
+    const id = setInterval(() => {
+      bump();
+      if (pomoRemainingSec(activePomoRef.current) <= 0) {
+        stopPomodoro();
+      }
+    }, 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!activePomo]);
+
+  useEffect(() => {
+    const closeMenus = () => {
+      setMenuOpen(false);
+      setMoreOpen(false);
+    };
+    document.addEventListener("click", closeMenus);
+    return () => document.removeEventListener("click", closeMenus);
+  }, []);
+
+  async function stopPomodoroInner(session) {
+    if (!session || pomoFinishing.current) return;
+    pomoFinishing.current = true;
+    const endedAt = new Date().toISOString();
+    const planned = session.durationSec || POMO_DURATION_SEC;
+    const durationSec = Math.min(planned, Math.max(1, pomoElapsedSec(session)));
+    setActivePomo(null);
+    activePomoRef.current = null;
+    savePomo(null);
+    try {
+      await postTimelog({
+        project: session.project,
+        board: session.board,
+        card: session.card,
+        title: session.title,
+        projectName: session.projectName,
+        boardName: session.boardName,
+        color: session.color,
+        kind: session.kind || "pomodoro",
+        startedAt: session.startedAt,
+        endedAt,
+        durationSec,
+      });
+    } catch {}
+    pomoFinishing.current = false;
+    if (gRef.current === "Timelogs") setTimelogRefresh((n) => n + 1);
+  }
+
+  async function stopPomodoro() {
+    await stopPomodoroInner(activePomoRef.current);
+  }
+
+  async function startPomodoro(payload) {
+    if (!payload.project || !payload.board || !payload.card) return;
+    if (activePomoRef.current) await stopPomodoro();
+    const session = {
+      project: payload.project,
+      board: payload.board,
+      card: payload.card,
+      title: payload.title || "Untitled",
+      projectName: payload.projectName || payload.project,
+      boardName: payload.boardName || payload.board,
+      color: payload.color || GACC,
+      kind: "pomodoro",
+      startedAt: new Date().toISOString(),
+      durationSec: POMO_DURATION_SEC,
+    };
+    setActivePomo(session);
+    activePomoRef.current = session;
+    savePomo(session);
+  }
+
+  const saveCard = useCallback(
+    async (row, folder, mod) => {
+      if (!folder || !mod || mod[0] !== "Board") return;
+      if (isProjectArchived(folder)) return;
+      const data = await putCard({
+        project: folder.slug,
+        board: mod[2].slug,
+        slug: row.slug,
+        title: row.n || "Untitled",
+        status: row.s || (mod[2].columns || stagesRef.current)[0] || stagesRef.current[0],
+        master: row.ms || stagesRef.current[0],
+        doneAt: row.doneAt || "",
+        body: row.body || "",
+      });
+      applyWorkspace(data, keepNav(folder.slug, mod[2].slug));
+      return data;
+    },
+    [applyWorkspace, keepNav]
+  );
+
+  const deleteCard = useCallback(
+    async (folder, mod, slug) => {
+      if (!folder || !mod || mod[0] !== "Board" || !slug) return;
+      const data = await deleteCardApi({
+        project: folder.slug,
+        board: mod[2].slug,
+        slug,
+      });
+      applyWorkspace(data, keepNav(folder.slug, mod[2].slug));
+      return data;
+    },
+    [applyWorkspace, keepNav]
+  );
+
+  const moveCard = useCallback(
+    async (row, from, to) => {
+      if (!from || !to || from.mod[0] !== "Board" || to.mod[0] !== "Board") return;
+      const same =
+        from.folder.slug === to.folder.slug && from.mod[2].slug === to.mod[2].slug;
+      if (same) {
+        await saveCard(row, to.folder, to.mod);
+        return;
+      }
+      const cols = to.mod[2].columns || stagesRef.current;
+      if (!cols.includes(row.s)) row.s = cols[0] || stagesRef.current[0];
+      if (!stagesRef.current.includes(row.ms)) row.ms = stagesRef.current[0];
+      const oldSlug = row.slug;
+      let slug = oldSlug || slugifyClient(row.n || "Untitled");
+      const taken = new Set((to.mod[2].rows || []).map((r) => r.slug));
+      if (taken.has(slug)) {
+        let i = 2;
+        const base = slugifyClient(row.n || "Untitled");
+        while (taken.has(base + "-" + i)) i++;
+        slug = base + "-" + i;
+      }
+      row.slug = slug;
+      from.mod[2].rows = (from.mod[2].rows || []).filter((r) => r !== row);
+      if (!to.mod[2].rows) to.mod[2].rows = [];
+      if (!to.mod[2].rows.includes(row)) to.mod[2].rows.push(row);
+      await saveCard(row, to.folder, to.mod);
+      await deleteCard(from.folder, from.mod, oldSlug);
+    },
+    [saveCard, deleteCard]
+  );
+
+  const createCard = useCallback(
+    async (folder, mod, { title, status, master, body, doneAt } = {}) => {
+      if (isProjectArchived(folder)) return;
+      const boardCol = status || (mod[2].columns || stagesRef.current)[0];
+      const masterCol =
+        master && stagesRef.current.includes(master)
+          ? master
+          : stagesRef.current[0];
+      const name = (title || "").trim() || "Untitled";
+      const data = await postCard({
+        project: folder.slug,
+        board: mod[2].slug,
+        title: name,
+        status: boardCol,
+        master: masterCol,
+        body: body || "",
+        doneAt: doneAt || "",
+      });
+      applyWorkspace(data, keepNav(folder.slug, mod[2].slug));
+      return data.slug;
+    },
+    [applyWorkspace, keepNav]
+  );
+
+  const openItem = useCallback(
+    (r, opts) => {
+      const isDraft = !!(opts && opts.draft);
+      let loc = isDraft ? null : locateRow(foldersRef.current, r);
+      if (isDraft && opts.folder && opts.mod) {
+        loc = { folder: opts.folder, mod: opts.mod };
+      }
+      setDialog({ row: { ...r }, isDraft, loc });
+    },
+    []
+  );
+
+  const startNewCard = useCallback(
+    (folder, mod, { status, master } = {}) => {
+      if (!folder || !mod || mod[0] !== "Board") return;
+      if (isProjectArchived(folder)) return;
+      const cols = mod[2].columns || stagesRef.current;
+      const cd = cardDraft;
+      const row = {
+        n: cd.n || "",
+        body: cd.body || "",
+        s: status || (cols.includes(cd.s) ? cd.s : cols[0]),
+        ms:
+          master ||
+          (stagesRef.current.includes(cd.ms) ? cd.ms : stagesRef.current[0]),
+        doneAt: cd.doneAt || "",
+        slug: null,
+      };
+      openItem(row, { draft: true, folder, mod });
+    },
+    [cardDraft, openItem]
+  );
+
+  const setCompletedView = useCallback(
+    (scope, mode) => {
+      if (!COMPLETED_VIEWS.includes(mode)) mode = "hide";
+      completedViewByScope.current.set(scope, mode);
+      const map = loadCompletedViews();
+      map[scope] = mode;
+      try {
+        localStorage.setItem(
+          "freelance-workbook:completedView",
+          JSON.stringify(map)
+        );
+      } catch {}
+      bump();
+    },
+    [bump]
+  );
+
+  const onToggleDone = useCallback(
+    async (row, folder, mod, checked) => {
+      row.doneAt = checked ? new Date().toISOString() : "";
+      await saveCard(row, folder, mod);
+    },
+    [saveCard]
+  );
+
+  // --- project actions ---
+  const startNewProject = () => {
+    const color = PC[folders.length % PC.length];
+    discardCoverEdit();
+    setDraftProject({ name: "", color, icon: "folder", description: "" });
+    setG(null);
+    setBoardEdit(false);
+  };
+
+  const commitDraftProject = async () => {
+    if (!draftProject) return;
+    const name = (draftProject.name || "").trim();
+    if (!name) {
+      alert("Add a project title first.");
+      return;
+    }
+    const { ok, data } = await postProject({
+      name,
+      color: draftProject.color,
+      icon: draftProject.icon || "folder",
+      cover: { values: { description: draftProject.description || "" } },
+    });
+    if (!ok) {
+      alert(data.error || "Could not create project.");
+      return;
+    }
+    setDraftProject(null);
+    const next = applyWorkspace(data);
+    const pi = Math.max(0, next.findIndex((f) => f.slug === data.slug));
+    setP(pi);
+    setM(0);
+    setG(null);
+    rememberCurrentTab(next, pi, 0);
+  };
+
+  const setProjectArchived = async (folder, archived) => {
+    if (!folder) return;
+    const data = await putProject({ project: folder.slug, archived: !!archived });
+    applyWorkspace(data, { project: folder.slug, board: null, g: null });
+    setG(null);
+  };
+
+  const deleteProjectPermanently = async (folder) => {
+    if (!folder) return;
+    const data = await deleteProjectApi({ project: folder.slug });
+    const next = applyWorkspace(data);
+    if (!next.length) {
+      setP(0);
+      setM(0);
+      setG("Masterboard");
+    } else {
+      setP((prev) => Math.min(prev, next.length - 1));
+      setM(restoreTabIndex(next[Math.min(pRef.current, next.length - 1)]));
+      setG(null);
+    }
+  };
+
+  const confirmArchiveProject = (folder) => {
+    setMoreOpen(false);
+    if (!folder) return;
+    if (
+      !confirm(
+        `Archive "${folder.name}"?\n\nArchived projects are read-only until you unarchive them.`
+      )
+    )
+      return;
+    setProjectArchived(folder, true);
+  };
+
+  const confirmUnarchiveProject = (folder) => {
+    setMoreOpen(false);
+    if (!folder) return;
+    if (
+      !confirm(
+        `Unarchive "${folder.name}"?\n\nThe project will become editable again.`
+      )
+    )
+      return;
+    setProjectArchived(folder, false);
+  };
+
+  const confirmDeleteProject = (folder) => {
+    setMoreOpen(false);
+    if (!folder) return;
+    if (
+      !confirm(
+        `Delete "${folder.name}" permanently?\n\nThis cannot be undone. All boards and tasks in this project will be removed.`
+      )
+    )
+      return;
+    if (!confirm(`Final confirmation: permanently delete "${folder.name}"?`))
+      return;
+    deleteProjectPermanently(folder);
+  };
+
+  const saveCover = async (folder, mod, patch) => {
+    if (!folder || !mod || mod[0] !== "Cover") return;
+    if (isProjectArchived(folder)) return;
+    const description =
+      patch && patch.description != null
+        ? String(patch.description)
+        : (mod[2].values && mod[2].values.description) || "";
+    const data = await putProject({
+      project: folder.slug,
+      name: patch && patch.name != null ? patch.name : folder.name,
+      color: patch && patch.color != null ? patch.color : folder.color,
+      icon: patch && patch.icon != null ? patch.icon : folder.icon || "folder",
+      cover: { values: { description } },
+    });
+    discardCoverEdit();
+    applyWorkspace(data, keepNav(folder.slug, mod[2].slug));
+  };
+
+  const onAddTab = async (t, title) => {
+    setMenuOpen(false);
+    const name = (prompt(title + " name") || "").trim();
+    if (!name) return;
+    const folder = foldersRef.current[pRef.current];
+    const data =
+      t === "Board"
+        ? await postBoard({ project: folder.slug, name })
+        : await postDatabase({ project: folder.slug, name });
+    const next = applyWorkspace(data, { project: folder.slug, board: data.slug });
+    const pi = next.findIndex((f) => f.slug === folder.slug);
+    const mi = next[pi]?.mods.findIndex((mod) => mod[2]?.slug === data.slug);
+    setM(mi >= 0 ? mi : (next[pi]?.mods.length || 1) - 1);
+    rememberCurrentTab(next, pi, mi);
+  };
+
+  const folder = folders[p];
+  const archived = folder ? isProjectArchived(folder) : false;
+  const mods = folder?.mods || [];
+  const x = mods[m];
+  const projC =
+    (coverEdit && coverDraft && coverDraft.color) ||
+    folder?.color ||
+    PC[p % PC.length];
+  const tabC = projC;
+  const isGlobal = !!g && !draftProject;
+
+  void uiTick; // force re-render when Sets mutate
+
+  return (
+    <>
+      <Sidebar
+        folders={folders}
+        p={p}
+        g={g}
+        draftProject={draftProject}
+        coverEdit={coverEdit}
+        coverDraft={coverDraft}
+        activePomo={activePomo}
+        onSelectGlobal={(n) => {
+          discardDraft();
+          discardCoverEdit();
+          setBoardEdit(false);
+          setG(n);
+        }}
+        onSelectProject={(i) => {
+          discardDraft();
+          discardCoverEdit();
+          setG(null);
+          setP(i);
+          setM(restoreTabIndex(folders[i]));
+          setBoardEdit(false);
+        }}
+        onAddProject={startNewProject}
+        onStopPomo={stopPomodoro}
+        onOpenPomoCard={() => {
+          if (!activePomo) return;
+          const hit = findCardBySlugs(
+            folders,
+            activePomo.project,
+            activePomo.board,
+            activePomo.card
+          );
+          if (hit) openItem(hit.row);
+        }}
+      />
+      <main className={isGlobal ? "global-view" : undefined}>
+        <div className="stage">
+          {!isGlobal && (
+            <TabBar
+              folder={folder}
+              mods={mods}
+              m={m}
+              tabC={tabC}
+              archived={archived}
+              draftProject={draftProject}
+              menuOpen={menuOpen}
+              menuPos={menuPos}
+              moreOpen={moreOpen}
+              morePos={morePos}
+              onSelectTab={(i) => {
+                if (i !== m) discardCoverEdit();
+                setM(i);
+              }}
+              onOpenAddMenu={(e) => {
+                discardCoverEdit();
+                setMoreOpen(false);
+                const r = e.currentTarget.getBoundingClientRect();
+                setMenuPos({
+                  left: Math.min(r.left, window.innerWidth - 160),
+                  top: r.bottom + 4,
+                });
+                setMenuOpen(true);
+              }}
+              onAddTab={onAddTab}
+              onOpenMore={(e) => {
+                e.stopPropagation();
+                setMenuOpen(false);
+                const open = moreOpen;
+                if (open) {
+                  setMoreOpen(false);
+                  return;
+                }
+                const r = e.currentTarget.getBoundingClientRect();
+                setMorePos({
+                  top: Math.round(r.bottom + 4),
+                  right: Math.max(8, Math.round(window.innerWidth - r.right)),
+                });
+                setMoreOpen(true);
+              }}
+              onArchive={confirmArchiveProject}
+              onUnarchive={confirmUnarchiveProject}
+              onDelete={confirmDeleteProject}
+            />
+          )}
+          {isGlobal && <div id="bar" style={{ display: "none" }} />}
+
+          {!loaded && (
+            <div id="view" className="mod">
+              <div style={{ padding: 24, color: "var(--mute)" }}>
+                Loading projects…
+              </div>
+            </div>
+          )}
+          {loaded && loadError && (
+            <div id="view" className="mod">
+              <div style={{ padding: 24, color: "var(--mute)" }}>
+                Start the app with <code>npm start</code>, then open{" "}
+                <code>http://localhost:3456</code>.
+                <br />
+                <br />
+                {loadError}
+              </div>
+            </div>
+          )}
+          {loaded && !loadError && draftProject && (
+            <Cover
+              draftProject={draftProject}
+              onCoverDraftChange={setDraftProject}
+              onCommitDraft={commitDraftProject}
+            />
+          )}
+          {loaded && !loadError && !draftProject && g === "Masterboard" && (
+            <Board
+              mode="master"
+              folder={folder}
+              folders={folders}
+              stages={stages}
+              tabC={GACC}
+              boardEdit={boardEdit}
+              onToggleBoardEdit={() => setBoardEdit((v) => !v)}
+              masterOff={masterOff.current}
+              colCollapsed={colCollapsed.current}
+              completedViewByScope={completedViewByScope.current}
+              dragRef={dragRef}
+              uiTick={uiTick}
+              onBump={bump}
+              onSetCompletedView={setCompletedView}
+              onSaveCard={saveCard}
+              onOpenCard={openItem}
+              onToggleDone={onToggleDone}
+              onStartNewCard={startNewCard}
+              onApplyWorkspace={applyWorkspace}
+              locateRow={(r) => locateRow(foldersRef.current, r)}
+            />
+          )}
+          {loaded && !loadError && !draftProject && g === "Calendar" && (
+            <Calendar tabC={GACC} />
+          )}
+          {loaded && !loadError && !draftProject && g === "Timelogs" && (
+            <Timelogs
+              tabC={GACC}
+              timelogFilter={timelogFilter}
+              onClearFilter={() => setTimelogFilter(null)}
+              onOpenCard={(project, board, card) => {
+                const hit = findCardBySlugs(folders, project, board, card);
+                if (hit) openItem(hit.row);
+              }}
+              refreshKey={timelogRefresh}
+            />
+          )}
+          {loaded &&
+            !loadError &&
+            !draftProject &&
+            g &&
+            g !== "Masterboard" &&
+            g !== "Calendar" &&
+            g !== "Timelogs" && (
+              <div id="view" className="mod" style={{ ["--tab"]: GACC }}>
+                <div className="modbar gbar">
+                  <b>{g}</b>
+                </div>
+                <div
+                  style={{
+                    padding: 20,
+                    color: "var(--mute)",
+                    fontSize: 18,
+                    textAlign: "center",
+                  }}
+                >
+                  This is the {g.toLowerCase()} page.
+                </div>
+              </div>
+            )}
+          {loaded && !loadError && !draftProject && !g && !folders.length && (
+            <div id="view" className="mod">
+              <div style={{ padding: 24, color: "var(--mute)" }}>
+                Loading projects…
+              </div>
+            </div>
+          )}
+          {loaded && !loadError && !draftProject && !g && folder && x?.[0] === "Cover" && (
+            <Cover
+              folder={folder}
+              mod={x}
+              tabC={tabC}
+              readonly={archived}
+              coverEdit={coverEdit}
+              coverDraft={coverDraft}
+              onCoverDraftChange={setCoverDraft}
+              onStartEdit={(draft) => {
+                setCoverEdit(true);
+                setCoverDraft(draft);
+              }}
+              onSave={(patch) => saveCover(folder, x, patch)}
+            />
+          )}
+          {loaded &&
+            !loadError &&
+            !draftProject &&
+            !g &&
+            folder &&
+            x?.[0] === "Board" && (
+              <Board
+                mode="project"
+                mod={x}
+                folder={folder}
+                folders={folders}
+                stages={stages}
+                tabC={tabC}
+                readonly={archived}
+                boardEdit={archived ? false : boardEdit}
+                onToggleBoardEdit={() => {
+                  if (archived) return;
+                  setBoardEdit((v) => !v);
+                }}
+                masterOff={masterOff.current}
+                colCollapsed={colCollapsed.current}
+                completedViewByScope={completedViewByScope.current}
+                dragRef={dragRef}
+                uiTick={uiTick}
+                onBump={bump}
+                onSetCompletedView={setCompletedView}
+                onSaveCard={saveCard}
+                onOpenCard={openItem}
+                onToggleDone={onToggleDone}
+                onStartNewCard={startNewCard}
+                onApplyWorkspace={applyWorkspace}
+                locateRow={(r) => locateRow(foldersRef.current, r)}
+                keepNav={keepNav}
+              />
+            )}
+          {loaded &&
+            !loadError &&
+            !draftProject &&
+            !g &&
+            folder &&
+            x?.[0] === "Database" && (
+              <DatabaseView
+                mod={x}
+                folder={folder}
+                tabC={tabC}
+                stages={stages}
+                onOpenCard={openItem}
+                onApplyWorkspace={applyWorkspace}
+              />
+            )}
+          {loaded &&
+            !loadError &&
+            !draftProject &&
+            !g &&
+            folder &&
+            x &&
+            x[0] !== "Cover" &&
+            x[0] !== "Board" &&
+            x[0] !== "Database" && (
+              <div id="view" className="mod" style={{ ["--tab"]: tabC }}>
+                <div className="modbar" />
+                <div
+                  style={{
+                    padding: 20,
+                    color: "var(--mute)",
+                    fontSize: 18,
+                    textAlign: "center",
+                  }}
+                >
+                  This is a {x[0].toLowerCase()} tab.
+                </div>
+              </div>
+            )}
+          {loaded && !loadError && !draftProject && !g && folder && !x && (
+            <div id="view" className="mod" style={{ ["--tab"]: tabC }}>
+              <div className="modbar" />
+              <div
+                style={{
+                  padding: 20,
+                  color: "var(--mute)",
+                  fontSize: 18,
+                  textAlign: "center",
+                }}
+              >
+                No boards yet. Add one.
+              </div>
+            </div>
+          )}
+          {archived && !g && !draftProject && folder && (
+            <div className="archive-ribbon">
+              <span>This project is archived and cannot be modified.</span>
+              <button type="button" onClick={() => confirmUnarchiveProject(folder)}>
+                Unarchive
+              </button>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {dialog && (
+        <CardDialog
+          row={dialog.row}
+          isDraft={dialog.isDraft}
+          loc={dialog.loc}
+          folders={folders}
+          stages={stages}
+          g={g}
+          onClose={(result) => {
+            if (result?.draftRemember) {
+              setCardDraft({
+                n: result.draftRemember.n || "",
+                body: result.draftRemember.body || "",
+                s: result.draftRemember.s || "",
+                ms: result.draftRemember.ms || "",
+                doneAt: result.draftRemember.doneAt || "",
+                project: result.loc?.folder?.slug || "",
+                board: result.loc?.mod?.[2]?.slug || "",
+              });
+            }
+            setDialog(null);
+            bump();
+          }}
+          onPersist={saveCard}
+          onCreate={async (r, curLoc) => {
+            await createCard(curLoc.folder, curLoc.mod, {
+              title: r.n,
+              status: r.s,
+              master: r.ms,
+              body: r.body || "",
+              doneAt: r.doneAt || "",
+            });
+            setCardDraft({
+              n: "",
+              body: "",
+              s: "",
+              ms: "",
+              doneAt: "",
+              project: "",
+              board: "",
+            });
+          }}
+          onDelete={deleteCard}
+          onDuplicate={async (r, curLoc) => {
+            const projectSlug = curLoc.folder.slug;
+            const boardSlug = curLoc.mod[2].slug;
+            const base = (r.n || "").trim() || "Untitled";
+            const slug = await createCard(curLoc.folder, curLoc.mod, {
+              title: "Duplicate of " + base,
+              status: r.s,
+              master: r.ms,
+              body: r.body || "",
+              doneAt: r.doneAt || "",
+            });
+            setDialog(null);
+            const hit = findCardBySlugs(foldersRef.current, projectSlug, boardSlug, slug);
+            if (hit) openItem(hit.row);
+          }}
+          onStartPomo={startPomodoro}
+          onOpenTimelogs={(filter) => {
+            setTimelogFilter(filter);
+            setG("Timelogs");
+          }}
+          onMoveCard={moveCard}
+          onSaveItem={async (r, folder, mod) => {
+            const fields = {};
+            (mod[2].cols || []).forEach((c) => {
+              fields[c.id] = r[c.id] != null ? r[c.id] : "";
+            });
+            await putItem({
+              project: folder.slug,
+              database: mod[2].slug,
+              slug: r.slug,
+              fields,
+              body: r.body || "",
+            });
+          }}
+        />
+      )}
+    </>
+  );
+}
