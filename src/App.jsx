@@ -290,6 +290,7 @@ export default function App() {
     const endedAt = new Date().toISOString();
     const planned = session.durationSec || POMO_DURATION_SEC;
     const durationSec = Math.min(planned, Math.max(1, pomoElapsedSec(session)));
+    const note = typeof session.note === "string" ? session.note.trim() : "";
     setActivePomo(null);
     activePomoRef.current = null;
     savePomo(null);
@@ -303,6 +304,7 @@ export default function App() {
         boardName: session.boardName,
         color: session.color,
         kind: session.kind || "pomodoro",
+        note,
         startedAt: session.startedAt,
         endedAt,
         durationSec,
@@ -314,6 +316,15 @@ export default function App() {
 
   async function stopPomodoro() {
     await stopPomodoroInner(activePomoRef.current);
+  }
+
+  function updatePomoNote(note) {
+    const cur = activePomoRef.current;
+    if (!cur) return;
+    const next = { ...cur, note: typeof note === "string" ? note : "" };
+    setActivePomo(next);
+    activePomoRef.current = next;
+    savePomo(next);
   }
 
   async function startPomodoro(payload) {
@@ -328,6 +339,7 @@ export default function App() {
       boardName: payload.boardName || payload.board,
       color: payload.color || GACC,
       kind: "pomodoro",
+      note: "",
       startedAt: new Date().toISOString(),
       durationSec: POMO_DURATION_SEC,
     };
@@ -679,6 +691,7 @@ export default function App() {
         }}
         onAddProject={startNewProject}
         onStopPomo={stopPomodoro}
+        onPomoNoteChange={updatePomoNote}
         onOpenPomoCard={() => {
           if (!activePomo) return;
           const hit = findCardBySlugs(

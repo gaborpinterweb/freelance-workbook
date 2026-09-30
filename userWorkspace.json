@@ -260,7 +260,6 @@
               "title": "Checkout & apps install",
               "status": "Data & apps",
               "master": "This week",
-              "doneAt": "",
               "body": "Klaviyo, Judge.me, and Shop Pay; smoke-test gift cards and discounts.",
               "isDemo": true
             },
@@ -653,6 +652,21 @@
       "startedAt": "2026-09-30T13:57:00.477Z",
       "endedAt": "2026-09-30T13:57:26.033Z",
       "durationSec": 25
+    },
+    {
+      "slug": "2026-09-30-meridian-site-redesign-lead-form",
+      "project": "meridian-site-redesign",
+      "board": "website",
+      "card": "lead-form",
+      "title": "Lead form + CRM hook",
+      "projectName": "Meridian site redesign",
+      "boardName": "Website",
+      "color": "#2f7a6e",
+      "kind": "pomodoro",
+      "note": "This is my very custom note",
+      "startedAt": "2026-09-30T14:00:26.763Z",
+      "endedAt": "2026-09-30T14:05:20.628Z",
+      "durationSec": 293
     }
   ],
   "trash": []

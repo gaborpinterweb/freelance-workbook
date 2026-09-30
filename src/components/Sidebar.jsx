@@ -21,6 +21,7 @@ export default function Sidebar({
   onSelectProject,
   onAddProject,
   onStopPomo,
+  onPomoNoteChange,
   onOpenPomoCard,
   onOpenSettings,
 }) {
@@ -121,6 +122,7 @@ export default function Sidebar({
         <PomoBlock
           activePomo={activePomo}
           onStop={onStopPomo}
+          onNoteChange={onPomoNoteChange}
           onOpenCard={onOpenPomoCard}
         />
         <button
@@ -143,7 +145,7 @@ export default function Sidebar({
   );
 }
 
-function PomoBlock({ activePomo, onStop, onOpenCard }) {
+function PomoBlock({ activePomo, onStop, onNoteChange, onOpenCard }) {
   if (!activePomo) {
     return <div className="pomo-block" id="pomo-block" hidden />;
   }
@@ -172,6 +174,17 @@ function PomoBlock({ activePomo, onStop, onOpenCard }) {
           </span>
         </span>
       </button>
+      <textarea
+        className="pomo-note"
+        id="pomo-note"
+        rows={2}
+        placeholder="Add notes for this timelog..."
+        value={activePomo.note || ""}
+        onChange={(e) => onNoteChange?.(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.preventDefault();
+        }}
+      />
       <button type="button" className="pomo-stop" id="pomo-stop" onClick={onStop}>
         Stop pomodoro
       </button>
