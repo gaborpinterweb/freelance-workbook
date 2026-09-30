@@ -666,7 +666,7 @@ const server = http.createServer(async (req, res) => {
 
 const boot = ensureStore();
 server.listen(PORT, () => {
-  console.log(`Freelance Manager v0.1.0 at http://localhost:${PORT}`);
+  console.log(`Freelance Workbook v0.1.0 at http://localhost:${PORT}`);
   console.log(`User data: ${USER_DATA}`);
   console.log(`Launch data (read-only): ${LAUNCH_DATA}`);
   if (boot.reseeded) console.log(`Seeded userData.json from launchData.json (${boot.reason})`);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Freelance Manager</title>
+<title>Freelance Workbook</title>
 <style>
 :root{--bg:#f0ede8;--bar:#fbf9f5;--card:#fbf9f5;--col:#e6e2db;--line:#dcd7cd;--ink:#33261c;--mute:#7c6b58;--acc:#9a5b2e;--sel:#e8e3d9;
 --side:#160e08;--side-ink:#f0e6d6;--side-mute:#a08d78;--side-sel:#2c1e14;--radius:14px;
@@ -286,7 +286,7 @@ td.open{width:1%}.open button{color:var(--acc);font-size:13px}
 <aside>
   <div class="brand">
     <span class="brand-mark" id="brand-mark" aria-hidden="true"></span>
-    <div class="brand-text"><b>Freelance Manager</b><span>v0.1.0</span></div>
+    <div class="brand-text"><b>Freelance Workbook</b><span>v0.1.0</span></div>
   </div>
   <div class="side-scroll">
     <h2>Workspace</h2><div id="globals"></div>
@@ -343,10 +343,10 @@ let draftProject=null;
 let coverEdit=false;
 let coverDraft=null;
 let cardDraft={n:"",body:"",s:"",ms:"",doneAt:""};
-const LAST_TAB_KEY="freelance-manager:lastTab";
-const SESSION_KEY="freelance-manager:session";
-const COMPLETED_VIEW_KEY="freelance-manager:completedView";
-const POMO_KEY="freelance-manager:pomodoro";
+const LAST_TAB_KEY="freelance-workbook:lastTab";
+const SESSION_KEY="freelance-workbook:session";
+const COMPLETED_VIEW_KEY="freelance-workbook:completedView";
+const POMO_KEY="freelance-workbook:pomodoro";
 const POMO_DURATION_SEC=25*60;
 const COMPLETED_VIEWS=["hide","virtual","inplace"];
 const completedViewByScope=new Map();
