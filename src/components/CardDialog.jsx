@@ -25,6 +25,8 @@ export default function CardDialog({
   onOpenTimelogs,
   onMoveCard,
   onSaveItem,
+  showMasterColumn = true,
+  showTimelogs = true,
 }) {
   const [curLoc, setCurLoc] = useState(
     isDraft && loc
@@ -251,23 +253,25 @@ export default function CardDialog({
                       </PropDropdown>
                     </td>
                   </tr>
-                  <tr>
-                    <td>Master board column</td>
-                    <td>
-                      <PropDropdown
-                        value={draft.ms || stages[0]}
-                        options={stages}
-                        onChange={(o) => {
-                          patch({ ms: o });
-                          clearTimeout(persistTimer.current);
-                          draftRef.current = { ...draftRef.current, ms: o };
-                          persist();
-                        }}
-                      >
-                        <span className="lab">{draft.ms || ""}</span>
-                      </PropDropdown>
-                    </td>
-                  </tr>
+                  {showMasterColumn && (
+                    <tr>
+                      <td>Master board column</td>
+                      <td>
+                        <PropDropdown
+                          value={draft.ms || stages[0]}
+                          options={stages}
+                          onChange={(o) => {
+                            patch({ ms: o });
+                            clearTimeout(persistTimer.current);
+                            draftRef.current = { ...draftRef.current, ms: o };
+                            persist();
+                          }}
+                        >
+                          <span className="lab">{draft.ms || ""}</span>
+                        </PropDropdown>
+                      </td>
+                    </tr>
+                  )}
                   {!isDraft && curLoc?.mod[0] === "Board" && draft.slug && spent > 0 && (
                     <tr>
                       <td>Time spent</td>
@@ -332,24 +336,26 @@ export default function CardDialog({
                   >
                     Duplicate
                   </button>
-                  <button
-                    type="button"
-                    className="pomo-start"
-                    onClick={async () => {
-                      await onStartPomo({
-                        project: curLoc.folder.slug,
-                        board: curLoc.mod[2].slug,
-                        card: draft.slug,
-                        title: draft.n || "Untitled",
-                        projectName: curLoc.folder.name,
-                        boardName: curLoc.mod[1],
-                        color: curLoc.folder.color || PC[0],
-                      });
-                      await close(false);
-                    }}
-                  >
-                    Start pomodoro
-                  </button>
+                  {showTimelogs && (
+                    <button
+                      type="button"
+                      className="pomo-start"
+                      onClick={async () => {
+                        await onStartPomo({
+                          project: curLoc.folder.slug,
+                          board: curLoc.mod[2].slug,
+                          card: draft.slug,
+                          title: draft.n || "Untitled",
+                          projectName: curLoc.folder.name,
+                          boardName: curLoc.mod[1],
+                          color: curLoc.folder.color || PC[0],
+                        });
+                        await close(false);
+                      }}
+                    >
+                      Start pomodoro
+                    </button>
+                  )}
                 </>
               ) : (
                 <button

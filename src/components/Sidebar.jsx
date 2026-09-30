@@ -68,6 +68,9 @@ export default function Sidebar({
           </button>
         </div>
         <div id="folders">
+          {active.length === 0 && (
+            <p className="side-empty">No projects yet</p>
+          )}
           {active.map(({ pr, i }) => {
             const editingHere = coverEdit && coverDraft && i === p && !g && !draftProject;
             const icName = editingHere ? coverDraft.icon || "folder" : projectIconName(pr);
@@ -91,9 +94,12 @@ export default function Sidebar({
           })}
         </div>
         {showArchived && (
-          <div id="archived-wrap" hidden={!archived.length}>
+          <div id="archived-wrap">
             <h2 className="side-muted">Archived projects</h2>
             <div id="archived" className="archived-list">
+              {archived.length === 0 && (
+                <p className="side-empty">No archived projects yet.</p>
+              )}
               {archived.map(({ pr, i }) => (
                 <button
                   key={pr.slug}

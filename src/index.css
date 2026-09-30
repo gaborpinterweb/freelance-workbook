@@ -62,6 +62,7 @@ main.global-view #view{margin:0;border-radius:0;overflow:hidden;background:var(-
 .archive-ribbon button:hover{background:#fff}
 aside .archived-list .bm{opacity:.72}
 aside .side-muted{margin-top:20px}
+aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;color:var(--side-mute);opacity:.55}
 #bar .tab.add{--c:#5a4a3c;color:var(--side-mute);padding-left:14px;padding-right:14px;font-weight:600}
 #bar .tab.add:hover{color:var(--side-ink)}
 #menu{position:fixed;z-index:5;background:var(--bar);border:1px solid var(--line);border-radius:var(--radius);padding:6px;display:none;box-shadow:0 8px 28px #00000022;min-width:240px}

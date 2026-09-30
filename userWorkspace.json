@@ -47,7 +47,7 @@
               "title": "Onboarding email sequence",
               "status": "Content",
               "master": "Next week",
-              "doneAt": "2026-09-30T10:56:10.281Z",
+              "doneAt": "",
               "body": "Day 0 / 2 / 5 welcome emails in Loops for early access users.",
               "isDemo": true
             },
@@ -202,27 +202,29 @@
               "isDemo": true
             },
             {
+              "slug": "ia-sitemap",
+              "title": "IA & sitemap",
+              "status": "Design",
+              "master": "Today",
+              "doneAt": "",
+              "body": "Propose nav structure: Services, Industries, Insights, About, Contact."
+            },
+            {
               "slug": "lead-form",
               "title": "Lead form + CRM hook",
               "status": "Content",
               "master": "This week",
+              "doneAt": "",
               "body": "HubSpot form embed, thank-you page, and UTM capture.",
-              "isDemo": true,
-              "doneAt": "2026-09-30T10:56:01.392Z"
+              "isDemo": true
             },
             {
               "slug": "services-page",
               "title": "Services page draft",
               "status": "Content",
               "master": "This week",
+              "doneAt": "",
               "body": "Four service blocks with outcomes; pull quotes from past proposals."
-            },
-            {
-              "slug": "ia-sitemap",
-              "title": "IA & sitemap",
-              "status": "Design",
-              "master": "Today",
-              "body": "Propose nav structure: Services, Industries, Insights, About, Contact."
             }
           ],
           "isDemo": true
@@ -251,7 +253,17 @@
               "title": "Catalog export & clean-up",
               "status": "Data & apps",
               "master": "Today",
+              "doneAt": "",
               "body": "Export products/variants, fix missing SKUs, map metafields for Shopify.",
+              "isDemo": true
+            },
+            {
+              "slug": "checkout-apps",
+              "title": "Checkout & apps install",
+              "status": "Data & apps",
+              "master": "This week",
+              "doneAt": "",
+              "body": "Klaviyo, Judge.me, and Shop Pay; smoke-test gift cards and discounts.",
               "isDemo": true
             },
             {
@@ -264,10 +276,20 @@
               "isDemo": true
             },
             {
+              "slug": "dawn-theme-setup",
+              "title": "Dawn theme customization",
+              "status": "Theme",
+              "master": "This week",
+              "doneAt": "",
+              "body": "Brand colors, PDP layout, and mega-menu to match their lookbook.",
+              "isDemo": true
+            },
+            {
               "slug": "go-live-rehearsal",
               "title": "Go-live rehearsal",
               "status": "Theme",
               "master": "Backlog",
+              "doneAt": "",
               "body": "Dry run on staging: DNS, payment, and order notifications.",
               "isDemo": true
             },
@@ -278,14 +300,6 @@
               "master": "Today",
               "doneAt": "2026-09-29T13:36:11.006Z",
               "body": "CSV of old Woo paths → new Shopify handles; keep top 200 SEO pages.",
-              "isDemo": true
-            },
-            {
-              "slug": "checkout-apps",
-              "title": "Checkout & apps install",
-              "status": "Data & apps",
-              "master": "This week",
-              "body": "Klaviyo, Judge.me, and Shop Pay; smoke-test gift cards and discounts.",
               "isDemo": true
             }
           ],

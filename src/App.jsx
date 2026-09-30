@@ -851,10 +851,17 @@ export default function App() {
                 </div>
               </div>
             )}
-          {loaded && !loadError && !draftProject && !g && !folders.length && (
+          {loaded && !loadError && !draftProject && !g && !folder && (
             <div id="view" className="mod">
-              <div style={{ padding: 24, color: "var(--mute)" }}>
-                Loading projects…
+              <div className="empty">
+                <h2>You have no active projects</h2>
+                <p>
+                  Create a project from the sidebar, or turn a workspace view back
+                  on in Settings → Appearance.
+                </p>
+                <button type="button" className="cta" onClick={startNewProject}>
+                  New project
+                </button>
               </div>
             </div>
           )}
@@ -981,6 +988,8 @@ export default function App() {
           folders={folders}
           stages={stages}
           g={g}
+          showMasterColumn={!!workspaceVis.Masterboard}
+          showTimelogs={!!workspaceVis.Timelogs}
           onClose={(result) => {
             if (result?.draftRemember) {
               setCardDraft({
