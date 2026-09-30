@@ -37,7 +37,6 @@
               "title": "Launch day checklist",
               "status": "Backend dev",
               "master": "This week",
-              "doneAt": "",
               "body": "DNS cutover, Product Hunt draft, social posts, and rollback notes.",
               "isDemo": true
             },
@@ -122,7 +121,6 @@
               "title": "Webflow component library",
               "status": "Webflow",
               "master": "Next week",
-              "doneAt": "",
               "body": "Buttons, cards, nav, and footer as Webflow components.",
               "isDemo": true
             },
@@ -131,7 +129,6 @@
               "title": "Homepage wireframes",
               "status": "Design",
               "master": "Today",
-              "doneAt": "",
               "body": "Desktop + mobile wires for hero, stays grid, and booking CTA.",
               "isDemo": true
             },
@@ -245,7 +242,7 @@
             {
               "slug": "catalog-export",
               "title": "Catalog export & clean-up",
-              "status": "Data & apps",
+              "status": "Theme",
               "master": "Today",
               "body": "Export products/variants, fix missing SKUs, map metafields for Shopify.",
               "isDemo": true

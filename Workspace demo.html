@@ -140,6 +140,10 @@ aside .side-muted{margin-top:20px}
 .ch-msg time{font-size:11px;color:var(--mute);font-weight:400;margin-left:8px}
 .log{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:0;background:var(--bg)}
 .log .empty-log{padding:40px 24px;text-align:center;color:var(--mute);font-size:14px}
+.log-filter{flex:none;display:flex;align-items:center;gap:10px;padding:10px 20px;background:color-mix(in srgb,var(--acc) 8%,var(--bg));border-bottom:1px solid var(--line);font-size:13px;color:var(--mute)}
+.log-filter b{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-filter .clear{flex:none;margin-left:auto;padding:4px 10px;border-radius:calc(var(--radius) - 6px);font-size:12px;font-weight:600;color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.log-filter .clear:hover{background:color-mix(in srgb,var(--acc) 20%,transparent)}
 .log .entry{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
 .log .entry time{font-size:12px;color:var(--mute);padding-top:2px}
 .log .entry .who{min-width:0}
@@ -150,14 +154,24 @@ aside .side-muted{margin-top:20px}
 .log .entry .meta span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .log .entry .dot{width:8px;height:8px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px #0002}
 .log .entry .dur{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);padding-top:2px;white-space:nowrap}
-.dlg .actions{display:flex;flex-direction:column;gap:8px;align-self:stretch}
-.dlg .pomo-start{align-self:stretch;padding:8px 14px;border-radius:calc(var(--radius) - 4px);background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc);font-weight:600}
-.dlg .pomo-start:hover{background:color-mix(in srgb,var(--acc) 22%,transparent)}
-.dlg.tint .pomo-start{background:color-mix(in srgb,#fff 55%,transparent);color:var(--ink)}
-.dlg.tint .pomo-start:hover{background:color-mix(in srgb,#fff 72%,transparent)}
-.dlg .actions .x{align-self:flex-end}
+.dlg .actions{display:flex;flex-direction:row;align-items:stretch;gap:8px;width:100%}
+.dlg .actions button{flex:1;min-width:0;padding:8px 14px;border-radius:calc(var(--radius) - 4px);font:inherit;font-weight:600;text-align:center}
+.dlg .actions .dlg-delete{color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.dlg .actions .dlg-delete:hover{background:color-mix(in srgb,var(--ink) 14%,transparent)}
+.dlg .actions .dlg-duplicate{color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.dlg .actions .dlg-duplicate:hover{background:color-mix(in srgb,var(--ink) 14%,transparent)}
+.dlg .actions .pomo-start{background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc)}
+.dlg .actions .pomo-start:hover{background:color-mix(in srgb,var(--acc) 22%,transparent)}
+.dlg.tint .actions .dlg-delete,.dlg.tint .actions .dlg-duplicate{background:color-mix(in srgb,#fff 55%,transparent);color:var(--ink)}
+.dlg.tint .actions .dlg-delete:hover,.dlg.tint .actions .dlg-duplicate:hover{background:color-mix(in srgb,#fff 72%,transparent)}
+.dlg.tint .actions .pomo-start{background:color-mix(in srgb,#fff 55%,transparent);color:var(--ink)}
+.dlg.tint .actions .pomo-start:hover{background:color-mix(in srgb,#fff 72%,transparent)}
+.dlg .actions .dlg-create{background:var(--sel);color:var(--ink)}
+.dlg .actions .dlg-create:hover{background:color-mix(in srgb,var(--ink) 12%,var(--sel))}
+.dlg.tint .actions .dlg-create{background:color-mix(in srgb,#fff 55%,transparent)}
+.dlg.tint .actions .dlg-create:hover{background:color-mix(in srgb,#fff 72%,transparent)}
 .wrap{position:relative}
-.pop{display:none;position:absolute;top:100%;left:0;z-index:2;background:var(--card);border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:4px;box-shadow:0 4px 16px #0002}
+.pop{display:none;position:absolute;top:100%;left:0;z-index:50;background:var(--card);border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:4px;box-shadow:0 4px 16px #0002}
 .pop button{display:block;width:100%;text-align:left;color:var(--ink)}
 .scroll{overflow:auto;padding:12px;flex:1}
 table{border-collapse:collapse;width:100%;min-width:480px}
@@ -243,21 +257,24 @@ aside small{display:block;color:var(--mute);font-size:12px;font-weight:400}
 .bm span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .none{color:var(--side-mute);font-size:13px;margin:0 8px}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:10;padding:16px}
-.dlg{background:var(--card);border:1px solid var(--line);border-radius:calc(var(--radius) + 4px);width:min(440px,100%);padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 12px 40px #0006;transition:background .15s ease,border-color .15s ease;--props-border:color-mix(in srgb,#000 12%,var(--card))}
+.dlg{background:var(--card);border:1px solid var(--line);border-radius:calc(var(--radius) + 4px);width:min(440px,100%);padding:0;display:flex;flex-direction:column;box-shadow:0 12px 40px #0006;transition:background .15s ease,border-color .15s ease;--props-border:color-mix(in srgb,#000 12%,var(--card))}
 .dlg.tint{background:color-mix(in srgb,var(--pc) 32%,#fff);border-color:color-mix(in srgb,var(--pc) 25%,var(--line));--props-border:color-mix(in srgb,#000 14%,color-mix(in srgb,var(--pc) 32%,#fff))}
-.dlg .props{width:100%;max-width:100%;min-width:0;table-layout:fixed;border-collapse:separate;border-spacing:0;border:1px solid var(--props-border);border-radius:calc(var(--radius) - 2px);overflow:hidden}
+.dlg .dlg-content{display:flex;flex-direction:column;gap:14px;padding:20px;min-width:0}
+.dlg .dlg-controls{flex:none;display:flex;padding:14px 20px 16px;border-top:1px solid var(--props-border)}
+.dlg .dlg-controls .actions{flex:1;min-width:0}
+.dlg .props{width:100%;max-width:100%;min-width:0;table-layout:fixed;border-collapse:separate;border-spacing:0;border:1px solid var(--props-border);border-radius:calc(var(--radius) - 2px);overflow:visible}
 .dlg .props td{padding:6px 8px;vertical-align:middle;font-size:13px;color:var(--mute);border:0;border-right:1px solid var(--props-border);border-bottom:1px solid var(--props-border)}
-.dlg .props td:last-child{width:auto;min-width:0;overflow:hidden;border-right:0}
+.dlg .props td:last-child{width:auto;min-width:0;overflow:visible;border-right:0}
 .dlg .props tr:last-child td{border-bottom:0}
 .dlg .props td:first-child{width:148px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dlg .props tr:first-child td:first-child{border-top-left-radius:calc(var(--radius) - 2px)}
 .dlg .props tr:first-child td:last-child{border-top-right-radius:calc(var(--radius) - 2px)}
 .dlg .props tr:last-child td:first-child{border-bottom-left-radius:calc(var(--radius) - 2px)}
 .dlg .props tr:last-child td:last-child{border-bottom-right-radius:calc(var(--radius) - 2px)}
-.dlg input,.dlg select,.dlg .ptab-btn{font:inherit;color:var(--ink);background:transparent;border:1px solid transparent;border-radius:calc(var(--radius) - 4px);padding:6px 8px;width:100%;box-sizing:border-box}
-.dlg input:hover,.dlg select:hover,.dlg .ptab-btn:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)}
-.dlg input:focus,.dlg select:focus,.dlg .ptab-btn:focus{outline:none;background:color-mix(in srgb,#fff 55%,transparent);border-color:color-mix(in srgb,var(--ink) 12%,transparent)}
-.dlg.tint input:focus,.dlg.tint select:focus,.dlg.tint .ptab-btn:focus{background:color-mix(in srgb,#fff 72%,transparent)}
+.dlg input,.dlg .prop-dd-btn,.dlg .prop-link{font:inherit;color:var(--ink);background:transparent;border:1px solid transparent;border-radius:calc(var(--radius) - 4px);padding:6px 8px;width:100%;box-sizing:border-box}
+.dlg input:hover,.dlg .prop-dd-btn:hover,.dlg .prop-link:hover{background-color:color-mix(in srgb,var(--ink) 5%,transparent)}
+.dlg input:focus,.dlg .prop-dd-btn:focus,.dlg .prop-link:focus{outline:none;background-color:color-mix(in srgb,#fff 55%,transparent);border-color:color-mix(in srgb,var(--ink) 12%,transparent)}
+.dlg.tint input:focus,.dlg.tint .prop-dd-btn:focus,.dlg.tint .prop-link:focus{background-color:color-mix(in srgb,#fff 72%,transparent)}
 .dlg input.title{font-size:20px;font-weight:600;border:0;padding:0;background:transparent;width:100%}
 .dlg.tint input.title,.dlg input.title:hover,.dlg input.title:focus{background:transparent;border-color:transparent}
 .dlg input.title:focus{outline:none}
@@ -265,22 +282,28 @@ aside small{display:block;color:var(--mute);font-size:12px;font-weight:400}
 .dlg .title-row{display:flex;align-items:center;gap:10px;width:100%}
 .dlg .title-row .card-check{flex:none;width:18px;height:18px;margin:0;accent-color:var(--acc);cursor:pointer}
 .dlg .title-row input.title{flex:1;min-width:0}
-.dlg select{cursor:pointer;appearance:none;background-image:none}
-.dlg .ptab{position:relative;width:100%}
-.dlg .ptab-btn{display:inline-flex;align-items:center;gap:8px;text-align:left;cursor:pointer;max-width:100%}
-.dlg .ptab-btn .lab{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dlg .prop-dd{position:relative;width:100%;z-index:1}
+.dlg .prop-dd.open{z-index:40}
+.dlg .prop-dd-btn{display:inline-flex;align-items:center;gap:8px;text-align:left;cursor:pointer;max-width:100%}
+.dlg .prop-dd-btn .lab{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dlg .prop-affix{flex:none;display:grid;place-items:center;margin-left:auto;color:var(--mute);opacity:.8}
+.dlg .prop-affix svg{display:block}
+.dlg .prop-link{display:inline-flex;align-items:center;gap:8px;text-align:left;cursor:pointer;font-weight:600;font-variant-numeric:tabular-nums}
+.dlg .prop-link .lab{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dlg .prop-link:hover{color:var(--acc)}
+.dlg .prop-link:hover .prop-affix{color:var(--acc);opacity:1}
 .dlg .dot{width:10px;height:10px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px #0002}
-.dlg .ptab .pop{left:0;right:auto;min-width:min(280px,100%);max-height:240px;overflow:auto}
-.dlg .ptab .pop button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;font-size:13px}
-.dlg .ptab .pop button.on{background:var(--sel)}
+.dlg .prop-dd .pop{left:0;right:auto;min-width:100%;max-height:240px;overflow:auto;z-index:50;background:var(--card)}
+.dlg.tint .prop-dd .pop{background:color-mix(in srgb,var(--pc) 18%,#fff)}
+.dlg .prop-dd .pop button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;font-size:13px;border-radius:calc(var(--radius) - 6px)}
+.dlg .prop-dd .pop button:hover{background:var(--sel)}
+.dlg .prop-dd .pop button.on{background:var(--sel)}
 .dlg .desc{margin-top:4px}
 .dlg textarea{font:inherit;color:var(--ink);background:transparent;border:1px solid transparent;border-radius:calc(var(--radius) - 4px);padding:8px;width:100%;min-height:140px;resize:vertical;line-height:1.45;box-sizing:border-box}
 .dlg textarea:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)}
 .dlg textarea:focus{outline:none;background:color-mix(in srgb,#fff 55%,transparent);border-color:color-mix(in srgb,var(--ink) 12%,transparent)}
 .dlg.tint textarea:focus{background:color-mix(in srgb,#fff 72%,transparent)}
 .dlg textarea::placeholder{color:var(--mute)}
-.x{align-self:flex-end;padding:6px 14px;border-radius:calc(var(--radius) - 4px);background:var(--sel)}
-.dlg.tint .x{background:color-mix(in srgb,#fff 55%,transparent)}
 td.open{width:1%}.open button{color:var(--acc);font-size:13px}
 .card,.gcard{cursor:pointer}
 @media(max-width:600px){aside{width:130px}}
@@ -357,6 +380,7 @@ const completedViewByScope=new Map();
 let activePomo=null;
 let pomoTick=null;
 let pomoFinishing=false;
+let timelogFilter=null;
 function loadLastTabs(){
   try{return JSON.parse(localStorage.getItem(LAST_TAB_KEY)||"{}")||{}}catch{return{}}
 }
@@ -483,11 +507,19 @@ async function saveCard(row,folder,mod){
 }
 async function deleteCard(folder,mod,slug){
   if(!folder||!mod||mod[0]!=="Board"||!slug)return;
-  await fetch("/api/card",{
+  const data=await fetch("/api/card",{
     method:"DELETE",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({project:folder.slug,board:mod[2].slug,slug})
-  });
+  }).then(r=>r.json());
+  const keepP=folder.slug,keepM=mod[2].slug,keepG=g;
+  folders=fromApi(data);
+  p=Math.max(0,folders.findIndex(f=>f.slug===keepP));
+  if(p<0)p=0;
+  m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===keepM));
+  if(m<0)m=0;
+  g=keepG;
+  return data;
 }
 async function moveCard(row,from,to){
   if(!from||!to||from.mod[0]!=="Board"||to.mod[0]!=="Board")return;
@@ -975,10 +1007,53 @@ const IC={
  folder:['<path d="M4 2.5h7.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 4 2.5z"/><path d="M6.5 5h4M6.5 7.5h4M6.5 10h2.5"/>',""],
  settings:['<circle cx="8" cy="8" r="2.2"/><path d="M8 2.5v1.2M8 12.3v1.2M2.5 8h1.2M12.3 8h1.2M3.9 3.9l.85.85M11.25 11.25l.85.85M3.9 12.1l.85-.85M11.25 4.75l.85-.85"/>',""],
  brand:['<circle cx="8" cy="8" r="5.5"/><path d="M10.2 5.8 7.2 7.2 5.8 10.2 8.8 8.8Z"/>',""],
- pencil:['<path d="M11.5 2.5l2 2L5.5 12.5H3.5v-2zM9.8 4.2l2 2"/>',""]};
+ pencil:['<path d="M11.5 2.5l2 2L5.5 12.5H3.5v-2zM9.8 4.2l2 2"/>',""],
+ caret:['<path d="M4 6l4 4 4-4"/>',""],
+ arrow:['<path d="M6 4l4 4-4 4"/>',""]};
 const GACC="#9a5b2e";
 const PC=["#6b4f8c","#2f7a6e","#b45a3c","#8a5c2e"];
 const icon=(t,size=16)=>`<svg viewBox="0 0 16 16" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${IC[t][0]}</svg>`;
+function propAffix(kind){
+  const s=el("span","prop-affix");
+  s.innerHTML=icon(kind,12);
+  s.setAttribute("aria-hidden","true");
+  return s;
+}
+function closePropDrops(except){
+  document.querySelectorAll(".dlg .prop-dd").forEach(dd=>{
+    if(except&&dd===except)return;
+    dd.classList.remove("open");
+    const pop=dd.querySelector(".pop");
+    if(pop)pop.style.display="none";
+  });
+}
+function propDropdown({paintBtn,fillPop}){
+  const wrap=el("div","prop-dd");
+  const btn=el("button","prop-dd-btn");
+  btn.type="button";
+  const pop=el("div","pop");
+  const paint=()=>{
+    btn.innerHTML="";
+    paintBtn(btn);
+    btn.append(propAffix("caret"));
+  };
+  const setOpen=(on)=>{
+    wrap.classList.toggle("open",on);
+    pop.style.display=on?"block":"none";
+  };
+  btn.onclick=e=>{
+    e.stopPropagation();
+    const willOpen=pop.style.display!=="block";
+    closePropDrops();
+    if(!willOpen)return;
+    pop.innerHTML="";
+    fillPop(pop,()=>setOpen(false));
+    setOpen(true);
+  };
+  wrap.append(btn,pop);
+  paint();
+  return {el:wrap,paint,close:()=>setOpen(false)};
+}
 $("brand-mark").innerHTML=icon("brand",20);
 $("app-settings").querySelector("span").innerHTML=icon("settings");
 $("menu").innerHTML="";
@@ -1628,10 +1703,30 @@ function formatDuration(sec){
   if(h)return h+":"+String(m).padStart(2,"0")+":"+String(r).padStart(2,"0");
   return m+":"+String(r).padStart(2,"0");
 }
+function formatSpent(sec){
+  const s=Math.max(0,Math.floor(sec||0));
+  const h=Math.floor(s/3600);
+  const m=Math.floor((s%3600)/60);
+  if(h)return h+"h "+m+"m";
+  return m+"m";
+}
 function formatClock(iso){
   const d=new Date(iso);
   if(Number.isNaN(d.getTime()))return"—";
   return d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});
+}
+function matchesTimelogFilter(entry,filter){
+  if(!filter)return true;
+  return entry.project===filter.project&&entry.board===filter.board&&entry.card===filter.card;
+}
+async function cardTimeSpentSec(project,board,card){
+  if(!project||!board||!card)return 0;
+  try{
+    const entries=await fetchTimelogs();
+    return entries
+      .filter(e=>e.project===project&&e.board===board&&e.card===card)
+      .reduce((sum,e)=>sum+(e.durationSec||0),0);
+  }catch{return 0}
 }
 async function fetchTimelogs(){
   const data=await fetch("/api/timelogs").then(r=>r.json());
@@ -1641,15 +1736,28 @@ async function renderTimelogs(tabC){
   const v=$("view");v.className="mod";v.innerHTML="";
   v.style.setProperty("--tab",tabC);
   v.append(globalBar("Timelogs"));
+  const filter=timelogFilter;
+  if(filter){
+    const bar=el("div","log-filter");
+    bar.append(document.createTextNode("Card: "),el("b","",filter.title||filter.card||"Untitled"));
+    const clear=el("button","clear","Clear filter");
+    clear.type="button";
+    clear.onclick=()=>{timelogFilter=null;render()};
+    bar.append(clear);
+    v.append(bar);
+  }
   const list=el("div","log");
   list.append(Object.assign(el("div","empty-log","Loading…"),{id:"timelog-loading"}));
   v.append(list);
   let entries=[];
   try{entries=await fetchTimelogs()}catch{entries=[]}
   if(g!=="Timelogs")return;
+  if(filter)entries=entries.filter(e=>matchesTimelogFilter(e,filter));
   list.innerHTML="";
   if(!entries.length){
-    list.append(el("div","empty-log","No timelogs yet. Start a pomodoro from a card."));
+    list.append(el("div","empty-log",filter
+      ?"No timelogs for this card yet."
+      :"No timelogs yet. Start a pomodoro from a card."));
     return;
   }
   entries.forEach(entry=>{
@@ -1878,11 +1986,12 @@ function masterBoard(){
 }
 function openItem(r,opts){
   const isDraft=!!(opts&&opts.draft);
-  const loc=isDraft?null:locateRow(r);
+  let loc=isDraft?null:locateRow(r);
   let curLoc=isDraft&&opts.folder&&opts.mod
     ?{folder:opts.folder,mod:opts.mod}
     :(loc?{folder:loc.folder,mod:loc.mod}:null);
   const ov=el("div","ov"),dlg=el("div","dlg");
+  let persistTimer=null;
   const tintDlg=()=>{
     if(!curLoc){dlg.classList.remove("tint");dlg.style.removeProperty("--pc");dlg.style.background="";return}
     const pc=curLoc.folder.color||PC[0];
@@ -1890,11 +1999,26 @@ function openItem(r,opts){
     dlg.style.setProperty("--pc",pc);
     dlg.style.background=pastel(pc);
   };
+  const persist=async()=>{
+    if(isDraft||!curLoc)return;
+    if(curLoc.mod[0]==="Board"){
+      if(loc&&(loc.folder.slug!==curLoc.folder.slug||loc.mod[2].slug!==curLoc.mod[2].slug)){
+        await moveCard(r,loc,curLoc);
+        loc={folder:curLoc.folder,mod:curLoc.mod};
+      }else await saveCard(r,curLoc.folder,curLoc.mod);
+    }else if(curLoc.mod[0]==="Database")await saveItem(r,curLoc.folder,curLoc.mod);
+  };
+  const persistSoon=()=>{
+    if(isDraft)return;
+    clearTimeout(persistTimer);
+    persistTimer=setTimeout(()=>{persist()},300);
+  };
   const esc=e=>e.key==="Escape"&&close(false);
-  const close=async(save)=>{
+  const close=async(create)=>{
+    clearTimeout(persistTimer);
     if(isDraft){
       rememberCardDraft(r,curLoc);
-      if(save){
+      if(create){
         if(!curLoc||curLoc.mod[0]!=="Board")return;
         if(!(r.n||"").trim()){
           alert("Add a task title first.");
@@ -1918,16 +2042,11 @@ function openItem(r,opts){
       render();
       return;
     }
+    await persist();
     ov.remove();document.removeEventListener("keydown",esc);
-    if(save&&curLoc){
-      if(curLoc.mod[0]==="Board"){
-        if(loc&&(loc.folder!==curLoc.folder||loc.mod!==curLoc.mod))await moveCard(r,loc,curLoc);
-        else await saveCard(r,curLoc.folder,curLoc.mod);
-      }
-      if(curLoc.mod[0]==="Database")await saveItem(r,curLoc.folder,curLoc.mod);
-    }
     render();
   };
+  const content=el("div","dlg-content");
   const props=el("table","props");
   const propsBody=document.createElement("tbody");
   props.append(propsBody);
@@ -1943,23 +2062,43 @@ function openItem(r,opts){
   const body=document.createElement("textarea");
   body.value=r.body||"";
   body.placeholder="Description...";
-  body.oninput=()=>r.body=body.value;
+  body.oninput=()=>{r.body=body.value;persistSoon()};
   desc.append(body);
   tintDlg();
   if(!isDraft&&loc?.mod[0]==="Database"){
     const cols=loc.mod[2].cols||[];
     const titleCol=cols.find(c=>c.id==="n")||cols[0];
     const n=el("input","title");n.value=r[titleCol?.id]||"";n.placeholder="Untitled";
-    n.oninput=()=>{if(titleCol)r[titleCol.id]=n.value};
-    dlg.append(n,props);
+    n.oninput=()=>{if(titleCol){r[titleCol.id]=n.value;persistSoon()}};
+    content.append(n,props);
     cols.forEach(c=>{
       if(c===titleCol)return;
       if(c.type==="stage"){
-        const s=el("select");
-        stages.forEach(o=>{const op=el("option","",o);op.selected=o===r[c.id];s.append(op)});
-        s.onchange=()=>r[c.id]=s.value;propsBody.append(f(c.label,s));
+        const dd=propDropdown({
+          paintBtn(btn){
+            btn.append(el("span","lab",r[c.id]||stages[0]||""));
+          },
+          fillPop(pop,closePop){
+            if(!stages.includes(r[c.id]))r[c.id]=stages[0];
+            stages.forEach(o=>{
+              const b=el("button");
+              b.type="button";
+              if(o===r[c.id])b.className="on";
+              b.append(document.createTextNode(o));
+              b.onclick=e=>{
+                e.stopPropagation();
+                r[c.id]=o;
+                closePop();
+                dd.paint();
+                persist();
+              };
+              pop.append(b);
+            });
+          }
+        });
+        propsBody.append(f(c.label,dd.el));
       }else{
-        const i=el("input");i.value=r[c.id]||"";i.oninput=()=>r[c.id]=i.value;propsBody.append(f(c.label,i));
+        const i=el("input");i.value=r[c.id]||"";i.oninput=()=>{r[c.id]=i.value;persistSoon()};propsBody.append(f(c.label,i));
       }
     });
   }else{
@@ -1969,7 +2108,7 @@ function openItem(r,opts){
     check.className="card-check";
     check.checked=isDone(r);
     check.title=isDone(r)?"Mark active":"Mark completed";
-    const n=el("input","title");n.value=r.n||"";n.placeholder="Untitled";n.oninput=()=>r.n=n.value;
+    const n=el("input","title");n.value=r.n||"";n.placeholder="Untitled";n.oninput=()=>{r.n=n.value;persistSoon()};
     const syncDoneUi=()=>{
       check.checked=isDone(r);
       check.title=isDone(r)?"Mark active":"Mark completed";
@@ -1978,70 +2117,150 @@ function openItem(r,opts){
     check.onchange=()=>{
       r.doneAt=check.checked?new Date().toISOString():"";
       syncDoneUi();
+      persist();
     };
     syncDoneUi();
     titleRow.append(check,n);
     if(!r.ms)r.ms=r.s||stages[0];
-    const boardCol=el("select");
-    const fillBoardCol=()=>{
-      const cols=curLoc?.mod[2]?.columns||stages;
-      boardCol.innerHTML="";
-      cols.forEach(o=>{const op=el("option","",o);op.selected=o===r.s;boardCol.append(op)});
-      if(!cols.includes(r.s)){r.s=cols[0]||stages[0];boardCol.value=r.s}
-    };
-    boardCol.onchange=()=>r.s=boardCol.value;
-    fillBoardCol();
-    const masterCol=el("select");
-    const fillMasterCol=()=>{
-      masterCol.innerHTML="";
-      stages.forEach(o=>{const op=el("option","",o);op.selected=o===r.ms;masterCol.append(op)});
-      if(!stages.includes(r.ms)){r.ms=stages[0];masterCol.value=r.ms}
-    };
-    masterCol.onchange=()=>r.ms=masterCol.value;
-    fillMasterCol();
-    const ptab=el("div","ptab");
-    const ptabBtn=el("button","ptab-btn");
-    ptabBtn.type="button";
-    const pop=el("div","pop");
-    const paintPtab=()=>{
-      ptabBtn.innerHTML="";
-      const dot=el("span","dot");
-      dot.style.background=curLoc?.folder.color||PC[0];
-      const lab=el("span","lab",`${curLoc?.folder.name||"Project"} · ${curLoc?.mod[1]||"Tab"}`);
-      ptabBtn.append(dot,lab);
-    };
-    const refreshPop=()=>{
-      pop.innerHTML="";
-      allBoards().forEach(({folder,mod})=>{
-        const b=el("button");
-        b.type="button";
-        if(curLoc&&folder===curLoc.folder&&mod===curLoc.mod)b.className="on";
-        const dot=el("span","dot");dot.style.background=folder.color||PC[0];
-        b.append(dot,document.createTextNode(`${folder.name} · ${mod[1]}`));
-        b.onclick=e=>{
-          e.stopPropagation();
-          curLoc={folder,mod};
-          pop.style.display="none";
-          paintPtab();
-          tintDlg();
-          fillBoardCol();
+    const boardCol=propDropdown({
+      paintBtn(btn){
+        btn.append(el("span","lab",r.s||""));
+      },
+      fillPop(pop,closePop){
+        const cols=curLoc?.mod[2]?.columns||stages;
+        if(!cols.includes(r.s))r.s=cols[0]||stages[0];
+        cols.forEach(o=>{
+          const b=el("button");
+          b.type="button";
+          if(o===r.s)b.className="on";
+          b.append(document.createTextNode(o));
+          b.onclick=e=>{
+            e.stopPropagation();
+            r.s=o;
+            closePop();
+            boardCol.paint();
+            persist();
+          };
+          pop.append(b);
+        });
+      }
+    });
+    const masterCol=propDropdown({
+      paintBtn(btn){
+        btn.append(el("span","lab",r.ms||""));
+      },
+      fillPop(pop,closePop){
+        if(!stages.includes(r.ms))r.ms=stages[0];
+        stages.forEach(o=>{
+          const b=el("button");
+          b.type="button";
+          if(o===r.ms)b.className="on";
+          b.append(document.createTextNode(o));
+          b.onclick=e=>{
+            e.stopPropagation();
+            r.ms=o;
+            closePop();
+            masterCol.paint();
+            persist();
+          };
+          pop.append(b);
+        });
+      }
+    });
+    const ptab=propDropdown({
+      paintBtn(btn){
+        const dot=el("span","dot");
+        dot.style.background=curLoc?.folder.color||PC[0];
+        const lab=el("span","lab",`${curLoc?.folder.name||"Project"} · ${curLoc?.mod[1]||"Tab"}`);
+        btn.append(dot,lab);
+      },
+      fillPop(pop,closePop){
+        allBoards().forEach(({folder,mod})=>{
+          const b=el("button");
+          b.type="button";
+          if(curLoc&&folder===curLoc.folder&&mod===curLoc.mod)b.className="on";
+          const dot=el("span","dot");dot.style.background=folder.color||PC[0];
+          b.append(dot,document.createTextNode(`${folder.name} · ${mod[1]}`));
+          b.onclick=e=>{
+            e.stopPropagation();
+            curLoc={folder,mod};
+            closePop();
+            ptab.paint();
+            tintDlg();
+            const cols=curLoc?.mod[2]?.columns||stages;
+            if(!cols.includes(r.s)){r.s=cols[0]||stages[0]}
+            boardCol.paint();
+            persist();
+          };
+          pop.append(b);
+        });
+      }
+    });
+    content.append(titleRow,props);
+    propsBody.append(f("Task board",ptab.el),f("Task board column",boardCol.el),f("Master board column",masterCol.el));
+    if(!isDraft&&curLoc?.mod[0]==="Board"&&r.slug){
+      const projectSlug=curLoc.folder.slug;
+      const boardSlug=curLoc.mod[2].slug;
+      const cardSlug=r.slug;
+      cardTimeSpentSec(projectSlug,boardSlug,cardSlug).then(total=>{
+        if(total<=0||!propsBody.isConnected)return;
+        const spent=el("button","prop-link");
+        spent.type="button";
+        spent.append(el("span","lab",formatSpent(total)),propAffix("arrow"));
+        spent.onclick=async()=>{
+          if(!curLoc)return;
+          timelogFilter={
+            project:curLoc.folder.slug,
+            board:curLoc.mod[2].slug,
+            card:r.slug,
+            title:r.n||"Untitled"
+          };
+          g="Timelogs";
+          await close(false);
         };
-        pop.append(b);
+        propsBody.append(f("Time spent",spent));
       });
-    };
-    ptabBtn.onclick=e=>{
-      e.stopPropagation();
-      document.querySelectorAll(".pop").forEach(e=>e.style.display="none");
-      refreshPop();
-      pop.style.display=pop.style.display==="block"?"none":"block";
-    };
-    paintPtab();
-    ptab.append(ptabBtn,pop);
-    dlg.append(titleRow,props);
-    propsBody.append(f("Task board",ptab),f("Task board column",boardCol),f("Master board column",masterCol));
+    }
   }
+  content.append(desc);
   const actions=el("div","actions");
   if(!isDraft&&curLoc?.mod[0]==="Board"&&r.slug){
+    const delBtn=el("button","dlg-delete","Delete");
+    delBtn.type="button";
+    delBtn.onclick=async()=>{
+      if(!curLoc||!r.slug)return;
+      const label=(r.n||"").trim()||"Untitled";
+      if(!confirm(`Delete "${label}"?`))return;
+      clearTimeout(persistTimer);
+      await deleteCard(curLoc.folder,curLoc.mod,r.slug);
+      ov.remove();document.removeEventListener("keydown",esc);
+      render();
+    };
+    const dupBtn=el("button","dlg-duplicate","Duplicate");
+    dupBtn.type="button";
+    dupBtn.onclick=async()=>{
+      if(!curLoc||!r.slug)return;
+      clearTimeout(persistTimer);
+      await persist();
+      const projectSlug=curLoc.folder.slug;
+      const boardSlug=curLoc.mod[2].slug;
+      const base=(r.n||"").trim()||"Untitled";
+      const slug=await createCard(curLoc.folder,curLoc.mod,{
+        title:"Duplicate of "+base,
+        status:r.s,
+        master:r.ms,
+        body:r.body||"",
+        doneAt:r.doneAt||""
+      });
+      const keepG=g;
+      p=Math.max(0,folders.findIndex(f=>f.slug===projectSlug));
+      m=Math.max(0,(folders[p]?.mods||[]).findIndex(x=>x[2]?.slug===boardSlug));
+      g=keepG;
+      ov.remove();document.removeEventListener("keydown",esc);
+      render();
+      const hit=findCardBySlugs(projectSlug,boardSlug,slug);
+      if(hit)openItem(hit.row);
+    };
     const pomoBtn=el("button","pomo-start","Start pomodoro");
     pomoBtn.type="button";
     pomoBtn.onclick=async()=>{
@@ -2054,16 +2273,25 @@ function openItem(r,opts){
         boardName:curLoc.mod[1],
         color:curLoc.folder.color||PC[0]
       });
-      close(true);
+      close(false);
     };
-    actions.append(pomoBtn);
+    actions.append(delBtn,dupBtn,pomoBtn);
+  }else if(isDraft){
+    const createBtn=el("button","dlg-create","Create");
+    createBtn.type="button";
+    createBtn.onclick=()=>close(true);
+    actions.append(createBtn);
   }
-  const x=el("button","x","Save");x.onclick=()=>close(true);
-  actions.append(x);
-  dlg.append(desc,actions);ov.append(dlg);
+  dlg.append(content);
+  if(actions.childNodes.length){
+    const controls=el("div","dlg-controls");
+    controls.append(actions);
+    dlg.append(controls);
+  }
+  ov.append(dlg);
   ov.onmousedown=e=>{
-    if(e.target===ov)close(isDraft?false:true);
-    else if(!e.target.closest?.(".ptab"))document.querySelectorAll(".dlg .ptab .pop").forEach(p=>p.style.display="none");
+    if(e.target===ov)close(false);
+    else if(!e.target.closest?.(".prop-dd"))closePropDrops();
   };
   document.addEventListener("keydown",esc);document.body.append(ov);dlg.querySelector("input")?.focus();
 }
