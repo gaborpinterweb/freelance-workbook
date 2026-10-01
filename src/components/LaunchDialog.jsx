@@ -6,22 +6,23 @@ const GITHUB_URL = "https://github.com/gaborpinterweb/freelance-workbook";
 const STEPS = [
   {
     title: `Welcome to ${APP_NAME}`,
-    text: "Learn the basics.",
+    text: "To get started, let's go through the main features of the app.",
   },
   {
-    title: "Create projects with color codes",
-    text: "All projects have their own colors and project items inherit that color.",
+    title: "Create projects with unique colors",
+    text: "All projects have their own unique colors. Project items - like Tasks - inherit the project's color.",
   },
   {
-    title: "Master board",
-    text: "On master board you can see all your tasks across all your projects and task boards.",
+    title: "See all tasks on your Master board",
+    text: "Master board shows all your tasks across all your projects and task boards in a single view.",
   },
   {
     title: "Everything is offline",
     text: "Set up autobackup to your local cloud provider folder, like Google Drive or iCloud folder.",
   },
   {
-    title: "To learn more, visit GitHub",
+    title: "... and there's much more!",
+    text: "To learn more, visit GitHub.",
     link: { href: GITHUB_URL, label: "Visit GitHub" },
   },
 ];
