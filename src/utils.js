@@ -1,5 +1,5 @@
 export const STAGES = ["Backlog", "This week", "Today", "Tomorrow", "Next week"];
-export const APP_NAME = "Projectory";
+export const APP_NAME = "Project Binder";
 export const APP_VERSION = "0.1.0";
 
 export const TYPES = [

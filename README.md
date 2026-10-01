@@ -1,4 +1,4 @@
-# Projectory
+# Project Binder
 
 ## Quick overview (all WIP)
 

@@ -914,7 +914,7 @@ const server = http.createServer(async (req, res) => {
 
 const boot = ensureStore();
 server.listen(PORT, () => {
-  console.log(`Projectory v0.1.0 at http://localhost:${PORT}`);
+  console.log(`Project Binder v0.1.0 at http://localhost:${PORT}`);
   console.log(`User workspace: ${USER_WORKSPACE}`);
   console.log(`Seed workspace (read-only): ${SEED_WORKSPACE}`);
   if (boot.reseeded) console.log(`Seeded userWorkspace.json from seedWorkspace.json (${boot.reason})`);
