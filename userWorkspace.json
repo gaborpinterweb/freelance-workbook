@@ -252,7 +252,6 @@
               "title": "Catalog export & clean-up",
               "status": "Data & apps",
               "master": "Today",
-              "doneAt": "",
               "body": "Export products/variants, fix missing SKUs, map metafields for Shopify.",
               "isDemo": true
             },

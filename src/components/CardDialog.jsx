@@ -8,6 +8,7 @@ import {
   pastel,
 } from "../utils.js";
 import PropDropdown, { PropAffix, closePropDrops } from "./PropDropdown.jsx";
+import RichTextEditor from "./RichTextEditor.jsx";
 
 export default function CardDialog({
   row,
@@ -148,162 +149,164 @@ export default function CardDialog({
     >
       <div className={"dlg" + (curLoc ? " tint" : "")} style={tintStyle}>
         <div className="dlg-content">
-          {isDb ? (
-            <DbFields
-              row={draft}
-              loc={originLoc}
-              stages={stages}
-              onPatch={patch}
-              onPersist={persist}
-            />
-          ) : (
-            <>
-              <div className="title-row">
-                <input
-                  type="checkbox"
-                  className="card-check"
-                  checked={isDone(draft)}
-                  title={isDone(draft) ? "Mark active" : "Mark completed"}
-                  onChange={(e) => {
-                    const doneAt = e.target.checked
-                      ? new Date().toISOString()
-                      : "";
-                    patch({ doneAt });
-                    clearTimeout(persistTimer.current);
-                    draftRef.current = { ...draftRef.current, doneAt };
-                    persist();
-                  }}
-                />
-                <input
-                  className={"title" + (isDone(draft) ? " done" : "")}
-                  value={draft.n || ""}
-                  placeholder="Untitled"
-                  autoFocus
-                  onChange={(e) => patch({ n: e.target.value })}
-                />
-              </div>
-              <table className="props">
-                <tbody>
-                  <tr>
-                    <td>Task board</td>
-                    <td>
-                      <PropDropdown
-                        value={
-                          curLoc
-                            ? curLoc.folder.slug + "/" + curLoc.mod[2].slug
-                            : ""
-                        }
-                        options={boards.map(({ folder, mod }) => ({
-                          value: folder.slug + "/" + mod[2].slug,
-                          label: `${folder.name} · ${mod[1]}`,
-                          folder,
-                          mod,
-                        }))}
-                        onChange={(_v, o) => {
-                          const next = { folder: o.folder, mod: o.mod };
-                          setCurLoc(next);
-                          curLocRef.current = next;
-                          const cols = next.mod[2]?.columns || stages;
-                          if (!cols.includes(draftRef.current.s)) {
-                            patch({ s: cols[0] || stages[0] });
-                          }
-                          clearTimeout(persistTimer.current);
-                          persist();
-                        }}
-                        renderOption={(o) => (
-                          <>
-                            <span
-                              className="dot"
-                              style={{
-                                background: o.folder.color || PC[0],
-                              }}
-                            />
-                            {o.label}
-                          </>
-                        )}
-                      >
-                        <span
-                          className="dot"
-                          style={{
-                            background: curLoc?.folder.color || PC[0],
-                          }}
-                        />
-                        <span className="lab">
-                          {(curLoc?.folder.name || "Project") +
-                            " · " +
-                            (curLoc?.mod[1] || "Tab")}
-                        </span>
-                      </PropDropdown>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Task board column</td>
-                    <td>
-                      <PropDropdown
-                        value={draft.s || ""}
-                        options={curLoc?.mod[2]?.columns || stages}
-                        onChange={(o) => {
-                          patch({ s: o });
-                          clearTimeout(persistTimer.current);
-                          draftRef.current = { ...draftRef.current, s: o };
-                          persist();
-                        }}
-                      >
-                        <span className="lab">{draft.s || ""}</span>
-                      </PropDropdown>
-                    </td>
-                  </tr>
-                  {showMasterColumn && (
+          <div className="dlg-fields">
+            {isDb ? (
+              <DbFields
+                row={draft}
+                loc={originLoc}
+                stages={stages}
+                onPatch={patch}
+                onPersist={persist}
+              />
+            ) : (
+              <>
+                <div className="title-row">
+                  <input
+                    type="checkbox"
+                    className="card-check"
+                    checked={isDone(draft)}
+                    title={isDone(draft) ? "Mark active" : "Mark completed"}
+                    onChange={(e) => {
+                      const doneAt = e.target.checked
+                        ? new Date().toISOString()
+                        : "";
+                      patch({ doneAt });
+                      clearTimeout(persistTimer.current);
+                      draftRef.current = { ...draftRef.current, doneAt };
+                      persist();
+                    }}
+                  />
+                  <input
+                    className={"title" + (isDone(draft) ? " done" : "")}
+                    value={draft.n || ""}
+                    placeholder="Untitled"
+                    autoFocus
+                    onChange={(e) => patch({ n: e.target.value })}
+                  />
+                </div>
+                <table className="props">
+                  <tbody>
                     <tr>
-                      <td>Master board column</td>
+                      <td>Task board</td>
                       <td>
                         <PropDropdown
-                          value={draft.ms || stages[0]}
-                          options={stages}
-                          onChange={(o) => {
-                            patch({ ms: o });
+                          value={
+                            curLoc
+                              ? curLoc.folder.slug + "/" + curLoc.mod[2].slug
+                              : ""
+                          }
+                          options={boards.map(({ folder, mod }) => ({
+                            value: folder.slug + "/" + mod[2].slug,
+                            label: `${folder.name} · ${mod[1]}`,
+                            folder,
+                            mod,
+                          }))}
+                          onChange={(_v, o) => {
+                            const next = { folder: o.folder, mod: o.mod };
+                            setCurLoc(next);
+                            curLocRef.current = next;
+                            const cols = next.mod[2]?.columns || stages;
+                            if (!cols.includes(draftRef.current.s)) {
+                              patch({ s: cols[0] || stages[0] });
+                            }
                             clearTimeout(persistTimer.current);
-                            draftRef.current = { ...draftRef.current, ms: o };
                             persist();
                           }}
+                          renderOption={(o) => (
+                            <>
+                              <span
+                                className="dot"
+                                style={{
+                                  background: o.folder.color || PC[0],
+                                }}
+                              />
+                              {o.label}
+                            </>
+                          )}
                         >
-                          <span className="lab">{draft.ms || ""}</span>
+                          <span
+                            className="dot"
+                            style={{
+                              background: curLoc?.folder.color || PC[0],
+                            }}
+                          />
+                          <span className="lab">
+                            {(curLoc?.folder.name || "Project") +
+                              " · " +
+                              (curLoc?.mod[1] || "Tab")}
+                          </span>
                         </PropDropdown>
                       </td>
                     </tr>
-                  )}
-                  {!isDraft && curLoc?.mod[0] === "Board" && draft.slug && spent > 0 && (
                     <tr>
-                      <td>Time spent</td>
+                      <td>Task board column</td>
                       <td>
-                        <button
-                          type="button"
-                          className="prop-link"
-                          onClick={async () => {
-                            await onOpenTimelogs({
-                              project: curLoc.folder.slug,
-                              board: curLoc.mod[2].slug,
-                              card: draft.slug,
-                              title: draft.n || "Untitled",
-                            });
-                            await close(false);
+                        <PropDropdown
+                          value={draft.s || ""}
+                          options={curLoc?.mod[2]?.columns || stages}
+                          onChange={(o) => {
+                            patch({ s: o });
+                            clearTimeout(persistTimer.current);
+                            draftRef.current = { ...draftRef.current, s: o };
+                            persist();
                           }}
                         >
-                          <span className="lab">{formatSpent(spent)}</span>
-                          <PropAffix kind="arrow" />
-                        </button>
+                          <span className="lab">{draft.s || ""}</span>
+                        </PropDropdown>
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </>
-          )}
-          <div className="desc">
-            <textarea
+                    {showMasterColumn && (
+                      <tr>
+                        <td>Master board column</td>
+                        <td>
+                          <PropDropdown
+                            value={draft.ms || stages[0]}
+                            options={stages}
+                            onChange={(o) => {
+                              patch({ ms: o });
+                              clearTimeout(persistTimer.current);
+                              draftRef.current = { ...draftRef.current, ms: o };
+                              persist();
+                            }}
+                          >
+                            <span className="lab">{draft.ms || ""}</span>
+                          </PropDropdown>
+                        </td>
+                      </tr>
+                    )}
+                    {!isDraft && curLoc?.mod[0] === "Board" && draft.slug && spent > 0 && (
+                      <tr>
+                        <td>Time spent</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="prop-link"
+                            onClick={async () => {
+                              await onOpenTimelogs({
+                                project: curLoc.folder.slug,
+                                board: curLoc.mod[2].slug,
+                                card: draft.slug,
+                                title: draft.n || "Untitled",
+                              });
+                              await close(false);
+                            }}
+                          >
+                            <span className="lab">{formatSpent(spent)}</span>
+                            <PropAffix kind="arrow" />
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </div>
+          <div className="dlg-description">
+            <RichTextEditor
               value={draft.body || ""}
               placeholder="Description..."
-              onChange={(e) => patch({ body: e.target.value })}
+              onChange={(html) => patch({ body: html })}
             />
           </div>
         </div>

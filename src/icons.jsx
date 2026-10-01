@@ -87,6 +87,30 @@ export const IC = {
     '<circle cx="8" cy="8" r="5.5"/><path d="M8 7v4M8 5.2h.01"/>',
     "",
   ],
+  bold: [
+    '<path d="M4.5 3.5h4.2a2.6 2.6 0 0 1 0 5.2H4.5zM4.5 8.7h4.8a2.7 2.7 0 0 1 0 5.4H4.5z"/>',
+    "",
+  ],
+  italic: [
+    '<path d="M7 3.5h5M4 12.5h5M9.5 3.5L6.5 12.5"/>',
+    "",
+  ],
+  heading: [
+    '<path d="M3.5 3.5v9M11.5 3.5v9M3.5 8h8"/>',
+    "",
+  ],
+  list: [
+    '<path d="M6.5 4.5h6.5M6.5 8h6.5M6.5 11.5h6.5"/><circle cx="3.5" cy="4.5" r=".9" fill="currentColor" stroke="none"/><circle cx="3.5" cy="8" r=".9" fill="currentColor" stroke="none"/><circle cx="3.5" cy="11.5" r=".9" fill="currentColor" stroke="none"/>',
+    "",
+  ],
+  listOrdered: [
+    '<path d="M6.5 4.5h6.5M6.5 8h6.5M6.5 11.5h6.5M3 3.2v3M3 3.2H4.2M2.5 10.2c.5-.7 1.5-.7 1.5.2 0 .7-.7 1-1.2 1.4H4.3"/>',
+    "",
+  ],
+  checklist: [
+    '<rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1"/><path d="M3.5 4.7l1.2 1.2 2-2"/><path d="M9 4.5h4.5M2.5 10.5h4.5v3.5H2.5zM9 11.5h4.5"/>',
+    "",
+  ],
 };
 
 export function Icon({ name, size = 16 }) {
