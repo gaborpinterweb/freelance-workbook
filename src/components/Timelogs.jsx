@@ -18,6 +18,162 @@ function entryBoardKey(entry) {
   return `${entry.project || ""}/${entry.board || ""}`;
 }
 
+const EXPORT_HEADERS = [
+  "Date",
+  "Time",
+  "Project",
+  "Board",
+  "Task",
+  "Duration",
+  "Hours",
+  "Note",
+];
+
+function escapeCsvCell(value) {
+  const s = String(value ?? "");
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function formatExportDate(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
+function formatExportHours(sec) {
+  const s = Math.max(0, Math.floor(sec || 0));
+  return (s / 3600).toFixed(2);
+}
+
+function timelogExportRows(entries) {
+  return (entries || []).map((entry) => {
+    const stamp = entry.endedAt || entry.startedAt || "";
+    return [
+      formatExportDate(stamp),
+      formatClock(stamp),
+      entry.projectName || entry.project || "",
+      entry.boardName || entry.board || "",
+      entry.title || "Untitled",
+      formatDuration(entry.durationSec),
+      formatExportHours(entry.durationSec),
+      entry.note || "",
+    ];
+  });
+}
+
+function downloadBlob(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportFilename(period, ext) {
+  const stamp = new Date();
+  const y = stamp.getFullYear();
+  const m = String(stamp.getMonth() + 1).padStart(2, "0");
+  const d = String(stamp.getDate()).padStart(2, "0");
+  const slug = String(period || "timelogs")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `timelogs-${slug}-${y}${m}${d}.${ext}`;
+}
+
+function exportTimelogsCsv(entries, period) {
+  const rows = timelogExportRows(entries);
+  const lines = [EXPORT_HEADERS, ...rows].map((row) =>
+    row.map(escapeCsvCell).join(",")
+  );
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], {
+    type: "text/csv;charset=utf-8",
+  });
+  downloadBlob(exportFilename(period, "csv"), blob);
+}
+
+/** HTML table Excel opens as a spreadsheet (no library). */
+function exportTimelogsExcel(entries, period) {
+  const rows = timelogExportRows(entries);
+  const head = EXPORT_HEADERS.map((h) => `<th>${escapeHtml(h)}</th>`).join("");
+  const body = rows
+    .map(
+      (row) =>
+        `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`
+    )
+    .join("");
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></body></html>`;
+  const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+  downloadBlob(exportFilename(period, "xls"), blob);
+}
+
+function ExportDropdown({ entries, period, disabled }) {
+  const wrapRef = useRef(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const run = (format) => {
+    if (disabled) return;
+    if (format === "csv") exportTimelogsCsv(entries, period);
+    else exportTimelogsExcel(entries, period);
+    setOpen(false);
+  };
+
+  return (
+    <div
+      className={"export-dd" + (open ? " open" : "")}
+      ref={wrapRef}
+    >
+      <button
+        type="button"
+        className="done-view export-btn"
+        aria-label="Export timelogs"
+        title="Export timelogs"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        disabled={disabled}
+        onClick={() => setOpen((o) => !o)}
+      >
+        Export
+      </button>
+      {open && !disabled && (
+        <div className="pop" role="menu">
+          <button type="button" role="menuitem" onClick={() => run("csv")}>
+            CSV
+          </button>
+          <button type="button" role="menuitem" onClick={() => run("excel")}>
+            Excel
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BoardFilterDropdown({ boards, boardOff, onToggle }) {
   const wrapRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -240,6 +396,11 @@ export default function Timelogs({
               </option>
             ))}
           </select>
+          <ExportDropdown
+            entries={shown || []}
+            period={period}
+            disabled={!shown?.length}
+          />
         </div>
       </GlobalBar>
       {filter && (
