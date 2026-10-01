@@ -2,9 +2,9 @@
   "version": 1,
   "stages": [
     "Backlog",
+    "Tomorrow",
     "This week",
     "Today",
-    "Tomorrow",
     "Next week"
   ],
   "projects": [

@@ -7,7 +7,6 @@ import {
   putMasterboard,
   fetchWorkspace,
 } from "../api.js";
-import { Icon } from "../icons.jsx";
 import {
   PC,
   STAGES,
@@ -104,15 +103,16 @@ function CompletedViewBtn({ scope, completedViewByScope, onChange }) {
 }
 
 function BoardEditBtn({ boardEdit, onToggle }) {
+  const label = boardEdit ? "Save columns" : "Edit columns";
   return (
     <button
       type="button"
       className={"bedit" + (boardEdit ? " on" : "")}
-      title={boardEdit ? "Done editing" : "Edit board"}
-      aria-label={boardEdit ? "Done editing" : "Edit board"}
+      title={label}
+      aria-label={label}
       onClick={onToggle}
     >
-      <Icon name="pencil" />
+      {label}
     </button>
   );
 }
@@ -431,10 +431,12 @@ function ProjectBoard({
                 : () => onStartNewCard(folder, mod, { status: s, master: stages[0] })
             }
           >
-            {split.open.map((r) => (
-              <TaskCard key={r.slug || r.n} row={r} folder={folder} mod={mod} {...cardProps} />
-            ))}
-            {mode === "inplace" &&
+            {!boardEdit &&
+              split.open.map((r) => (
+                <TaskCard key={r.slug || r.n} row={r} folder={folder} mod={mod} {...cardProps} />
+              ))}
+            {!boardEdit &&
+              mode === "inplace" &&
               split.done.length > 0 &&
               fillDoneGroups(
                 split.done.map((row) => ({
@@ -455,7 +457,7 @@ function ProjectBoard({
           + Add column
         </button>
       )}
-      {mode === "virtual" && (
+      {mode === "virtual" && !boardEdit && (
         <div
           className="col done-col"
           onDragOver={(e) => e.preventDefault()}
@@ -659,19 +661,21 @@ function MasterBoard({
                     }
               }
             >
-              {open.map((t) => (
-                <TaskCard
-                  key={(t.folder.slug || "") + "/" + (t.row.slug || t.row.n)}
-                  row={t.row}
-                  folder={t.folder}
-                  mod={t.mod}
-                  color={t.folder.color || PC[t.fi % PC.length]}
-                  src={t.folder.name + " · " + t.mod[1]}
-                  dragPayload={t}
-                  {...cardProps}
-                />
-              ))}
-              {mode === "inplace" &&
+              {!boardEdit &&
+                open.map((t) => (
+                  <TaskCard
+                    key={(t.folder.slug || "") + "/" + (t.row.slug || t.row.n)}
+                    row={t.row}
+                    folder={t.folder}
+                    mod={t.mod}
+                    color={t.folder.color || PC[t.fi % PC.length]}
+                    src={t.folder.name + " · " + t.mod[1]}
+                    dragPayload={t}
+                    {...cardProps}
+                  />
+                ))}
+              {!boardEdit &&
+                mode === "inplace" &&
                 done.length > 0 &&
                 fillDoneGroups(
                   done.map((t) => ({
@@ -693,7 +697,7 @@ function MasterBoard({
             + Add column
           </button>
         )}
-        {mode === "virtual" && (
+        {mode === "virtual" && !boardEdit && (
           <div
             className="col done-col"
             onDragOver={(e) => e.preventDefault()}
@@ -732,27 +736,29 @@ function MasterBoard({
           </div>
         )}
       </div>
-      <div className="mb-foot">
-        {allBoards(folders).map(({ folder, mod, color, key }) => {
-          const label = `${folder.name} · ${mod[1]}`;
-          return (
-            <button
-              key={key}
-              type="button"
-              className={masterOff.has(key) ? "off" : ""}
-              style={{ background: pastel(color) }}
-              title={label}
-              onClick={() => {
-                if (masterOff.has(key)) masterOff.delete(key);
-                else masterOff.add(key);
-                onBump();
-              }}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      {!boardEdit && (
+        <div className="mb-foot">
+          {allBoards(folders).map(({ folder, mod, color, key }) => {
+            const label = `${folder.name} · ${mod[1]}`;
+            return (
+              <button
+                key={key}
+                type="button"
+                className={masterOff.has(key) ? "off" : ""}
+                style={{ background: pastel(color) }}
+                title={label}
+                onClick={() => {
+                  if (masterOff.has(key)) masterOff.delete(key);
+                  else masterOff.add(key);
+                  onBump();
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
