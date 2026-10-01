@@ -1,5 +1,5 @@
 export const STAGES = ["Backlog", "This week", "Today", "Tomorrow", "Next week"];
-export const APP_NAME = "Freelance Workbook";
+export const APP_NAME = "Projectory";
 export const APP_VERSION = "0.1.0";
 
 export const TYPES = [
@@ -14,12 +14,33 @@ export const TYPES = [
   { t: "Workflows", title: "Workflows", sub: "Trigger remote workers", off: true },
 ];
 
-export const LAST_TAB_KEY = "freelance-workbook:lastTab";
-export const SESSION_KEY = "freelance-workbook:session";
-export const COMPLETED_VIEW_KEY = "freelance-workbook:completedView";
-export const POMO_KEY = "freelance-workbook:pomodoro";
-export const WORKSPACE_VIS_KEY = "freelance-workbook:workspaceVisibility";
-export const LAUNCH_SEEN_KEY = "freelance-workbook:launchSeen";
+const STORAGE_PREFIX = "projectory:";
+const LEGACY_STORAGE_PREFIX = "freelance-workbook:";
+
+function migrateStorageKeys() {
+  try {
+    const legacy = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(LEGACY_STORAGE_PREFIX)) legacy.push(key);
+    }
+    for (const oldKey of legacy) {
+      const newKey = STORAGE_PREFIX + oldKey.slice(LEGACY_STORAGE_PREFIX.length);
+      if (localStorage.getItem(newKey) == null) {
+        localStorage.setItem(newKey, localStorage.getItem(oldKey));
+      }
+      localStorage.removeItem(oldKey);
+    }
+  } catch {}
+}
+migrateStorageKeys();
+
+export const LAST_TAB_KEY = `${STORAGE_PREFIX}lastTab`;
+export const SESSION_KEY = `${STORAGE_PREFIX}session`;
+export const COMPLETED_VIEW_KEY = `${STORAGE_PREFIX}completedView`;
+export const POMO_KEY = `${STORAGE_PREFIX}pomodoro`;
+export const WORKSPACE_VIS_KEY = `${STORAGE_PREFIX}workspaceVisibility`;
+export const LAUNCH_SEEN_KEY = `${STORAGE_PREFIX}launchSeen`;
 export const WORKSPACE_ITEMS = ["Masterboard", "Timelogs", "Calendar", "Trash"];
 /** Only Archived is hideable; workspace items are always shown. */
 export const SIDEBAR_VIS_ITEMS = ["Archived"];
@@ -336,7 +357,7 @@ export function clearClientAppState() {
     const keys = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith("freelance-workbook:")) keys.push(key);
+      if (key && key.startsWith(STORAGE_PREFIX)) keys.push(key);
     }
     keys.forEach((key) => localStorage.removeItem(key));
   } catch {}

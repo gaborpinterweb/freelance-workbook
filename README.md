@@ -1,4 +1,4 @@
-# Freelance Workbook
+# Projectory
 
 ## Quick overview (all WIP)
 

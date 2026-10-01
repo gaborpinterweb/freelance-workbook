@@ -20,6 +20,7 @@ import {
   PC,
   GACC,
   COMPLETED_VIEWS,
+  COMPLETED_VIEW_KEY,
   POMO_DURATION_SEC,
   WORKSPACE_ITEMS,
   fromApi,
@@ -484,10 +485,7 @@ export default function App() {
       const map = loadCompletedViews();
       map[scope] = mode;
       try {
-        localStorage.setItem(
-          "freelance-workbook:completedView",
-          JSON.stringify(map)
-        );
+        localStorage.setItem(COMPLETED_VIEW_KEY, JSON.stringify(map));
       } catch {}
       bump();
     },
