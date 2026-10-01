@@ -6,11 +6,11 @@ const GITHUB_URL = "https://github.com/gaborpinterweb/freelance-workbook";
 const STEPS = [
   {
     title: `Welcome to ${APP_NAME}`,
-    text: "To get started, let's go through the main features of the app.",
+    text: "Projectory is an inventory for your projects with task boards, timelogs, notes and more. To get started, let's go through the main features of the app.",
   },
   {
     title: "Create projects with unique colors",
-    text: "All projects have their own unique colors. Project items - like Tasks - inherit the project's color.",
+    text: "All projects have their own unique colors. All project items - like Tasks - inherit the project's color.",
   },
   {
     title: "See all tasks on your Master board",
