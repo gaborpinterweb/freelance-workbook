@@ -1,59 +1,94 @@
-import { useEffect } from "react";
-import { Icon } from "../icons.jsx";
+import { useEffect, useState } from "react";
 import { APP_NAME } from "../utils.js";
 
-const FEATURES = [
+const GITHUB_URL = "https://github.com/gaborpinterweb/freelance-workbook";
+
+const STEPS = [
   {
-    icon: "Board",
-    title: "Task board",
-    text: "Plan and track work across projects on a shared masterboard.",
+    title: `Welcome to ${APP_NAME}`,
+    text: "Learn the basics.",
   },
   {
-    icon: "Timelogs",
-    title: "Timelogs",
-    text: "Start a pomodoro from any card and keep a clear time history.",
+    title: "Create projects with color codes",
+    text: "All projects have their own colors and project items inherit that color.",
   },
   {
-    icon: "Docs",
-    title: "Notes",
-    text: "Keep briefs, context, and project notes next to your tasks.",
+    title: "Master board",
+    text: "On master board you can see all your tasks across all your projects and task boards.",
+  },
+  {
+    title: "Everything is offline",
+    text: "Set up autobackup to your local cloud provider folder, like Google Drive or iCloud folder.",
+  },
+  {
+    title: "To learn more, visit GitHub",
+    link: { href: GITHUB_URL, label: "Visit GitHub" },
   },
 ];
 
 export default function LaunchDialog({ onStart }) {
+  const [step, setStep] = useState(0);
+  const current = STEPS[step];
+  const isLast = step === STEPS.length - 1;
+
+  const goNext = () => {
+    if (isLast) onStart();
+    else setStep((s) => s + 1);
+  };
+
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "Enter") onStart();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      if (e.key !== "Enter") return;
+      if (step === STEPS.length - 1) onStart();
+      else setStep((s) => s + 1);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onStart]);
+  }, [step, onStart]);
 
   return (
     <div className="ov" role="presentation">
-      <div className="dlg launch-dlg" role="dialog" aria-label={`Welcome to ${APP_NAME}`}>
+      <div
+        className="dlg launch-dlg"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${APP_NAME} welcome — step ${step + 1} of ${STEPS.length}`}
+      >
         <div className="dlg-content launch-body">
-          <span className="launch-mark" aria-hidden="true">
-            <Icon name="brand" size={32} />
-          </span>
-          <h2 className="launch-title">Welcome to {APP_NAME}</h2>
-          <ul className="launch-features">
-            {FEATURES.map((f) => (
-              <li key={f.title}>
-                <span className="launch-feature-icon" aria-hidden="true">
-                  <Icon name={f.icon} size={18} />
-                </span>
-                <div className="launch-feature-text">
-                  <b>{f.title}</b>
-                  <p>{f.text}</p>
-                </div>
-              </li>
+          <div className="launch-copy">
+            <h2 className="launch-title">{current.title}</h2>
+            {current.text && <p className="launch-text">{current.text}</p>}
+            {current.link && (
+              <a
+                className="launch-link"
+                href={current.link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {current.link.label}
+              </a>
+            )}
+          </div>
+          <div className="launch-shot" aria-hidden="true">
+            <span>Screenshot</span>
+          </div>
+          <div className="launch-dots" aria-hidden="true">
+            {STEPS.map((_, i) => (
+              <span
+                key={i}
+                className={`launch-dot${i === step ? " is-active" : ""}`}
+              />
             ))}
-          </ul>
+          </div>
         </div>
         <div className="dlg-controls launch-controls">
-          <button type="button" className="launch-cta" onClick={onStart}>
-            Let&apos;s start
+          <button type="button" className="launch-cta" onClick={goNext}>
+            {isLast ? "Let's get started" : "Next"}
           </button>
         </div>
       </div>

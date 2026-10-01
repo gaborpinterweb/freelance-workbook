@@ -3,8 +3,8 @@
   "stages": [
     "Backlog",
     "This week",
-    "Tomorrow",
     "Today",
+    "Tomorrow",
     "Next week"
   ],
   "projects": [
@@ -123,6 +123,7 @@
               "title": "Webflow component library",
               "status": "Webflow",
               "master": "Next week",
+              "doneAt": "",
               "body": "Buttons, cards, nav, and footer as Webflow components.",
               "isDemo": true
             },
@@ -213,6 +214,7 @@
               "title": "Lead form + CRM hook",
               "status": "Content",
               "master": "This week",
+              "doneAt": "",
               "body": "HubSpot form embed, thank-you page, and UTM capture.",
               "isDemo": true
             },
@@ -260,6 +262,7 @@
               "title": "Checkout & apps install",
               "status": "Data & apps",
               "master": "This week",
+              "doneAt": "",
               "body": "Klaviyo, Judge.me, and Shop Pay; smoke-test gift cards and discounts.",
               "isDemo": true
             },
@@ -363,7 +366,7 @@
       "boardName": "Brand",
       "color": "#6b4f8c",
       "kind": "pomodoro",
-      "note": "asd",
+      "note": "",
       "startedAt": "2026-09-29T10:30:00.000Z",
       "endedAt": "2026-09-29T10:55:00.000Z",
       "durationSec": 1500
@@ -381,6 +384,21 @@
       "note": "Homepage sections done; product template needs variant swatches.",
       "startedAt": "2026-09-29T07:40:00.000Z",
       "endedAt": "2026-09-29T08:05:00.000Z",
+      "durationSec": 1500
+    },
+    {
+      "slug": "2026-09-28-aurora-app-launch-onboarding-email",
+      "project": "aurora-app-launch",
+      "board": "launch",
+      "card": "onboarding-email",
+      "title": "Onboarding email sequence",
+      "projectName": "Aurora app launch",
+      "boardName": "Launch",
+      "color": "#b45a3c",
+      "kind": "pomodoro",
+      "note": "Mapped day-0 / day-2 / day-7 emails in Customer.io.",
+      "startedAt": "2026-09-28T15:10:00.000Z",
+      "endedAt": "2026-09-28T15:35:00.000Z",
       "durationSec": 1500
     },
     {
@@ -637,36 +655,6 @@
       "startedAt": "2026-09-22T12:00:00.000Z",
       "endedAt": "2026-09-22T12:30:00.000Z",
       "durationSec": 1800
-    },
-    {
-      "slug": "2026-09-30-cove-brand-redesign-component-library",
-      "project": "cove-brand-redesign",
-      "board": "brand",
-      "card": "component-library",
-      "title": "Webflow component library",
-      "projectName": "Cove brand redesign",
-      "boardName": "Brand",
-      "color": "#6b4f8c",
-      "kind": "pomodoro",
-      "note": "",
-      "startedAt": "2026-09-30T13:57:00.477Z",
-      "endedAt": "2026-09-30T13:57:26.033Z",
-      "durationSec": 25
-    },
-    {
-      "slug": "2026-09-30-meridian-site-redesign-lead-form",
-      "project": "meridian-site-redesign",
-      "board": "website",
-      "card": "lead-form",
-      "title": "Lead form + CRM hook",
-      "projectName": "Meridian site redesign",
-      "boardName": "Website",
-      "color": "#2f7a6e",
-      "kind": "pomodoro",
-      "note": "This is my very custom note",
-      "startedAt": "2026-09-30T14:00:26.763Z",
-      "endedAt": "2026-09-30T14:05:20.628Z",
-      "durationSec": 293
     }
   ],
   "trash": []
