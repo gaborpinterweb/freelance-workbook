@@ -8,6 +8,7 @@ export default function TabBar({
   tabC,
   archived,
   draftProject,
+  boardEdit,
   menuOpen,
   menuPos,
   moreOpen,
@@ -35,25 +36,40 @@ export default function TabBar({
 
   return (
     <>
-      <div id="bar" style={{ ["--tab"]: tabC }}>
+      <div
+        id="bar"
+        className={boardEdit ? "board-editing" : undefined}
+        style={{ ["--tab"]: tabC }}
+      >
         <div id="tabs">
-          {mods.map((mod, i) => (
-            <TabBtn
-              key={mod[2]?.slug || mod[1] + i}
-              label={mod[1]}
-              c={tabC}
-              on={i === m}
-              type={mod[0]}
-              onClick={() => onSelectTab(i)}
-            />
-          ))}
+          {mods.map((mod, i) => {
+            const active = i === m;
+            const locked = boardEdit && !active;
+            return (
+              <TabBtn
+                key={mod[2]?.slug || mod[1] + i}
+                label={mod[1]}
+                c={tabC}
+                on={active}
+                type={mod[0]}
+                disabled={locked}
+                onClick={() => {
+                  if (locked) return;
+                  onSelectTab(i);
+                }}
+              />
+            );
+          })}
           {!archived && (
             <button
               type="button"
-              className="tab add"
+              className={"tab add" + (boardEdit ? " locked" : "")}
               id="add"
               title="Add tab"
+              disabled={!!boardEdit}
+              aria-disabled={boardEdit || undefined}
               onClick={(e) => {
+                if (boardEdit) return;
                 e.stopPropagation();
                 onOpenAddMenu(e);
               }}
@@ -62,17 +78,19 @@ export default function TabBar({
             </button>
           )}
         </div>
-        <div className="actions">
-          <button
-            type="button"
-            id="more"
-            title="More"
-            aria-label="More"
-            onClick={(e) => onOpenMore(e, folder)}
-          >
-            ⋯
-          </button>
-        </div>
+        {!boardEdit && (
+          <div className="actions">
+            <button
+              type="button"
+              id="more"
+              title="More"
+              aria-label="More"
+              onClick={(e) => onOpenMore(e, folder)}
+            >
+              ⋯
+            </button>
+          </div>
+        )}
       </div>
       <div
         id="menu"
@@ -150,12 +168,14 @@ export default function TabBar({
   );
 }
 
-function TabBtn({ label, c, on, type, onClick }) {
+function TabBtn({ label, c, on, type, onClick, disabled }) {
   return (
     <button
       type="button"
-      className={"tab" + (on ? " on" : "")}
+      className={"tab" + (on ? " on" : "") + (disabled ? " locked" : "")}
       style={{ ["--c"]: c }}
+      disabled={disabled}
+      aria-disabled={disabled || undefined}
       onClick={onClick}
     >
       {type && IC[type] ? (

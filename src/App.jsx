@@ -702,7 +702,13 @@ export default function App() {
         }}
         onOpenSettings={() => setSettingsOpen(true)}
       />
-      <main className={isGlobal ? "global-view" : undefined}>
+      <main
+        className={
+          [isGlobal ? "global-view" : "", boardEdit ? "board-editing" : ""]
+            .filter(Boolean)
+            .join(" ") || undefined
+        }
+      >
         <div className="stage">
           {!isGlobal && (
             <TabBar
@@ -712,15 +718,18 @@ export default function App() {
               tabC={tabC}
               archived={archived}
               draftProject={draftProject}
+              boardEdit={boardEdit && !archived}
               menuOpen={menuOpen}
               menuPos={menuPos}
               moreOpen={moreOpen}
               morePos={morePos}
               onSelectTab={(i) => {
+                if (boardEdit) return;
                 if (i !== m) discardCoverEdit();
                 setM(i);
               }}
               onOpenAddMenu={(e) => {
+                if (boardEdit) return;
                 discardCoverEdit();
                 setMoreOpen(false);
                 const r = e.currentTarget.getBoundingClientRect();
@@ -732,6 +741,7 @@ export default function App() {
               }}
               onAddTab={onAddTab}
               onOpenMore={(e) => {
+                if (boardEdit) return;
                 e.stopPropagation();
                 setMenuOpen(false);
                 const open = moreOpen;
@@ -903,7 +913,13 @@ export default function App() {
                 boardEdit={archived ? false : boardEdit}
                 onToggleBoardEdit={() => {
                   if (archived) return;
-                  setBoardEdit((v) => !v);
+                  setBoardEdit((v) => {
+                    if (!v) {
+                      setMenuOpen(false);
+                      setMoreOpen(false);
+                    }
+                    return !v;
+                  });
                 }}
                 masterOff={masterOff.current}
                 colCollapsed={colCollapsed.current}
