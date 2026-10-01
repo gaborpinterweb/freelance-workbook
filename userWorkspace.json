@@ -38,7 +38,6 @@
               "title": "Launch day checklist",
               "status": "Backend dev",
               "master": "This week",
-              "doneAt": "",
               "body": "DNS cutover, Product Hunt draft, social posts, and rollback notes.",
               "isDemo": true
             },
@@ -262,6 +261,7 @@
               "title": "Checkout & apps install",
               "status": "Data & apps",
               "master": "This week",
+              "doneAt": "",
               "body": "Klaviyo, Judge.me, and Shop Pay; smoke-test gift cards and discounts.",
               "isDemo": true
             },

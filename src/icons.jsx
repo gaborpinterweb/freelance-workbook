@@ -65,7 +65,7 @@ export const IC = {
     "",
   ],
   brand: [
-    '<circle cx="8" cy="8" r="5.5"/><path d="M10.2 5.8 7.2 7.2 5.8 10.2 8.8 8.8Z"/>',
+    '<rect x="5" y="2" width="9" height="12" rx="1.25"/><path d="M5 2v12"/><circle cx="5" cy="5" r="1.1"/><circle cx="5" cy="8" r="1.1"/><circle cx="5" cy="11" r="1.1"/><path d="M8 6h4.5M8 9h3.5"/>',
     "",
   ],
   pencil: ['<path d="M11.5 2.5l2 2L5.5 12.5H3.5v-2zM9.8 4.2l2 2"/>', ""],
