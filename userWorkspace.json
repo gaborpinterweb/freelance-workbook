@@ -2,8 +2,8 @@
   "version": 1,
   "stages": [
     "Backlog",
-    "Tomorrow",
     "This week",
+    "Tomorrow",
     "Today",
     "Next week"
   ],

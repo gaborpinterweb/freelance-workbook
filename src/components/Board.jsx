@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   putItem,
   postItem,
@@ -7,6 +8,7 @@ import {
   putMasterboard,
   fetchWorkspace,
 } from "../api.js";
+import { Icon } from "../icons.jsx";
 import {
   PC,
   STAGES,
@@ -148,10 +150,151 @@ function fillDoneGroups(items, opts, cardProps) {
   ));
 }
 
+function findBoardColEl(boardEl, name) {
+  if (!boardEl) return null;
+  return [...boardEl.querySelectorAll(":scope > .col")].find(
+    (el) => el.dataset.col === name
+  );
+}
+
+/** FLIP-animate two columns after applyOrder reorders the DOM. */
+function flipSwapColumns(boardEl, leftName, rightName, applyOrder) {
+  const leftEl = findBoardColEl(boardEl, leftName);
+  const rightEl = findBoardColEl(boardEl, rightName);
+  if (!leftEl || !rightEl) {
+    applyOrder();
+    return;
+  }
+
+  const firstLeft = leftEl.getBoundingClientRect();
+  const firstRight = rightEl.getBoundingClientRect();
+
+  flushSync(() => {
+    applyOrder();
+  });
+
+  const leftAfter = findBoardColEl(boardEl, leftName);
+  const rightAfter = findBoardColEl(boardEl, rightName);
+  if (!leftAfter || !rightAfter) return;
+
+  const lastLeft = leftAfter.getBoundingClientRect();
+  const lastRight = rightAfter.getBoundingClientRect();
+  const dxLeft = firstLeft.left - lastLeft.left;
+  const dxRight = firstRight.left - lastRight.left;
+  if (dxLeft === 0 && dxRight === 0) return;
+
+  leftAfter.classList.add("col-swapping");
+  rightAfter.classList.add("col-swapping");
+  leftAfter.style.transition = "none";
+  rightAfter.style.transition = "none";
+  leftAfter.style.transform = `translateX(${dxLeft}px)`;
+  rightAfter.style.transform = `translateX(${dxRight}px)`;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      leftAfter.style.transition = "";
+      rightAfter.style.transition = "";
+      leftAfter.style.transform = "";
+      rightAfter.style.transform = "";
+      const cleanup = () => {
+        leftAfter.classList.remove("col-swapping");
+        rightAfter.classList.remove("col-swapping");
+      };
+      leftAfter.addEventListener("transitionend", cleanup, { once: true });
+      window.setTimeout(cleanup, 380);
+    });
+  });
+}
+
+function ColMoreMenu({
+  canLeft,
+  canRight,
+  canDelete,
+  onMoveLeft,
+  onMoveRight,
+  onRename,
+  onDelete,
+}) {
+  const wrapRef = useRef(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const run = (fn) => {
+    setOpen(false);
+    fn?.();
+  };
+
+  return (
+    <div
+      className={"col-more" + (open ? " open" : "")}
+      ref={wrapRef}
+    >
+      <button
+        type="button"
+        className="col-more-btn"
+        title="Column options"
+        aria-label="Column options"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
+      >
+        <Icon name="more" size={14} />
+      </button>
+      {open && (
+        <div className="pop" role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            disabled={!canLeft}
+            onClick={() => run(onMoveLeft)}
+          >
+            Move left
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={!canRight}
+            onClick={() => run(onMoveRight)}
+          >
+            Move right
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => run(onRename)}
+          >
+            Rename
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="danger"
+            disabled={!canDelete}
+            onClick={() => run(onDelete)}
+          >
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BoardCol({
   name,
   count,
-  scope,
   collapsed,
   editing,
   canLeft,
@@ -165,81 +308,49 @@ function BoardCol({
   onBodyDblClick,
   children,
 }) {
-  const [draft, setDraft] = useState(name);
+  const renameViaPrompt = () => {
+    const next = prompt("Column name", name);
+    if (next == null) return;
+    const trimmed = next.trim().replace(/,/g, " ");
+    if (!trimmed || trimmed === name) return;
+    onRename?.(name, trimmed);
+  };
 
   if (editing) {
     return (
       <div
         className="col"
+        data-col={name}
         onDragOver={(e) => e.preventDefault()}
         onDrop={onDrop}
       >
         <div className="col-head">
-          <button
-            type="button"
-            className="col-move"
-            title="Move left"
-            disabled={!canLeft}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={(e) => {
-              e.stopPropagation();
-              onMove?.(name, -1);
-            }}
-          >
-            ‹
-          </button>
-          <input
-            className="col-name-input"
-            value={draft}
-            aria-label="Column name"
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={async () => {
-              const next = draft.trim();
-              if (!next || next === name) {
-                setDraft(name);
-                return;
-              }
-              await onRename?.(name, next);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                e.target.blur();
-              }
-              if (e.key === "Escape") {
-                setDraft(name);
-                e.target.blur();
-              }
-            }}
+          <span className="col-name">{name}</span>
+          <ColMoreMenu
+            canLeft={canLeft}
+            canRight={canRight}
+            canDelete={canDelete}
+            onMoveLeft={() => onMove?.(name, -1)}
+            onMoveRight={() => onMove?.(name, 1)}
+            onRename={renameViaPrompt}
+            onDelete={() => onDelete?.(name)}
           />
-          <button
-            type="button"
-            className="col-move"
-            title="Move right"
-            disabled={!canRight}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={(e) => {
-              e.stopPropagation();
-              onMove?.(name, 1);
-            }}
-          >
-            ›
-          </button>
-          <button
-            type="button"
-            className="col-del"
-            title={canDelete ? "Delete column" : "Keep at least one column"}
-            disabled={!canDelete}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete?.(name);
-            }}
-          >
-            ×
-          </button>
         </div>
-        {!collapsed && <div className="col-body">{children}</div>}
+        <div className="col-body">
+          {count > 0 && (
+            <div
+              className="col-phantom"
+              title="Cards in this column move with it"
+              aria-label={`${count} ${count === 1 ? "card" : "cards"}`}
+            >
+              <span className="col-phantom-back" aria-hidden="true" />
+              <span className="col-phantom-front">
+                {count} {count === 1 ? "card" : "cards"}
+              </span>
+            </div>
+          )}
+          {children}
+        </div>
       </div>
     );
   }
@@ -247,6 +358,7 @@ function BoardCol({
   return (
     <div
       className={"col" + (collapsed ? " collapsed" : "")}
+      data-col={name}
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
     >
@@ -295,7 +407,6 @@ function ProjectBoard({
   onApplyWorkspace,
   keepNav,
 }) {
-  const cols = data.columns || stages;
   const scope = boardKey(folder, mod);
   const mode = getCompletedView(scope, completedViewByScope);
   const cardProps = {
@@ -376,12 +487,7 @@ function ProjectBoard({
     onApplyWorkspace(res, keepNav(folder.slug, mod[2].slug));
   };
 
-  const moveBoardColumn = async (name, dir) => {
-    const nextCols = (mod[2].columns || []).slice();
-    const i = nextCols.indexOf(name);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= nextCols.length) return;
-    [nextCols[i], nextCols[j]] = [nextCols[j], nextCols[i]];
+  const moveBoardColumn = async (nextCols) => {
     const res = await putBoard({
       project: folder.slug,
       board: mod[2].slug,
@@ -391,18 +497,58 @@ function ProjectBoard({
     onApplyWorkspace(res, keepNav(folder.slug, mod[2].slug));
   };
 
+  const boardRef = useRef(null);
+  const swappingRef = useRef(false);
+  const [editOrder, setEditOrder] = useState(null);
+  const sourceCols = data.columns || stages;
+  const sourceKey = sourceCols.join("\0");
+  const cols = editOrder || sourceCols;
+
+  useEffect(() => {
+    if (!boardEdit) {
+      setEditOrder(null);
+      return;
+    }
+    if (swappingRef.current) return;
+    setEditOrder(sourceCols.slice());
+  }, [boardEdit, sourceKey, sourceCols]);
+
+  const moveBoardColumnAnimated = (name, dir) => {
+    if (swappingRef.current || !boardEdit) return;
+    const list = cols.slice();
+    const i = list.indexOf(name);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    const leftName = dir > 0 ? name : list[j];
+    const rightName = dir > 0 ? list[j] : name;
+    const next = list.slice();
+    [next[i], next[j]] = [next[j], next[i]];
+    swappingRef.current = true;
+    flipSwapColumns(boardRef.current, leftName, rightName, () => {
+      setEditOrder(next);
+    });
+    moveBoardColumn(next).finally(() => {
+      window.setTimeout(() => {
+        swappingRef.current = false;
+      }, 320);
+    });
+  };
+
   return (
-    <div className={"board" + (boardEdit ? " editing" : "")}>
+    <div
+      className={"board" + (boardEdit ? " editing" : "")}
+      ref={boardRef}
+    >
       {cols.map((s, i) => {
-        const split = columnRows((data.rows || []).filter((r) => r.s === s), mode);
+        const colRows = (data.rows || []).filter((r) => r.s === s);
+        const split = columnRows(colRows, mode);
         const key = colCollapseKey(scope, s);
         const collapsed = !boardEdit && colCollapsed.has(key);
         return (
           <BoardCol
             key={s}
             name={s}
-            count={split.all.length}
-            scope={scope}
+            count={boardEdit ? colRows.length : split.all.length}
             collapsed={collapsed}
             editing={boardEdit}
             canLeft={i > 0}
@@ -414,7 +560,7 @@ function ProjectBoard({
               onBumpCollapse();
             }}
             onRename={renameBoardColumn}
-            onMove={moveBoardColumn}
+            onMove={moveBoardColumnAnimated}
             onDelete={deleteBoardColumn}
             onDrop={async () => {
               if (!dragRef.current || boardEdit) return;
@@ -453,9 +599,14 @@ function ProjectBoard({
         );
       })}
       {boardEdit && (
-        <button type="button" className="col-add" onClick={addBoardColumn}>
-          + Add column
-        </button>
+        <div className="col col-add-slot">
+          <div className="col-head">
+            <button type="button" className="col-add" onClick={addBoardColumn}>
+              + Add column
+            </button>
+          </div>
+          <div className="col-body" />
+        </div>
       )}
       {mode === "virtual" && !boardEdit && (
         <div
@@ -581,14 +732,45 @@ function MasterBoard({
     onApplyWorkspace(res);
   };
 
-  const moveMasterColumn = async (name, dir) => {
-    const cols = stages.slice();
-    const i = cols.indexOf(name);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= cols.length) return;
-    [cols[i], cols[j]] = [cols[j], cols[i]];
-    const res = await putMasterboard({ columns: cols });
+  const moveMasterColumn = async (nextCols) => {
+    const res = await putMasterboard({ columns: nextCols });
     onApplyWorkspace(res);
+  };
+
+  const boardRef = useRef(null);
+  const swappingRef = useRef(false);
+  const [editOrder, setEditOrder] = useState(null);
+  const sourceKey = stages.join("\0");
+  const cols = editOrder || stages;
+
+  useEffect(() => {
+    if (!boardEdit) {
+      setEditOrder(null);
+      return;
+    }
+    if (swappingRef.current) return;
+    setEditOrder(stages.slice());
+  }, [boardEdit, sourceKey, stages]);
+
+  const moveMasterColumnAnimated = (name, dir) => {
+    if (swappingRef.current || !boardEdit) return;
+    const list = cols.slice();
+    const i = list.indexOf(name);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    const leftName = dir > 0 ? name : list[j];
+    const rightName = dir > 0 ? list[j] : name;
+    const next = list.slice();
+    [next[i], next[j]] = [next[j], next[i]];
+    swappingRef.current = true;
+    flipSwapColumns(boardRef.current, leftName, rightName, () => {
+      setEditOrder(next);
+    });
+    moveMasterColumn(next).finally(() => {
+      window.setTimeout(() => {
+        swappingRef.current = false;
+      }, 320);
+    });
   };
 
   const masterCreateTarget = () => {
@@ -599,8 +781,11 @@ function MasterBoard({
 
   return (
     <div className="mb">
-      <div className={"board" + (boardEdit ? " editing" : "")}>
-        {stages.map((s, i) => {
+      <div
+        className={"board" + (boardEdit ? " editing" : "")}
+        ref={boardRef}
+      >
+        {cols.map((s, i) => {
           const stageTasks = tasks.filter((t) => t.row.ms === s);
           const split = columnRows(
             stageTasks.map((t) => t.row),
@@ -615,20 +800,19 @@ function MasterBoard({
             <BoardCol
               key={s}
               name={s}
-              count={split.all.length}
-              scope="master"
+              count={boardEdit ? stageTasks.length : split.all.length}
               collapsed={collapsed}
               editing={boardEdit}
               canLeft={i > 0}
-              canRight={i < stages.length - 1}
-              canDelete={stages.length > 1}
+              canRight={i < cols.length - 1}
+              canDelete={cols.length > 1}
               onToggleCollapse={() => {
                 if (colCollapsed.has(key)) colCollapsed.delete(key);
                 else colCollapsed.add(key);
                 onBump();
               }}
               onRename={renameMasterColumn}
-              onMove={moveMasterColumn}
+              onMove={moveMasterColumnAnimated}
               onDelete={deleteMasterColumn}
               onDrop={async () => {
                 if (!dragRef.current || boardEdit) return;
@@ -693,9 +877,14 @@ function MasterBoard({
           );
         })}
         {boardEdit && (
-          <button type="button" className="col-add" onClick={addMasterColumn}>
-            + Add column
-          </button>
+          <div className="col col-add-slot">
+            <div className="col-head">
+              <button type="button" className="col-add" onClick={addMasterColumn}>
+                + Add column
+              </button>
+            </div>
+            <div className="col-body" />
+          </div>
         )}
         {mode === "virtual" && !boardEdit && (
           <div
@@ -1006,11 +1195,13 @@ export default function Board({
     return (
       <div id="view" className="db" style={{ ["--tab"]: tabC }}>
         <GlobalBar name="Masterboard">
-          <CompletedViewBtn
-            scope="master"
-            completedViewByScope={completedViewByScope}
-            onChange={onSetCompletedView}
-          />
+          {!boardEdit && (
+            <CompletedViewBtn
+              scope="master"
+              completedViewByScope={completedViewByScope}
+              onChange={onSetCompletedView}
+            />
+          )}
           <BoardEditBtn boardEdit={boardEdit} onToggle={onToggleBoardEdit} />
         </GlobalBar>
         <MasterBoard
@@ -1042,11 +1233,13 @@ export default function Board({
   return (
     <div id="view" className="db" style={{ ["--tab"]: tabC }}>
       <div className="modbar">
-        <CompletedViewBtn
-          scope={scope}
-          completedViewByScope={completedViewByScope}
-          onChange={onSetCompletedView}
-        />
+        {!editing && (
+          <CompletedViewBtn
+            scope={scope}
+            completedViewByScope={completedViewByScope}
+            onChange={onSetCompletedView}
+          />
+        )}
         {!readonly && (
           <BoardEditBtn boardEdit={editing} onToggle={onToggleBoardEdit} />
         )}
