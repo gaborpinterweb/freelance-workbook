@@ -91,7 +91,7 @@ export function fromApi(data, loadStagesFn) {
           columns: b.columns && b.columns.length ? b.columns : undefined,
           rows: (b.cards || []).map((c) => {
             const msRaw = c.master || c.status;
-            return {
+            const row = {
               n: c.title,
               s: c.status,
               ms: msRaw,
@@ -99,6 +99,10 @@ export function fromApi(data, loadStagesFn) {
               doneAt: c.doneAt || "",
               body: c.body || "",
             };
+            if (c.ord != null && c.ord !== "" && !Number.isNaN(Number(c.ord))) {
+              row.ord = Number(c.ord);
+            }
+            return row;
           }),
         },
       ]);
@@ -199,8 +203,25 @@ export function groupByDoneDay(rows) {
   return [...map.values()];
 }
 
+/** Stable sort by numeric `ord`, preserving original order when missing. */
+export function byOrd(rows) {
+  return (rows || [])
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => {
+      const ao = a.r?.ord;
+      const bo = b.r?.ord;
+      const aMissing = ao == null || ao === "" || Number.isNaN(Number(ao));
+      const bMissing = bo == null || bo === "" || Number.isNaN(Number(bo));
+      if (aMissing && bMissing) return a.i - b.i;
+      if (aMissing) return 1;
+      if (bMissing) return -1;
+      return Number(ao) - Number(bo) || a.i - b.i;
+    })
+    .map(({ r }) => r);
+}
+
 export function columnRows(rows, mode) {
-  const list = rows.slice();
+  const list = byOrd(rows);
   if (mode === "inplace") {
     const open = [],
       done = [];

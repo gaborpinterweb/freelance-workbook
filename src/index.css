@@ -265,7 +265,13 @@ select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4
 .col.collapsed .col-count{display:grid;place-items:center;flex:none;order:1;width:100%;height:40px;font-size:13px;font-weight:600;color:var(--ink);background:var(--sel);border-bottom:1px solid var(--line)}
 .col.collapsed .col-name{order:2;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:.08em;text-transform:uppercase;font-size:12px;padding:14px 0 8px;color:var(--mute)}
 .col.collapsed .col-body{display:none}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;cursor:grab}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:opacity .12s ease,box-shadow .12s ease}
+.board .card{cursor:grab;touch-action:none;user-select:none}
+.board .card:active,.board .card.dragging,.is-card-dragging{cursor:grabbing}
+.board .card.dragging{display:none}
+.drop-shadow{flex:none;height:42px;margin-bottom:8px;border-radius:var(--radius);background:color-mix(in srgb,var(--ink) 9%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 6%,transparent);pointer-events:none}
+.drag-preview{position:fixed;left:0;top:0;z-index:1000;margin:0;pointer-events:none;box-shadow:0 12px 32px #00000030,0 2px 8px #00000018;cursor:grabbing}
+.drag-preview .drag-preview-check{flex:none;width:16px;height:16px;border:1px solid color-mix(in srgb,var(--ink) 28%,transparent);border-radius:3px;background:#fff;box-sizing:border-box}
 .card b,.card span{display:block}.card span{color:var(--mute);font-size:13px}
 .card b{display:flex;align-items:center;gap:8px;min-width:0;width:100%}
 .card .card-check{flex:none;width:16px;height:16px;margin:0;accent-color:var(--acc);cursor:pointer}
@@ -461,5 +467,5 @@ aside small{display:block;color:var(--mute);font-size:12px;font-weight:400}
 .launch-cta{font:inherit;font-size:15px;font-weight:600;color:#fff;background:var(--acc);border:0;border-radius:var(--radius);padding:14px 24px;cursor:pointer;width:100%}
 .launch-cta:hover{filter:brightness(1.05)}
 td.open{width:1%}.open button{color:var(--acc);font-size:13px}
-.card,.gcard{cursor:pointer}
+.gcard{cursor:pointer}
 @media(max-width:600px){aside{width:130px}}

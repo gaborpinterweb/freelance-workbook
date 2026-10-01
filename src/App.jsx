@@ -95,7 +95,6 @@ export default function App() {
   const masterOff = useRef(new Set());
   const colCollapsed = useRef(new Set());
   const completedViewByScope = useRef(new Map());
-  const dragRef = useRef(null);
   const pomoFinishing = useRef(false);
   const foldersRef = useRef(folders);
   const stagesRef = useRef(stages);
@@ -362,6 +361,7 @@ export default function App() {
         master: row.ms || stagesRef.current[0],
         doneAt: row.doneAt || "",
         body: row.body || "",
+        ord: row.ord,
       });
       applyWorkspace(data, keepNav(folder.slug, mod[2].slug));
       return data;
@@ -800,7 +800,6 @@ export default function App() {
               masterOff={masterOff.current}
               colCollapsed={colCollapsed.current}
               completedViewByScope={completedViewByScope.current}
-              dragRef={dragRef}
               uiTick={uiTick}
               onBump={bump}
               onSetCompletedView={setCompletedView}
@@ -924,7 +923,6 @@ export default function App() {
                 masterOff={masterOff.current}
                 colCollapsed={colCollapsed.current}
                 completedViewByScope={completedViewByScope.current}
-                dragRef={dragRef}
                 uiTick={uiTick}
                 onBump={bump}
                 onSetCompletedView={setCompletedView}

@@ -28,10 +28,10 @@
               "slug": "landing-hero-copy",
               "title": "Landing hero copy",
               "status": "Content",
-              "master": "Today",
-              "doneAt": "",
+              "master": "Tomorrow",
               "body": "Finalize headline, subcopy, and CTA for the Aurora waitlist page.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 3
             },
             {
               "slug": "launch-day-checklist",
@@ -39,16 +39,17 @@
               "status": "Backend dev",
               "master": "This week",
               "body": "",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 0
             },
             {
               "slug": "onboarding-email",
               "title": "Onboarding email sequence",
               "status": "Content",
               "master": "Next week",
-              "doneAt": "",
               "body": "Day 0 / 2 / 5 welcome emails in Loops for early access users.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 1
             },
             {
               "slug": "press-kit",
@@ -72,20 +73,32 @@
               "slug": "waitlist-flow",
               "title": "Waitlist signup flow",
               "status": "Backend dev",
-              "master": "Today",
-              "doneAt": "",
+              "master": "This week",
               "body": "Wire Formspark → Notion, confirmation email, and success state.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 3
             },
             {
               "slug": "catalog-export",
               "title": "Catalog export & clean-up",
               "status": "Design",
-              "master": "Today",
-              "body": "<ul data-type=\"taskList\"><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qweqwe asd</strong></p></div></li><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qwe</strong></p></div></li><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qwe</strong></p></div></li></ul><p></p>"
+              "master": "Tomorrow",
+              "body": "<ul data-type=\"taskList\"><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qweqwe asd</strong></p></div></li><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qwe</strong></p></div></li><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qwe</strong></p></div></li></ul><p></p>",
+              "ord": 1
             }
           ],
           "isDemo": true
+        },
+        {
+          "slug": "bjk",
+          "name": "bjk",
+          "columns": [
+            "Design",
+            "Frontend dev",
+            "Backend dev",
+            "Content"
+          ],
+          "cards": []
         }
       ],
       "databases": [],
@@ -110,19 +123,19 @@
               "slug": "asset-handoff",
               "title": "Asset handoff pack",
               "status": "Content",
-              "master": "Backlog",
-              "doneAt": "",
+              "master": "This week",
               "body": "Logo SVG/PNG, brand PDF, and usage guidelines for their team.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 1
             },
             {
               "slug": "case-study-template",
               "title": "Case study template",
               "status": "Content",
-              "master": "This week",
-              "doneAt": "",
+              "master": "Today",
               "body": "Reusable layout for property stories; first pass on Casa Verde.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 2
             },
             {
               "slug": "component-library",
@@ -130,16 +143,17 @@
               "status": "Webflow",
               "master": "Next week",
               "body": "Buttons, cards, nav, and footer as Webflow components.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 2
             },
             {
               "slug": "homepage-wireframes",
               "title": "Homepage wireframes",
               "status": "Design",
               "master": "Today",
-              "doneAt": "",
               "body": "Desktop + mobile wires for hero, stays grid, and booking CTA.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 1
             },
             {
               "slug": "moodboard-signoff",
@@ -154,8 +168,9 @@
               "slug": "type-color-system",
               "title": "Type & color system",
               "status": "Design",
-              "master": "This week",
-              "body": "<p>Document scales, tokens, and Figma styles for the new brand.</p><p><code>console.log(x)</code> is nice</p><p></p>"
+              "master": "Tomorrow",
+              "body": "<p>Document scales, tokens, and Figma styles for the new brand.</p><p><code>console.log(x)</code> is nice</p><p></p>",
+              "ord": 2
             }
           ],
           "isDemo": true
@@ -182,18 +197,19 @@
               "slug": "accessibility-pass",
               "title": "Accessibility pass",
               "status": "Design",
-              "master": "Backlog",
+              "master": "This week",
               "body": "Contrast, focus states, and alt text before client QA.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 4
             },
             {
               "slug": "blog-templates",
               "title": "Insights blog templates",
               "status": "Design",
-              "master": "Next week",
-              "doneAt": "",
+              "master": "Today",
               "body": "Article and author layouts in the new design system.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 0
             },
             {
               "slug": "discovery-workshop",
@@ -209,22 +225,25 @@
               "title": "IA & sitemap",
               "status": "Design",
               "master": "Today",
-              "body": ""
+              "body": "",
+              "doneAt": "2026-10-01T19:02:45.338Z"
             },
             {
               "slug": "lead-form",
               "title": "Lead form + CRM hook",
               "status": "Content",
-              "master": "This week",
+              "master": "Today",
               "body": "HubSpot form embed, thank-you page, and UTM capture.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 4
             },
             {
               "slug": "services-page",
               "title": "Services page draft",
               "status": "Content",
-              "master": "This week",
-              "body": "Four service blocks with outcomes; pull quotes from past proposals."
+              "master": "Tomorrow",
+              "body": "Four service blocks with outcomes; pull quotes from past proposals.",
+              "ord": 4
             }
           ],
           "isDemo": true
@@ -252,10 +271,10 @@
               "slug": "checkout-apps",
               "title": "Checkout & apps install",
               "status": "Data & apps",
-              "master": "This week",
-              "doneAt": "",
+              "master": "Backlog",
               "body": "Klaviyo, Judge.me, and Shop Pay; smoke-test gift cards and discounts.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 1
             },
             {
               "slug": "customer-accounts",
@@ -270,17 +289,19 @@
               "slug": "dawn-theme-setup",
               "title": "Dawn theme customization",
               "status": "Theme",
-              "master": "This week",
+              "master": "Next week",
               "body": "Brand colors, PDP layout, and mega-menu to match their lookbook.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 3
             },
             {
               "slug": "go-live-rehearsal",
               "title": "Go-live rehearsal",
               "status": "Theme",
-              "master": "Backlog",
+              "master": "Today",
               "body": "Dry run on staging: DNS, payment, and order notifications.",
-              "isDemo": true
+              "isDemo": true,
+              "ord": 3
             },
             {
               "slug": "url-redirect-map",
@@ -644,6 +665,21 @@
       "startedAt": "2026-09-22T12:00:00.000Z",
       "endedAt": "2026-09-22T12:30:00.000Z",
       "durationSec": 1800
+    },
+    {
+      "slug": "2026-10-01-aurora-app-launch-catalog-export",
+      "project": "aurora-app-launch",
+      "board": "launch",
+      "card": "catalog-export",
+      "title": "Catalog export & clean-up",
+      "projectName": "Aurora app launch",
+      "boardName": "Launch",
+      "color": "#b45a3c",
+      "kind": "pomodoro",
+      "note": "This was a good session",
+      "startedAt": "2026-10-01T19:04:34.269Z",
+      "endedAt": "2026-10-01T19:04:47.869Z",
+      "durationSec": 13
     }
   ],
   "trash": []

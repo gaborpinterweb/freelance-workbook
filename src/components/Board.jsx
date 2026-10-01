@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { createPortal, flushSync } from "react-dom";
 import {
   putItem,
   postItem,
   putDatabase,
   putBoard,
   putMasterboard,
+  putCardOrder,
   fetchWorkspace,
 } from "../api.js";
 import { Icon } from "../icons.jsx";
@@ -15,6 +16,7 @@ import {
   allBoardTasks,
   allBoards,
   boardKey,
+  byOrd,
   colCollapseKey,
   columnRows,
   confirmDeleteColumn,
@@ -25,6 +27,8 @@ import {
   loadCompletedViews,
 } from "../utils.js";
 import GlobalBar from "./GlobalBar.jsx";
+
+const DRAG_THRESHOLD_PX = 6;
 
 function getCompletedView(scope, completedViewByScope) {
   if (completedViewByScope.has(scope)) {
@@ -37,6 +41,241 @@ function getCompletedView(scope, completedViewByScope) {
   return mode;
 }
 
+function cardDragKey(row, folder, mod) {
+  return `${folder?.slug || ""}/${mod?.[2]?.slug || ""}/${row?.slug || row?.n || ""}`;
+}
+
+function orderPayload(row, folder, mod, ord) {
+  return {
+    project: folder.slug,
+    board: mod[2].slug,
+    slug: row.slug,
+    title: row.n || "Untitled",
+    status: row.s,
+    master: row.ms,
+    doneAt: row.doneAt || "",
+    body: row.body || "",
+    ord,
+  };
+}
+
+function findDropTarget(clientX, clientY) {
+  const stack = document.elementsFromPoint(clientX, clientY);
+  let col = null;
+  for (const el of stack) {
+    if (!(el instanceof Element)) continue;
+    if (el.classList.contains("done-col")) return { done: true };
+    if (el.classList.contains("col") && el.dataset.col) {
+      col = el;
+      break;
+    }
+  }
+  if (!col) return null;
+  const column = col.dataset.col;
+  if (col.classList.contains("collapsed")) return { column, index: 0 };
+  const body = col.querySelector(":scope > .col-body");
+  if (!body) return { column, index: 0 };
+  const cards = [...body.querySelectorAll(":scope > .card:not(.dragging)")];
+  let index = cards.length;
+  for (let i = 0; i < cards.length; i++) {
+    const rect = cards[i].getBoundingClientRect();
+    if (clientY < rect.top + rect.height / 2) {
+      index = i;
+      break;
+    }
+  }
+  return { column, index };
+}
+
+function useBoardCardDrag(boardEdit, resolveDrop) {
+  const [dragKey, setDragKey] = useState(null);
+  const [dragHeight, setDragHeight] = useState(null);
+  const [dragPreview, setDragPreview] = useState(null);
+  const [dropHint, setDropHint] = useState(null);
+  const sessionRef = useRef(null);
+  const hintRef = useRef(null);
+  const movedRef = useRef(false);
+  const previewElRef = useRef(null);
+  const resolveRef = useRef(resolveDrop);
+  resolveRef.current = resolveDrop;
+
+  const setHint = useCallback((hint) => {
+    hintRef.current = hint;
+    setDropHint(hint);
+  }, []);
+
+  const movePreview = useCallback((clientX, clientY, session) => {
+    const el = previewElRef.current;
+    if (!el || !session) return;
+    el.style.transform = `translate(${clientX - session.offsetX}px, ${clientY - session.offsetY}px)`;
+  }, []);
+
+  const cleanup = useCallback(() => {
+    const session = sessionRef.current;
+    if (session) {
+      window.removeEventListener("pointermove", session.onMove);
+      window.removeEventListener("pointerup", session.onUp);
+      window.removeEventListener("pointercancel", session.onUp);
+    }
+    sessionRef.current = null;
+    setDragKey(null);
+    setDragHeight(null);
+    setDragPreview(null);
+    setHint(null);
+    document.body.classList.remove("is-card-dragging");
+  }, [setHint]);
+
+  useEffect(() => () => cleanup(), [cleanup]);
+
+  const armDrag = useCallback(
+    (e, payload, key) => {
+      if (boardEdit || e.button !== 0) return;
+      if (e.target.closest?.(".card-check")) return;
+      if (sessionRef.current) cleanup();
+
+      movedRef.current = false;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const session = {
+        payload,
+        key,
+        el: e.currentTarget,
+        x: e.clientX,
+        y: e.clientY,
+        offsetX: e.clientX - rect.left,
+        offsetY: e.clientY - rect.top,
+        pointerId: e.pointerId,
+        started: false,
+        height: Math.round(rect.height),
+        width: Math.round(rect.width),
+      };
+
+      session.onMove = (ev) => {
+        if (ev.pointerId !== session.pointerId) return;
+        const dist = Math.hypot(ev.clientX - session.x, ev.clientY - session.y);
+        if (!session.started) {
+          if (dist < DRAG_THRESHOLD_PX) return;
+          session.started = true;
+          movedRef.current = true;
+          const row = payload.row || payload;
+          const folder = payload.folder;
+          const mod = payload.mod;
+          const color =
+            payload.color || folder?.color || PC[0];
+          const src =
+            payload.src ||
+            (folder && mod ? `${folder.name} · ${mod[1]}` : "");
+          setDragKey(key);
+          setDragHeight(session.height);
+          setDragPreview({
+            width: session.width,
+            height: session.height,
+            color,
+            done: isDone(row),
+            title: row.n || "Untitled",
+            src,
+            x: ev.clientX - session.offsetX,
+            y: ev.clientY - session.offsetY,
+          });
+          document.body.classList.add("is-card-dragging");
+        } else {
+          movePreview(ev.clientX, ev.clientY, session);
+        }
+        ev.preventDefault();
+        setHint(findDropTarget(ev.clientX, ev.clientY));
+      };
+
+      session.onUp = (ev) => {
+        if (ev.pointerId !== session.pointerId) return;
+        const started = session.started;
+        const hint = hintRef.current;
+        const dragPayload = session.payload;
+        cleanup();
+        if (started) resolveRef.current?.(dragPayload, hint);
+      };
+
+      sessionRef.current = session;
+      window.addEventListener("pointermove", session.onMove, { passive: false });
+      window.addEventListener("pointerup", session.onUp);
+      window.addEventListener("pointercancel", session.onUp);
+    },
+    [boardEdit, cleanup, movePreview, setHint]
+  );
+
+  const consumeDragClick = useCallback(() => {
+    if (!movedRef.current) return false;
+    movedRef.current = false;
+    return true;
+  }, []);
+
+  return {
+    dragKey,
+    dragHeight,
+    dragPreview,
+    previewElRef,
+    dropHint,
+    armDrag,
+    consumeDragClick,
+  };
+}
+
+function DropShadow({ height }) {
+  return (
+    <div
+      className="drop-shadow"
+      aria-hidden="true"
+      style={height ? { height } : undefined}
+    />
+  );
+}
+
+function DragPreview({ preview, previewElRef }) {
+  if (!preview) return null;
+  const pc = preview.color || PC[0];
+  return createPortal(
+    <div
+      ref={previewElRef}
+      className={"card tint drag-preview" + (preview.done ? " done" : "")}
+      style={{
+        ["--pc"]: pc,
+        background: pastel(pc),
+        width: preview.width,
+        height: preview.height,
+        transform: `translate(${preview.x}px, ${preview.y}px)`,
+      }}
+      aria-hidden="true"
+    >
+      <b>
+        <span className="card-check drag-preview-check" aria-hidden="true" />
+        <span className="card-name">{preview.title}</span>
+      </b>
+      {preview.src ? <span className="src">{preview.src}</span> : null}
+    </div>,
+    document.body
+  );
+}
+
+function renderOpenCards(items, column, dropHint, dragHeight, dragKey, renderCard) {
+  const hintHere = dropHint && !dropHint.done && dropHint.column === column;
+  const visible = dragKey
+    ? items.filter((item) => item.dragKey !== dragKey)
+    : items;
+  return (
+    <>
+      {visible.map((item, i) => (
+        <Fragment key={item.key}>
+          {hintHere && dropHint.index === i ? (
+            <DropShadow height={dragHeight} />
+          ) : null}
+          {renderCard(item, i)}
+        </Fragment>
+      ))}
+      {hintHere && dropHint.index === visible.length ? (
+        <DropShadow height={dragHeight} />
+      ) : null}
+    </>
+  );
+}
+
 export function TaskCard({
   row,
   folder,
@@ -46,22 +285,30 @@ export function TaskCard({
   boardEdit,
   noDrag,
   dragPayload,
-  dragRef,
+  dragKey,
+  cardKey,
+  onArmDrag,
+  consumeDragClick,
   onOpen,
   onToggleDone,
 }) {
   const pc = color || folder?.color || PC[0];
   const done = isDone(row);
+  const canDrag = !boardEdit && !noDrag;
+  const key = cardKey || cardDragKey(row, folder, mod);
+  const dragging = dragKey === key;
   return (
     <div
-      className={"card tint" + (done ? " done" : "")}
-      draggable={!boardEdit && !noDrag}
+      className={"card tint" + (done ? " done" : "") + (dragging ? " dragging" : "")}
       style={{ ["--pc"]: pc, background: pastel(pc) }}
       onClick={() => {
-        if (!boardEdit) onOpen(row);
+        if (boardEdit) return;
+        if (consumeDragClick?.()) return;
+        onOpen(row);
       }}
-      onDragStart={() => {
-        if (!boardEdit && !noDrag) dragRef.current = dragPayload || row;
+      onPointerDown={(e) => {
+        if (!canDrag) return;
+        onArmDrag?.(e, dragPayload || { row, folder, mod }, key);
       }}
     >
       <b>
@@ -71,6 +318,7 @@ export function TaskCard({
           checked={done}
           title={done ? "Mark active" : "Mark completed"}
           onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
           onChange={async (e) => {
             e.stopPropagation();
             await onToggleDone(row, folder, mod, e.target.checked);
@@ -301,7 +549,6 @@ function BoardCol({
   canRight,
   canDelete,
   onToggleCollapse,
-  onDrop,
   onRename,
   onMove,
   onDelete,
@@ -318,12 +565,7 @@ function BoardCol({
 
   if (editing) {
     return (
-      <div
-        className="col"
-        data-col={name}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={onDrop}
-      >
+      <div className="col" data-col={name}>
         <div className="col-head">
           <span className="col-name">{name}</span>
           <ColMoreMenu
@@ -356,12 +598,7 @@ function BoardCol({
   }
 
   return (
-    <div
-      className={"col" + (collapsed ? " collapsed" : "")}
-      data-col={name}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={onDrop}
-    >
+    <div className={"col" + (collapsed ? " collapsed" : "")} data-col={name}>
       <button
         type="button"
         className="col-head"
@@ -397,7 +634,6 @@ function ProjectBoard({
   boardEdit,
   colCollapsed,
   completedViewByScope,
-  dragRef,
   onBumpCollapse,
   onSetCompletedView,
   onSaveCard,
@@ -409,9 +645,66 @@ function ProjectBoard({
 }) {
   const scope = boardKey(folder, mod);
   const mode = getCompletedView(scope, completedViewByScope);
+
+  const resolveDrop = useCallback(
+    async (payload, hint) => {
+      if (!hint || boardEdit) return;
+      const row = payload.row || payload;
+      if (!row?.slug) return;
+
+      if (hint.done) {
+        if (isDone(row)) return;
+        row.doneAt = new Date().toISOString();
+        onBumpCollapse();
+        await onSaveCard(row, folder, mod);
+        return;
+      }
+
+      const targetCol = hint.column;
+      if (!targetCol) return;
+
+      const openInTarget = byOrd(
+        (data.rows || []).filter((r) => r.s === targetCol && !isDone(r))
+      );
+      const without = openInTarget.filter((r) => r !== row);
+      const index = Math.max(0, Math.min(hint.index ?? without.length, without.length));
+      const sameCol = row.s === targetCol && !isDone(row);
+      if (sameCol) {
+        const oldIndex = openInTarget.indexOf(row);
+        if (oldIndex === index) return;
+      }
+
+      const next = [...without.slice(0, index), row, ...without.slice(index)];
+      row.s = targetCol;
+      row.doneAt = "";
+      const items = next.map((r, i) => {
+        r.ord = i;
+        return orderPayload(r, folder, mod, i);
+      });
+      onBumpCollapse();
+      const res = await putCardOrder({ items });
+      onApplyWorkspace(res, keepNav(folder.slug, mod[2].slug));
+    },
+    [
+      boardEdit,
+      data.rows,
+      folder,
+      mod,
+      onApplyWorkspace,
+      onBumpCollapse,
+      onSaveCard,
+      keepNav,
+    ]
+  );
+
+  const { dragKey, dragHeight, dragPreview, previewElRef, dropHint, armDrag, consumeDragClick } =
+    useBoardCardDrag(boardEdit, resolveDrop);
+
   const cardProps = {
     boardEdit,
-    dragRef,
+    dragKey,
+    onArmDrag: armDrag,
+    consumeDragClick,
     onOpen: onOpenCard,
     onToggleDone,
   };
@@ -539,11 +832,17 @@ function ProjectBoard({
       className={"board" + (boardEdit ? " editing" : "")}
       ref={boardRef}
     >
+      <DragPreview preview={dragPreview} previewElRef={previewElRef} />
       {cols.map((s, i) => {
         const colRows = (data.rows || []).filter((r) => r.s === s);
         const split = columnRows(colRows, mode);
         const key = colCollapseKey(scope, s);
         const collapsed = !boardEdit && colCollapsed.has(key);
+        const openItems = split.open.map((r) => ({
+          key: r.slug || r.n,
+          dragKey: cardDragKey(r, folder, mod),
+          row: r,
+        }));
         return (
           <BoardCol
             key={s}
@@ -562,15 +861,6 @@ function ProjectBoard({
             onRename={renameBoardColumn}
             onMove={moveBoardColumnAnimated}
             onDelete={deleteBoardColumn}
-            onDrop={async () => {
-              if (!dragRef.current || boardEdit) return;
-              const row = dragRef.current.row || dragRef.current;
-              row.s = s;
-              row.doneAt = "";
-              dragRef.current = null;
-              onBumpCollapse();
-              await onSaveCard(row, folder, mod);
-            }}
             onBodyDblClick={
               boardEdit
                 ? undefined
@@ -578,9 +868,21 @@ function ProjectBoard({
             }
           >
             {!boardEdit &&
-              split.open.map((r) => (
-                <TaskCard key={r.slug || r.n} row={r} folder={folder} mod={mod} {...cardProps} />
-              ))}
+              renderOpenCards(
+                openItems,
+                s,
+                dropHint,
+                dragHeight,
+                dragKey,
+                (item) => (
+                  <TaskCard
+                    row={item.row}
+                    folder={folder}
+                    mod={mod}
+                    {...cardProps}
+                  />
+                )
+              )}
             {!boardEdit &&
               mode === "inplace" &&
               split.done.length > 0 &&
@@ -590,7 +892,7 @@ function ProjectBoard({
                   folder,
                   mod,
                   color: folder.color || PC[0],
-                  dragPayload: row,
+                  dragPayload: { row, folder, mod },
                 })),
                 { showEmpty: false },
                 cardProps
@@ -609,18 +911,7 @@ function ProjectBoard({
         </div>
       )}
       {mode === "virtual" && !boardEdit && (
-        <div
-          className="col done-col"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={async () => {
-            if (!dragRef.current || boardEdit) return;
-            const row = dragRef.current.row || dragRef.current;
-            if (!isDone(row)) row.doneAt = new Date().toISOString();
-            dragRef.current = null;
-            onBumpCollapse();
-            await onSaveCard(row, folder, mod);
-          }}
-        >
+        <div className="col done-col">
           <button type="button" className="col-head" disabled>
             <span className="col-count">
               {(data.rows || []).filter(isDone).length}
@@ -634,7 +925,7 @@ function ProjectBoard({
                 folder,
                 mod,
                 color: folder.color || PC[0],
-                dragPayload: row,
+                dragPayload: { row, folder, mod },
               })),
               {},
               cardProps
@@ -653,7 +944,6 @@ function MasterBoard({
   masterOff,
   colCollapsed,
   completedViewByScope,
-  dragRef,
   onBump,
   onSetCompletedView,
   onSaveCard,
@@ -668,9 +958,68 @@ function MasterBoard({
     (t) => !masterOff.has(boardKey(t.folder, t.mod))
   );
   const mode = getCompletedView("master", completedViewByScope);
+
+  const resolveDrop = useCallback(
+    async (payload, hint) => {
+      if (!hint || boardEdit) return;
+      const row = payload.row || payload;
+      const loc = payload.folder
+        ? { folder: payload.folder, mod: payload.mod }
+        : locateRow(row);
+      if (!row?.slug || !loc) return;
+
+      if (hint.done) {
+        if (isDone(row)) return;
+        row.doneAt = new Date().toISOString();
+        onBump();
+        await onSaveCard(row, loc.folder, loc.mod);
+        return;
+      }
+
+      const targetCol = hint.column;
+      if (!targetCol) return;
+
+      const openTasks = byOrd(
+        tasks
+          .filter((t) => t.row.ms === targetCol && !isDone(t.row))
+          .map((t) => t.row)
+      )
+        .map((r) => tasks.find((t) => t.row === r))
+        .filter(Boolean);
+
+      const without = openTasks.filter((t) => t.row !== row);
+      const index = Math.max(0, Math.min(hint.index ?? without.length, without.length));
+      const sameCol = row.ms === targetCol && !isDone(row);
+      if (sameCol) {
+        const oldIndex = openTasks.findIndex((t) => t.row === row);
+        if (oldIndex === index) return;
+      }
+
+      const dragTask = payload.folder
+        ? payload
+        : { row, folder: loc.folder, mod: loc.mod };
+      const next = [...without.slice(0, index), dragTask, ...without.slice(index)];
+      row.ms = targetCol;
+      row.doneAt = "";
+      const items = next.map((t, i) => {
+        t.row.ord = i;
+        return orderPayload(t.row, t.folder, t.mod, i);
+      });
+      onBump();
+      const res = await putCardOrder({ items });
+      onApplyWorkspace(res);
+    },
+    [boardEdit, tasks, locateRow, onBump, onSaveCard, onApplyWorkspace]
+  );
+
+  const { dragKey, dragHeight, dragPreview, previewElRef, dropHint, armDrag, consumeDragClick } =
+    useBoardCardDrag(boardEdit, resolveDrop);
+
   const cardProps = {
     boardEdit,
-    dragRef,
+    dragKey,
+    onArmDrag: armDrag,
+    consumeDragClick,
     onOpen: onOpenCard,
     onToggleDone,
   };
@@ -785,6 +1134,7 @@ function MasterBoard({
         className={"board" + (boardEdit ? " editing" : "")}
         ref={boardRef}
       >
+        <DragPreview preview={dragPreview} previewElRef={previewElRef} />
         {cols.map((s, i) => {
           const stageTasks = tasks.filter((t) => t.row.ms === s);
           const split = columnRows(
@@ -796,6 +1146,11 @@ function MasterBoard({
           const done = split.done.map(byRow).filter(Boolean);
           const key = colCollapseKey("master", s);
           const collapsed = !boardEdit && colCollapsed.has(key);
+          const openItems = open.map((t) => ({
+            key: (t.folder.slug || "") + "/" + (t.row.slug || t.row.n),
+            dragKey: cardDragKey(t.row, t.folder, t.mod),
+            task: t,
+          }));
           return (
             <BoardCol
               key={s}
@@ -814,18 +1169,6 @@ function MasterBoard({
               onRename={renameMasterColumn}
               onMove={moveMasterColumnAnimated}
               onDelete={deleteMasterColumn}
-              onDrop={async () => {
-                if (!dragRef.current || boardEdit) return;
-                const row = dragRef.current.row || dragRef.current;
-                const loc = dragRef.current.folder
-                  ? { folder: dragRef.current.folder, mod: dragRef.current.mod }
-                  : locateRow(row);
-                row.ms = s;
-                row.doneAt = "";
-                dragRef.current = null;
-                onBump();
-                if (loc) await onSaveCard(row, loc.folder, loc.mod);
-              }}
               onBodyDblClick={
                 boardEdit
                   ? undefined
@@ -846,18 +1189,27 @@ function MasterBoard({
               }
             >
               {!boardEdit &&
-                open.map((t) => (
-                  <TaskCard
-                    key={(t.folder.slug || "") + "/" + (t.row.slug || t.row.n)}
-                    row={t.row}
-                    folder={t.folder}
-                    mod={t.mod}
-                    color={t.folder.color || PC[t.fi % PC.length]}
-                    src={t.folder.name + " · " + t.mod[1]}
-                    dragPayload={t}
-                    {...cardProps}
-                  />
-                ))}
+                renderOpenCards(
+                  openItems,
+                  s,
+                  dropHint,
+                  dragHeight,
+                  dragKey,
+                  (item) => {
+                    const t = item.task;
+                    return (
+                      <TaskCard
+                        row={t.row}
+                        folder={t.folder}
+                        mod={t.mod}
+                        color={t.folder.color || PC[t.fi % PC.length]}
+                        src={t.folder.name + " · " + t.mod[1]}
+                        dragPayload={t}
+                        {...cardProps}
+                      />
+                    );
+                  }
+                )}
               {!boardEdit &&
                 mode === "inplace" &&
                 done.length > 0 &&
@@ -887,21 +1239,7 @@ function MasterBoard({
           </div>
         )}
         {mode === "virtual" && !boardEdit && (
-          <div
-            className="col done-col"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={async () => {
-              if (!dragRef.current || boardEdit) return;
-              const row = dragRef.current.row || dragRef.current;
-              const loc = dragRef.current.folder
-                ? { folder: dragRef.current.folder, mod: dragRef.current.mod }
-                : locateRow(row);
-              if (!isDone(row)) row.doneAt = new Date().toISOString();
-              dragRef.current = null;
-              onBump();
-              if (loc) await onSaveCard(row, loc.folder, loc.mod);
-            }}
-          >
+          <div className="col done-col">
             <button type="button" className="col-head" disabled>
               <span className="col-count">{tasks.filter((t) => isDone(t.row)).length}</span>
               <span className="col-name">Completed</span>
@@ -1179,7 +1517,6 @@ export default function Board({
   masterOff,
   colCollapsed,
   completedViewByScope,
-  dragRef,
   uiTick,
   onBump,
   onSetCompletedView,
@@ -1211,7 +1548,6 @@ export default function Board({
           masterOff={masterOff}
           colCollapsed={colCollapsed}
           completedViewByScope={completedViewByScope}
-          dragRef={dragRef}
           onBump={onBump}
           onSetCompletedView={onSetCompletedView}
           onSaveCard={onSaveCard}
@@ -1252,7 +1588,6 @@ export default function Board({
         boardEdit={editing}
         colCollapsed={colCollapsed}
         completedViewByScope={completedViewByScope}
-        dragRef={dragRef}
         onBumpCollapse={onBump}
         onSetCompletedView={onSetCompletedView}
         onSaveCard={onSaveCard}

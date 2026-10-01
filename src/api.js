@@ -12,6 +12,15 @@ export async function putCard(body) {
   return r.json();
 }
 
+export async function putCardOrder(body) {
+  const r = await fetch("/api/card-order", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
 export async function deleteCardApi(body) {
   const r = await fetch("/api/card", {
     method: "DELETE",

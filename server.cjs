@@ -195,6 +195,9 @@ function projectToApi(p) {
             doneAt: c.doneAt || "",
             body: c.body || "",
           };
+          if (c.ord != null && c.ord !== "" && !Number.isNaN(Number(c.ord))) {
+            card.ord = Number(c.ord);
+          }
           if (isDemoValue(c.isDemo)) card.isDemo = true;
           return card;
         }),
@@ -326,6 +329,7 @@ function writeCard(projectSlug, boardSlug, card) {
   if (!board.cards) board.cards = [];
   const slug = card.slug || slugify(card.title);
   let existing = board.cards.find((c) => c.slug === slug);
+  const isNew = !existing;
   if (!existing) {
     existing = { slug };
     board.cards.push(existing);
@@ -336,10 +340,45 @@ function writeCard(projectSlug, boardSlug, card) {
   existing.body = card.body || "";
   if (card.doneAt) existing.doneAt = card.doneAt;
   else delete existing.doneAt;
+  if (card.ord != null && card.ord !== "" && !Number.isNaN(Number(card.ord))) {
+    existing.ord = Number(card.ord);
+  } else if (isNew) {
+    let maxOrd = -1;
+    for (const c of board.cards) {
+      if (c === existing) continue;
+      const n = Number(c.ord);
+      if (!Number.isNaN(n)) maxOrd = Math.max(maxOrd, n);
+    }
+    existing.ord = maxOrd + 1;
+  }
   const demo = card.isDemo != null ? card.isDemo : existing.isDemo;
   if (isDemoValue(demo)) existing.isDemo = true;
   else delete existing.isDemo;
   return slug;
+}
+
+function writeCardOrder(items) {
+  if (!Array.isArray(items)) return;
+  for (const item of items) {
+    if (!item || !item.project || !item.board || !item.slug) continue;
+    if (projectIsArchived(item.project)) continue;
+    const project = findProject(item.project);
+    const board = findBoard(project, item.board);
+    if (!project || !board || !board.cards) continue;
+    const card = board.cards.find((c) => c.slug === item.slug);
+    if (!card) continue;
+    if (item.title != null) card.title = item.title || card.title;
+    if (item.status != null) card.status = item.status;
+    if (item.master != null) card.master = item.master;
+    if (item.body != null) card.body = item.body;
+    if (item.doneAt != null) {
+      if (item.doneAt) card.doneAt = item.doneAt;
+      else delete card.doneAt;
+    }
+    if (item.ord != null && item.ord !== "" && !Number.isNaN(Number(item.ord))) {
+      card.ord = Number(item.ord);
+    }
+  }
 }
 
 function ensureTrash() {
@@ -742,6 +781,13 @@ const server = http.createServer(async (req, res) => {
       const slug = writeCard(body.project, body.board, body);
       saveStore();
       return json(res, 200, { slug, ...readWorkspace() });
+    }
+    if (req.method === "PUT" && url.pathname === "/api/card-order") {
+      const body = await readBody(req);
+      if (!Array.isArray(body.items)) return json(res, 400, { error: "missing fields" });
+      writeCardOrder(body.items);
+      saveStore();
+      return json(res, 200, readWorkspace());
     }
     if (req.method === "DELETE" && url.pathname === "/api/card") {
       const body = await readBody(req);
