@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { deleteTimelogApi, fetchTimelogs, putTimelog } from "../api.js";
 import {
   GACC,
+  TIMELOG_PERIODS,
   formatClock,
   formatDuration,
   formatSpent,
   groupTimelogsByDayAndProject,
   matchesTimelogFilter,
+  matchesTimelogPeriod,
 } from "../utils.js";
 import { Icon } from "../icons.jsx";
 import GlobalBar from "./GlobalBar.jsx";
@@ -19,6 +21,7 @@ export default function Timelogs({
   refreshKey,
 }) {
   const [entries, setEntries] = useState(null);
+  const [period, setPeriod] = useState("This week");
   const [editingSlug, setEditingSlug] = useState(null);
   const [draftNote, setDraftNote] = useState("");
   const [busySlug, setBusySlug] = useState(null);
@@ -50,9 +53,10 @@ export default function Timelogs({
   const filter = timelogFilter;
   const shown = useMemo(() => {
     if (!entries) return null;
-    if (!filter) return entries;
-    return entries.filter((e) => matchesTimelogFilter(e, filter));
-  }, [entries, filter]);
+    return entries.filter(
+      (e) => matchesTimelogPeriod(e, period) && matchesTimelogFilter(e, filter)
+    );
+  }, [entries, filter, period]);
 
   const groups = useMemo(
     () => (shown ? groupTimelogsByDayAndProject(shown) : null),
@@ -116,7 +120,21 @@ export default function Timelogs({
 
   return (
     <div id="view" className="mod" style={{ ["--tab"]: tabC }}>
-      <GlobalBar name="Timelogs" />
+      <GlobalBar name="Timelogs">
+        <select
+          className="done-view"
+          aria-label="Timelog period"
+          title="Timelog period"
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
+        >
+          {TIMELOG_PERIODS.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+      </GlobalBar>
       {filter && (
         <div className="log-filter">
           Card: <b>{filter.title || filter.card || "Untitled"}</b>
@@ -130,8 +148,10 @@ export default function Timelogs({
         {shown && !shown.length && (
           <div className="empty-log">
             {filter
-              ? "No timelogs for this card yet."
-              : "No timelogs yet. Start a pomodoro from a card."}
+              ? `No timelogs for this card in ${period.toLowerCase()}.`
+              : entries?.length
+                ? `No timelogs for ${period.toLowerCase()}.`
+                : "No timelogs yet. Start a pomodoro from a card."}
           </div>
         )}
         {groups &&

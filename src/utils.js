@@ -318,6 +318,108 @@ export function matchesTimelogFilter(entry, filter) {
   return entry.project === filter.project && entry.board === filter.board && entry.card === filter.card;
 }
 
+export const TIMELOG_PERIODS = [
+  "Today",
+  "Yesterday",
+  "This week",
+  "Last week",
+  "This month",
+  "Last month",
+  "This quarter",
+  "Last quarter",
+  "This year",
+  "Last year",
+];
+
+function startOfLocalDay(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function addLocalDays(d, n) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+
+/** Monday-based local week start. */
+function startOfLocalWeek(d) {
+  const x = startOfLocalDay(d);
+  const day = x.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  return addLocalDays(x, diff);
+}
+
+function startOfLocalMonth(d) {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+function startOfLocalQuarter(d) {
+  const q = Math.floor(d.getMonth() / 3);
+  return new Date(d.getFullYear(), q * 3, 1);
+}
+
+function startOfLocalYear(d) {
+  return new Date(d.getFullYear(), 0, 1);
+}
+
+/** Inclusive start, exclusive end (local time). */
+export function timelogPeriodRange(period, now = new Date()) {
+  const today = startOfLocalDay(now);
+  switch (period) {
+    case "Today":
+      return { start: today, end: addLocalDays(today, 1) };
+    case "Yesterday": {
+      const start = addLocalDays(today, -1);
+      return { start, end: today };
+    }
+    case "This week": {
+      const start = startOfLocalWeek(today);
+      return { start, end: addLocalDays(start, 7) };
+    }
+    case "Last week": {
+      const end = startOfLocalWeek(today);
+      return { start: addLocalDays(end, -7), end };
+    }
+    case "This month": {
+      const start = startOfLocalMonth(today);
+      return { start, end: new Date(start.getFullYear(), start.getMonth() + 1, 1) };
+    }
+    case "Last month": {
+      const end = startOfLocalMonth(today);
+      return { start: new Date(end.getFullYear(), end.getMonth() - 1, 1), end };
+    }
+    case "This quarter": {
+      const start = startOfLocalQuarter(today);
+      return { start, end: new Date(start.getFullYear(), start.getMonth() + 3, 1) };
+    }
+    case "Last quarter": {
+      const end = startOfLocalQuarter(today);
+      return { start: new Date(end.getFullYear(), end.getMonth() - 3, 1), end };
+    }
+    case "This year": {
+      const start = startOfLocalYear(today);
+      return { start, end: new Date(start.getFullYear() + 1, 0, 1) };
+    }
+    case "Last year": {
+      const end = startOfLocalYear(today);
+      return { start: new Date(end.getFullYear() - 1, 0, 1), end };
+    }
+    default:
+      return { start: today, end: addLocalDays(today, 1) };
+  }
+}
+
+export function matchesTimelogPeriod(entry, period) {
+  if (!period || !TIMELOG_PERIODS.includes(period)) return true;
+  const stamp = entry.endedAt || entry.startedAt || "";
+  const t = new Date(stamp).getTime();
+  if (Number.isNaN(t)) return false;
+  const { start, end } = timelogPeriodRange(period);
+  return t >= start.getTime() && t < end.getTime();
+}
+
 export function globalLabel(name) {
   return (
     {
