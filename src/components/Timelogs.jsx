@@ -3,6 +3,7 @@ import { deleteTimelogApi, fetchTimelogs, putTimelog } from "../api.js";
 import {
   GACC,
   TIMELOG_PERIODS,
+  allBoards,
   formatClock,
   formatDuration,
   formatSpent,
@@ -13,8 +14,84 @@ import {
 import { Icon } from "../icons.jsx";
 import GlobalBar from "./GlobalBar.jsx";
 
+function entryBoardKey(entry) {
+  return `${entry.project || ""}/${entry.board || ""}`;
+}
+
+function BoardFilterDropdown({ boards, boardOff, onToggle }) {
+  const wrapRef = useRef(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const selected = boards.filter((b) => !boardOff.has(b.key));
+  const label =
+    !boards.length
+      ? "No boards"
+      : selected.length === boards.length
+        ? "All boards"
+        : selected.length === 0
+          ? "No boards"
+          : selected.length === 1
+            ? selected[0].label
+            : `${selected.length} boards`;
+
+  return (
+    <div
+      className={"board-filter" + (open ? " open" : "")}
+      ref={wrapRef}
+    >
+      <button
+        type="button"
+        className="done-view board-filter-btn"
+        aria-label="Task boards"
+        title="Task boards"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {label}
+      </button>
+      {open && (
+        <div className="pop" role="listbox" aria-multiselectable="true">
+          {!boards.length && (
+            <div className="board-filter-empty">No task boards yet</div>
+          )}
+          {boards.map((b) => {
+            const on = !boardOff.has(b.key);
+            return (
+              <label
+                key={b.key}
+                className="board-filter-item"
+                role="option"
+                aria-selected={on}
+              >
+                <input
+                  type="checkbox"
+                  checked={on}
+                  onChange={() => onToggle(b.key)}
+                />
+                <span className="dot" style={{ background: b.color || GACC }} />
+                <span className="lab">{b.label}</span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Timelogs({
   tabC = GACC,
+  folders = [],
   timelogFilter,
   onClearFilter,
   onOpenCard,
@@ -22,10 +99,21 @@ export default function Timelogs({
 }) {
   const [entries, setEntries] = useState(null);
   const [period, setPeriod] = useState("This week");
+  const [boardOff, setBoardOff] = useState(() => new Set());
   const [editingSlug, setEditingSlug] = useState(null);
   const [draftNote, setDraftNote] = useState("");
   const [busySlug, setBusySlug] = useState(null);
   const noteRef = useRef(null);
+
+  const boards = useMemo(
+    () =>
+      allBoards(folders).map(({ folder, mod, color, key }) => ({
+        key,
+        label: `${folder.name} · ${mod[1]}`,
+        color,
+      })),
+    [folders]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -54,14 +142,26 @@ export default function Timelogs({
   const shown = useMemo(() => {
     if (!entries) return null;
     return entries.filter(
-      (e) => matchesTimelogPeriod(e, period) && matchesTimelogFilter(e, filter)
+      (e) =>
+        matchesTimelogPeriod(e, period) &&
+        matchesTimelogFilter(e, filter) &&
+        !boardOff.has(entryBoardKey(e))
     );
-  }, [entries, filter, period]);
+  }, [entries, filter, period, boardOff]);
 
   const groups = useMemo(
     () => (shown ? groupTimelogsByDayAndProject(shown) : null),
     [shown]
   );
+
+  const toggleBoard = (key) => {
+    setBoardOff((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const startEdit = (entry) => {
     if (busySlug) return;
@@ -121,19 +221,26 @@ export default function Timelogs({
   return (
     <div id="view" className="mod" style={{ ["--tab"]: tabC }}>
       <GlobalBar name="Timelogs">
-        <select
-          className="done-view"
-          aria-label="Timelog period"
-          title="Timelog period"
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-        >
-          {TIMELOG_PERIODS.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
+        <div className="gbar-tools">
+          <BoardFilterDropdown
+            boards={boards}
+            boardOff={boardOff}
+            onToggle={toggleBoard}
+          />
+          <select
+            className="done-view"
+            aria-label="Timelog period"
+            title="Timelog period"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+          >
+            {TIMELOG_PERIODS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </div>
       </GlobalBar>
       {filter && (
         <div className="log-filter">

@@ -808,6 +808,7 @@ export default function App() {
           {loaded && !loadError && !draftProject && g === "Timelogs" && (
             <Timelogs
               tabC={GACC}
+              folders={folders}
               timelogFilter={timelogFilter}
               onClearFilter={() => setTimelogFilter(null)}
               onOpenCard={(project, board, card) => {
