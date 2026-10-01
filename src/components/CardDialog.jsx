@@ -141,7 +141,7 @@ export default function CardDialog({
 
   return (
     <div
-      className="ov"
+      className="ov ov-top"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) close(false);
         else if (!e.target.closest?.(".prop-dd")) closePropDrops();
@@ -149,6 +149,38 @@ export default function CardDialog({
     >
       <div className={"dlg" + (curLoc ? " tint" : "")} style={tintStyle}>
         <div className="dlg-content">
+          {isDb ? (
+            <DbTitle
+              row={draft}
+              loc={originLoc}
+              onPatch={patch}
+            />
+          ) : (
+            <div className="title-row">
+              <input
+                type="checkbox"
+                className="card-check"
+                checked={isDone(draft)}
+                title={isDone(draft) ? "Mark active" : "Mark completed"}
+                onChange={(e) => {
+                  const doneAt = e.target.checked
+                    ? new Date().toISOString()
+                    : "";
+                  patch({ doneAt });
+                  clearTimeout(persistTimer.current);
+                  draftRef.current = { ...draftRef.current, doneAt };
+                  persist();
+                }}
+              />
+              <input
+                className={"title" + (isDone(draft) ? " done" : "")}
+                value={draft.n || ""}
+                placeholder="Untitled"
+                autoFocus
+                onChange={(e) => patch({ n: e.target.value })}
+              />
+            </div>
+          )}
           <div className="dlg-fields">
             {isDb ? (
               <DbFields
@@ -159,36 +191,12 @@ export default function CardDialog({
                 onPersist={persist}
               />
             ) : (
-              <>
-                <div className="title-row">
-                  <input
-                    type="checkbox"
-                    className="card-check"
-                    checked={isDone(draft)}
-                    title={isDone(draft) ? "Mark active" : "Mark completed"}
-                    onChange={(e) => {
-                      const doneAt = e.target.checked
-                        ? new Date().toISOString()
-                        : "";
-                      patch({ doneAt });
-                      clearTimeout(persistTimer.current);
-                      draftRef.current = { ...draftRef.current, doneAt };
-                      persist();
-                    }}
-                  />
-                  <input
-                    className={"title" + (isDone(draft) ? " done" : "")}
-                    value={draft.n || ""}
-                    placeholder="Untitled"
-                    autoFocus
-                    onChange={(e) => patch({ n: e.target.value })}
-                  />
-                </div>
-                <table className="props">
-                  <tbody>
-                    <tr>
-                      <td>Task board</td>
-                      <td>
+              <table className="props">
+                <tbody>
+                  <tr>
+                    <td>Task board</td>
+                    <td>
+                      <div className="prop-split">
                         <PropDropdown
                           value={
                             curLoc
@@ -236,11 +244,9 @@ export default function CardDialog({
                               (curLoc?.mod[1] || "Tab")}
                           </span>
                         </PropDropdown>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Task board column</td>
-                      <td>
+                        <span className="prop-split-sep" aria-hidden="true">
+                          /
+                        </span>
                         <PropDropdown
                           value={draft.s || ""}
                           options={curLoc?.mod[2]?.columns || stages}
@@ -253,59 +259,59 @@ export default function CardDialog({
                         >
                           <span className="lab">{draft.s || ""}</span>
                         </PropDropdown>
+                      </div>
+                    </td>
+                  </tr>
+                  {showMasterColumn && (
+                    <tr>
+                      <td>Master board</td>
+                      <td>
+                        <PropDropdown
+                          value={draft.ms || stages[0]}
+                          options={stages}
+                          onChange={(o) => {
+                            patch({ ms: o });
+                            clearTimeout(persistTimer.current);
+                            draftRef.current = { ...draftRef.current, ms: o };
+                            persist();
+                          }}
+                        >
+                          <span className="lab">{draft.ms || ""}</span>
+                        </PropDropdown>
                       </td>
                     </tr>
-                    {showMasterColumn && (
-                      <tr>
-                        <td>Master board column</td>
-                        <td>
-                          <PropDropdown
-                            value={draft.ms || stages[0]}
-                            options={stages}
-                            onChange={(o) => {
-                              patch({ ms: o });
-                              clearTimeout(persistTimer.current);
-                              draftRef.current = { ...draftRef.current, ms: o };
-                              persist();
-                            }}
-                          >
-                            <span className="lab">{draft.ms || ""}</span>
-                          </PropDropdown>
-                        </td>
-                      </tr>
-                    )}
-                    {!isDraft && curLoc?.mod[0] === "Board" && draft.slug && spent > 0 && (
-                      <tr>
-                        <td>Time spent</td>
-                        <td>
-                          <button
-                            type="button"
-                            className="prop-link"
-                            onClick={async () => {
-                              await onOpenTimelogs({
-                                project: curLoc.folder.slug,
-                                board: curLoc.mod[2].slug,
-                                card: draft.slug,
-                                title: draft.n || "Untitled",
-                              });
-                              await close(false);
-                            }}
-                          >
-                            <span className="lab">{formatSpent(spent)}</span>
-                            <PropAffix kind="arrow" />
-                          </button>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </>
+                  )}
+                  {!isDraft && curLoc?.mod[0] === "Board" && draft.slug && spent > 0 && (
+                    <tr>
+                      <td>Time spent</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="prop-link"
+                          onClick={async () => {
+                            await onOpenTimelogs({
+                              project: curLoc.folder.slug,
+                              board: curLoc.mod[2].slug,
+                              card: draft.slug,
+                              title: draft.n || "Untitled",
+                            });
+                            await close(false);
+                          }}
+                        >
+                          <span className="lab">{formatSpent(spent)}</span>
+                          <PropAffix kind="arrow" />
+                        </button>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             )}
           </div>
           <div className="dlg-description">
             <RichTextEditor
               value={draft.body || ""}
-              placeholder="Description..."
+              placeholder="Write something…"
               onChange={(html) => patch({ body: html })}
             />
           </div>
@@ -377,50 +383,55 @@ export default function CardDialog({
   );
 }
 
+function DbTitle({ row, loc, onPatch }) {
+  const cols = loc.mod[2].cols || [];
+  const titleCol = cols.find((c) => c.id === "n") || cols[0];
+  return (
+    <input
+      className="title"
+      value={row[titleCol?.id] || ""}
+      placeholder="Untitled"
+      autoFocus
+      onChange={(e) => {
+        if (titleCol) onPatch({ [titleCol.id]: e.target.value });
+      }}
+    />
+  );
+}
+
 function DbFields({ row, loc, stages, onPatch, onPersist }) {
   const cols = loc.mod[2].cols || [];
   const titleCol = cols.find((c) => c.id === "n") || cols[0];
   return (
-    <>
-      <input
-        className="title"
-        value={row[titleCol?.id] || ""}
-        placeholder="Untitled"
-        autoFocus
-        onChange={(e) => {
-          if (titleCol) onPatch({ [titleCol.id]: e.target.value });
-        }}
-      />
-      <table className="props">
-        <tbody>
-          {cols
-            .filter((c) => c !== titleCol)
-            .map((c) => (
-              <tr key={c.id}>
-                <td>{c.label}</td>
-                <td>
-                  {c.type === "stage" ? (
-                    <PropDropdown
-                      value={row[c.id] || stages[0]}
-                      options={stages}
-                      onChange={(o) => {
-                        onPatch({ [c.id]: o });
-                        onPersist();
-                      }}
-                    >
-                      <span className="lab">{row[c.id] || stages[0] || ""}</span>
-                    </PropDropdown>
-                  ) : (
-                    <input
-                      value={row[c.id] || ""}
-                      onChange={(e) => onPatch({ [c.id]: e.target.value })}
-                    />
-                  )}
-                </td>
-              </tr>
-            ))}
-        </tbody>
-      </table>
-    </>
+    <table className="props">
+      <tbody>
+        {cols
+          .filter((c) => c !== titleCol)
+          .map((c) => (
+            <tr key={c.id}>
+              <td>{c.label}</td>
+              <td>
+                {c.type === "stage" ? (
+                  <PropDropdown
+                    value={row[c.id] || stages[0]}
+                    options={stages}
+                    onChange={(o) => {
+                      onPatch({ [c.id]: o });
+                      onPersist();
+                    }}
+                  >
+                    <span className="lab">{row[c.id] || stages[0] || ""}</span>
+                  </PropDropdown>
+                ) : (
+                  <input
+                    value={row[c.id] || ""}
+                    onChange={(e) => onPatch({ [c.id]: e.target.value })}
+                  />
+                )}
+              </td>
+            </tr>
+          ))}
+      </tbody>
+    </table>
   );
 }

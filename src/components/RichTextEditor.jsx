@@ -65,49 +65,70 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
 
   return (
     <div className="rte">
-      <div className="rte-toolbar">
-        <ToolbarBtn
-          title="Heading"
-          active={editor.isActive("heading", { level: 1 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-        >
-          <Icon name="heading" size={15} />
-        </ToolbarBtn>
-        <ToolbarBtn
-          title="Bold"
-          active={editor.isActive("bold")}
-          onClick={() => editor.chain().focus().toggleBold().run()}
-        >
-          <Icon name="bold" size={15} />
-        </ToolbarBtn>
-        <ToolbarBtn
-          title="Italic"
-          active={editor.isActive("italic")}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-        >
-          <Icon name="italic" size={15} />
-        </ToolbarBtn>
-        <ToolbarBtn
-          title="Bullet list"
-          active={editor.isActive("bulletList")}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-        >
-          <Icon name="list" size={15} />
-        </ToolbarBtn>
-        <ToolbarBtn
-          title="Numbered list"
-          active={editor.isActive("orderedList")}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        >
-          <Icon name="listOrdered" size={15} />
-        </ToolbarBtn>
-        <ToolbarBtn
-          title="Checklist"
-          active={editor.isActive("taskList")}
-          onClick={() => editor.chain().focus().toggleTaskList().run()}
-        >
-          <Icon name="checklist" size={15} />
-        </ToolbarBtn>
+      <div className="dlg-desc-head">
+        <span className="dlg-desc-label">Description</span>
+        <div className="rte-toolbar">
+          <ToolbarBtn
+            title="Bold"
+            active={editor.isActive("bold")}
+            onClick={() => editor.chain().focus().toggleBold().run()}
+          >
+            <Icon name="bold" size={15} />
+          </ToolbarBtn>
+          <ToolbarBtn
+            title="Bullet list"
+            active={editor.isActive("bulletList")}
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+          >
+            <Icon name="list" size={15} />
+          </ToolbarBtn>
+          <ToolbarBtn
+            title="Checklist"
+            active={editor.isActive("taskList")}
+            onClick={() => editor.chain().focus().toggleTaskList().run()}
+          >
+            <Icon name="checklist" size={15} />
+          </ToolbarBtn>
+          <span className="dlg-desc-info" tabIndex={0} aria-label="Formatting help">
+            <Icon name="About" size={15} />
+            <div className="dlg-desc-tip" role="tooltip">
+              <div>
+                <b>Bold:</b> **text**
+              </div>
+              <div>
+                <b>Italic:</b> _text_
+              </div>
+              <div>
+                <b>Strikethrough:</b> ~~text~~
+              </div>
+              <div>
+                <b>Heading:</b> # text
+              </div>
+              <div>
+                <b>List:</b>
+                <br />- Item 1
+                <br />- Item 2
+              </div>
+              <div>
+                <b>Numbered list:</b>
+                <br />
+                1. Item 1
+                <br />
+                2. Item 2
+              </div>
+              <div>
+                <b>Checklist:</b>
+                <br />
+                [] Item 1
+                <br />
+                [x] Item 2
+              </div>
+              <div>
+                <b>Inline code:</b> `text`
+              </div>
+            </div>
+          </span>
+        </div>
       </div>
       <EditorContent editor={editor} />
     </div>

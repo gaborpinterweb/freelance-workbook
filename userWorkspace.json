@@ -38,7 +38,7 @@
               "title": "Launch day checklist",
               "status": "Backend dev",
               "master": "This week",
-              "body": "DNS cutover, Product Hunt draft, social posts, and rollback notes.",
+              "body": "",
               "isDemo": true
             },
             {
@@ -76,6 +76,13 @@
               "doneAt": "",
               "body": "Wire Formspark → Notion, confirmation email, and success state.",
               "isDemo": true
+            },
+            {
+              "slug": "catalog-export",
+              "title": "Catalog export & clean-up",
+              "status": "Design",
+              "master": "Today",
+              "body": "<ul data-type=\"taskList\"><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qweqwe asd</strong></p></div></li><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qwe</strong></p></div></li><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qwe</strong></p></div></li></ul><p></p>"
             }
           ],
           "isDemo": true
@@ -119,7 +126,7 @@
             },
             {
               "slug": "component-library",
-              "title": "Webflow component library",
+              "title": "This is some title",
               "status": "Webflow",
               "master": "Next week",
               "body": "Buttons, cards, nav, and footer as Webflow components.",
@@ -148,7 +155,7 @@
               "title": "Type & color system",
               "status": "Design",
               "master": "This week",
-              "body": "Document scales, tokens, and Figma styles for the new brand."
+              "body": "<p>Document scales, tokens, and Figma styles for the new brand.</p><p><code>console.log(x)</code> is nice</p><p></p>"
             }
           ],
           "isDemo": true
@@ -176,7 +183,6 @@
               "title": "Accessibility pass",
               "status": "Design",
               "master": "Backlog",
-              "doneAt": "",
               "body": "Contrast, focus states, and alt text before client QA.",
               "isDemo": true
             },
@@ -242,14 +248,6 @@
             "SEO"
           ],
           "cards": [
-            {
-              "slug": "catalog-export",
-              "title": "Catalog export & clean-up",
-              "status": "Data & apps",
-              "master": "Today",
-              "body": "",
-              "isDemo": true
-            },
             {
               "slug": "checkout-apps",
               "title": "Checkout & apps install",
