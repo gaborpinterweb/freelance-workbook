@@ -262,7 +262,6 @@
               "title": "Checkout & apps install",
               "status": "Data & apps",
               "master": "This week",
-              "doneAt": "",
               "body": "Klaviyo, Judge.me, and Shop Pay; smoke-test gift cards and discounts.",
               "isDemo": true
             },
@@ -289,7 +288,6 @@
               "title": "Go-live rehearsal",
               "status": "Theme",
               "master": "Backlog",
-              "doneAt": "",
               "body": "Dry run on staging: DNS, payment, and order notifications.",
               "isDemo": true
             },
