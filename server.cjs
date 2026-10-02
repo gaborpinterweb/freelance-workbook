@@ -229,6 +229,7 @@ function projectToApi(p) {
         slug: n.slug,
         title: n.title || n.slug,
         body: n.body || "",
+        createdAt: n.createdAt || n.updatedAt || "",
         updatedAt: n.updatedAt || "",
       })),
     })),
@@ -638,11 +639,18 @@ function writeNote(projectSlug, notesTabSlug, { slug, title, body }) {
   const now = new Date().toISOString();
   let note = tab.notes.find((n) => n.slug === slug);
   if (!note) {
-    note = { slug, title: title || slug, body: body || "", updatedAt: now };
+    note = {
+      slug,
+      title: title || slug,
+      body: body || "",
+      createdAt: now,
+      updatedAt: now,
+    };
     tab.notes.push(note);
   } else {
     if (title != null) note.title = String(title).trim() || note.title || slug;
     if (body != null) note.body = String(body);
+    if (!note.createdAt) note.createdAt = note.updatedAt || now;
     note.updatedAt = now;
   }
   return slug;

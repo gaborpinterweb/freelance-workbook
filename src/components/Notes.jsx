@@ -1,22 +1,60 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { postNote, putNote } from "../api.js";
 import { Icon } from "../icons.jsx";
 import { noteListTitle, noteListPreview, isEmptyNoteBody } from "../utils.js";
+import Dropdown from "./Dropdown.jsx";
 import RichTextEditor, { RteToolbar } from "./RichTextEditor.jsx";
 
 const EMPTY_NOTE_BODY = "<h1></h1>";
 const NOTE_PLACEHOLDER = "New note...";
+
+const NOTE_SORT_OPTIONS = [
+  { value: "created-asc", label: "Creation ascending" },
+  { value: "created-desc", label: "Creation descending" },
+  { value: "updated-asc", label: "Updated ascending" },
+  { value: "updated-desc", label: "Updated descending" },
+  { value: "alpha-asc", label: "Alphabetical ascending" },
+  { value: "alpha-desc", label: "Alphabetical descending" },
+];
 
 function previewHtml(body) {
   if (!body) return "<p></p>";
   return body;
 }
 
+function sortNotes(list, sort) {
+  const notes = [...(list || [])];
+  const byTime = (a, b, key, dir) => {
+    const cmp = String(a[key] || "").localeCompare(String(b[key] || ""));
+    return dir === "asc" ? cmp : -cmp;
+  };
+  const byAlpha = (a, b, dir) => {
+    const cmp = noteListTitle(a.body).localeCompare(noteListTitle(b.body), undefined, {
+      sensitivity: "base",
+    });
+    return dir === "asc" ? cmp : -cmp;
+  };
+  switch (sort) {
+    case "created-asc":
+      return notes.sort((a, b) => byTime(a, b, "createdAt", "asc"));
+    case "created-desc":
+      return notes.sort((a, b) => byTime(a, b, "createdAt", "desc"));
+    case "updated-asc":
+      return notes.sort((a, b) => byTime(a, b, "updatedAt", "asc"));
+    case "alpha-asc":
+      return notes.sort((a, b) => byAlpha(a, b, "asc"));
+    case "alpha-desc":
+      return notes.sort((a, b) => byAlpha(a, b, "desc"));
+    case "updated-desc":
+    default:
+      return notes.sort((a, b) => byTime(a, b, "updatedAt", "desc"));
+  }
+}
+
 export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace }) {
   const d = mod[2] || { slug: "", notes: [] };
-  const notes = [...(d.notes || [])].sort((a, b) =>
-    String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""))
-  );
+  const [sort, setSort] = useState("updated-desc");
+  const notes = useMemo(() => sortNotes(d.notes, sort), [d.notes, sort]);
   const [selectedSlug, setSelectedSlug] = useState(notes[0]?.slug || null);
   const [locked, setLocked] = useState(true);
   const [editor, setEditor] = useState(null);
@@ -95,14 +133,19 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Search notes"
           />
-          <button
-            type="button"
-            className="notes-view-bar"
+          <Dropdown
+            className="notes-view-dd"
+            buttonClassName="notes-view-bar"
+            ariaLabel="View options"
             title="View options"
-            aria-label="View options"
+            align="right"
+            caret={false}
+            value={sort}
+            options={NOTE_SORT_OPTIONS}
+            onChange={setSort}
           >
             <Icon name="gallery" size={15} />
-          </button>
+          </Dropdown>
           {!readonly && (
             <button
               type="button"

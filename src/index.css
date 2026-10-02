@@ -99,16 +99,19 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .notes-chrome .notes-view-bar:hover,
 .notes-chrome .notes-add-bar:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
 .notes-chrome .notes-view-bar svg{display:block}
+.notes-chrome .notes-view-dd{flex:none}
+.notes-chrome .notes-view-dd .dd-btn{width:28px;height:28px;padding:0;justify-content:center}
+.notes-chrome .notes-view-dd .dd-menu{min-width:200px;right:0;left:auto}
 .notes-layout{display:flex;flex:1;min-height:0}
 .notes-sidebar{width:320px;flex:none;display:flex;flex-direction:column;padding:0;border-right:1px solid var(--line);background:color-mix(in srgb,var(--ink) 3%,var(--bg));color:var(--ink);min-height:0}
-.notes-list{flex:1;min-height:0;overflow:auto;padding:6px 6px 10px}
-.notes-item{display:flex;flex-direction:column;align-items:stretch;gap:2px;width:100%;padding:8px 10px;border:none;border-radius:calc(var(--radius) - 4px);font:inherit;text-align:left;color:var(--ink);background:transparent;cursor:pointer;overflow:hidden}
-.notes-item:hover{background:var(--sel)}
-.notes-item.on{background:color-mix(in srgb,var(--tab,var(--acc)) 18%,var(--bg));color:var(--ink)}
+.notes-list{flex:1;min-height:0;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+.notes-item{display:flex;flex-direction:column;align-items:stretch;gap:2px;width:100%;padding:10px 12px;border:3px solid transparent;border-radius:calc(var(--radius) - 2px);font:inherit;text-align:left;color:var(--ink);background:#fff;box-shadow:0 1px 2px #0001;cursor:pointer;overflow:hidden}
+.notes-item:hover{box-shadow:0 1px 4px #0002}
+.notes-sidebar .notes-item.on{background:#fff;border-color:var(--tab,var(--acc));box-shadow:none;color:var(--ink)}
 .notes-item-title{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .notes-item-preview{font-size:12px;font-weight:400;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .notes-empty,.notes-placeholder{margin:16px 14px;font-size:13px;color:var(--mute)}
-.notes-main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;background:var(--card)}
+.notes-main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;background:#fff}
 .notes-toolbar-left{min-width:0}
 .notes-toolbar-mid{display:flex;justify-content:center;min-width:0}
 .notes-toolbar-right{display:flex;justify-content:flex-end;align-items:center;min-width:0}

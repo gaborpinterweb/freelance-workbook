@@ -120,6 +120,7 @@ export function fromApi(data, loadStagesFn) {
             slug: n.slug,
             title: n.title || n.slug,
             body: n.body || "",
+            createdAt: n.createdAt || n.updatedAt || "",
             updatedAt: n.updatedAt || "",
           })),
         },
