@@ -65,14 +65,31 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
   const [cardSize, setCardSize] = useState("md");
   const notes = useMemo(() => sortNotes(d.notes, sort), [d.notes, sort]);
   const [selectedSlug, setSelectedSlug] = useState(notes[0]?.slug || null);
-  const [locked, setLocked] = useState(true);
+  const [unlocked, setUnlocked] = useState({});
   const [editor, setEditor] = useState(null);
   const [search, setSearch] = useState("");
+
+  const unlockKey = (noteSlug) => `${d.slug}:${noteSlug}`;
+  const locked = !selectedSlug || !unlocked[unlockKey(selectedSlug)];
+
+  const setLocked = (next) => {
+    if (!selectedSlug) return;
+    const key = unlockKey(selectedSlug);
+    setUnlocked((prev) => {
+      if (next) {
+        if (!prev[key]) return prev;
+        const copy = { ...prev };
+        delete copy[key];
+        return copy;
+      }
+      if (prev[key]) return prev;
+      return { ...prev, [key]: true };
+    });
+  };
 
   useEffect(() => {
     if (selectedSlug && notes.some((n) => n.slug === selectedSlug)) return;
     setSelectedSlug(notes[0]?.slug || null);
-    setLocked(true);
   }, [notes, selectedSlug]);
 
   useEffect(() => {
@@ -104,14 +121,13 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
     onApplyWorkspace(data);
     if (data.slug) {
       setSelectedSlug(data.slug);
-      setLocked(false);
+      setUnlocked((prev) => ({ ...prev, [unlockKey(data.slug)]: true }));
     }
   };
 
   const selectNote = (slug) => {
     if (slug === selectedSlug) return;
     setSelectedSlug(slug);
-    setLocked(true);
   };
 
   if (notes.length === 0) {
