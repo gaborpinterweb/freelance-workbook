@@ -229,6 +229,7 @@ function projectToApi(p) {
         slug: n.slug,
         title: n.title || n.slug,
         body: n.body || "",
+        updatedAt: n.updatedAt || "",
       })),
     })),
   };
@@ -634,13 +635,15 @@ function writeNote(projectSlug, notesTabSlug, { slug, title, body }) {
   const tab = findNotesTab(project, notesTabSlug);
   if (!project || !tab) throw new Error("notes tab not found");
   if (!tab.notes) tab.notes = [];
+  const now = new Date().toISOString();
   let note = tab.notes.find((n) => n.slug === slug);
   if (!note) {
-    note = { slug, title: title || slug, body: body || "" };
+    note = { slug, title: title || slug, body: body || "", updatedAt: now };
     tab.notes.push(note);
   } else {
     if (title != null) note.title = String(title).trim() || note.title || slug;
     if (body != null) note.body = String(body);
+    note.updatedAt = now;
   }
   return slug;
 }
@@ -936,7 +939,9 @@ const server = http.createServer(async (req, res) => {
       if (!tab) return json(res, 404, { error: "notes tab not found" });
       const title = String(body.title || "").trim() || "Untitled";
       const slug = uniqueNoteSlug(tab, title);
-      writeNote(body.project, body.notesTab, { slug, title, body: "" });
+      const noteBody =
+        body.body != null ? String(body.body) : "<h1></h1>";
+      writeNote(body.project, body.notesTab, { slug, title, body: noteBody });
       saveStore();
       return json(res, 201, { slug, ...readWorkspace() });
     }

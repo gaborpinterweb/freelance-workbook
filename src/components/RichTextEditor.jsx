@@ -19,6 +19,18 @@ function toEditorContent(body) {
     .join("");
 }
 
+function emptyHeadingDoc() {
+  return {
+    type: "doc",
+    content: [{ type: "heading", attrs: { level: 1 }, content: [] }],
+  };
+}
+
+function isBlankHeadingHtml(html) {
+  const s = String(html || "").trim();
+  return !s || s === "<h1></h1>" || s === "<h1><br></h1>" || s === "<h1><br/></h1>";
+}
+
 function ToolbarBtn({ onClick, active, title, children }) {
   return (
     <button
@@ -123,10 +135,21 @@ export default function RichTextEditor({
   showLabel = true,
   showToolbar = true,
   editable = true,
+  autofocus = false,
+  startInHeading = false,
   onEditor,
 }) {
+  const initialContent = (() => {
+    const html = toEditorContent(value);
+    if (startInHeading || autofocus) {
+      if (isBlankHeadingHtml(html)) return emptyHeadingDoc();
+    }
+    return html || "";
+  })();
+
   const editor = useEditor({
     editable,
+    autofocus: false,
     extensions: [
       StarterKit.configure({
         heading: { levels: [1] },
@@ -136,11 +159,13 @@ export default function RichTextEditor({
       }),
       Placeholder.configure({
         placeholder: placeholder || "Description...",
+        showOnlyWhenEditable: true,
+        showOnlyCurrent: false,
       }),
       TaskList,
       TaskItem.configure({ nested: true }),
     ],
-    content: toEditorContent(value),
+    content: initialContent,
     editorProps: {
       attributes: {
         class: "rte-content",
@@ -148,7 +173,11 @@ export default function RichTextEditor({
     },
     onUpdate: ({ editor: ed }) => {
       if (!editable) return;
-      onChange(ed.isEmpty ? "" : ed.getHTML());
+      if (ed.isEmpty) {
+        onChange(startInHeading ? "<h1></h1>" : "");
+        return;
+      }
+      onChange(ed.getHTML());
     },
   });
 
@@ -156,6 +185,19 @@ export default function RichTextEditor({
     onEditor?.(editor || null);
     return () => onEditor?.(null);
   }, [editor, onEditor]);
+
+  useEffect(() => {
+    if (!editor || !autofocus) return;
+    // Keep caret inside the first block (heading), not a trailing empty paragraph.
+    const { state } = editor;
+    const first = state.doc.firstChild;
+    if (first) {
+      const pos = 1; // inside first textblock
+      editor.chain().setTextSelection(pos).focus().run();
+    } else {
+      editor.chain().focus().setHeading({ level: 1 }).run();
+    }
+  }, [editor, autofocus]);
 
   if (!editor) return null;
 

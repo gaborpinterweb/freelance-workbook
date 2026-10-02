@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { postNote, putNote } from "../api.js";
 import { Icon } from "../icons.jsx";
+import { noteListTitle, noteListPreview, isEmptyNoteBody } from "../utils.js";
 import RichTextEditor, { RteToolbar } from "./RichTextEditor.jsx";
+
+const EMPTY_NOTE_BODY = "<h1></h1>";
+const NOTE_PLACEHOLDER = "New note...";
 
 function previewHtml(body) {
   if (!body) return "<p></p>";
@@ -10,7 +14,9 @@ function previewHtml(body) {
 
 export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace }) {
   const d = mod[2] || { slug: "", notes: [] };
-  const notes = d.notes || [];
+  const notes = [...(d.notes || [])].sort((a, b) =>
+    String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""))
+  );
   const [selectedSlug, setSelectedSlug] = useState(notes[0]?.slug || null);
   const [locked, setLocked] = useState(true);
   const [editor, setEditor] = useState(null);
@@ -34,6 +40,7 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
       project: folder.slug,
       notesTab: d.slug,
       note: selected.slug,
+      title: noteListTitle(body),
       body,
     });
     onApplyWorkspace(data);
@@ -41,12 +48,11 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
 
   const addNote = async () => {
     if (readonly) return;
-    const title = (prompt("Note title") || "").trim();
-    if (!title) return;
     const data = await postNote({
       project: folder.slug,
       notesTab: d.slug,
-      title,
+      title: "New note...",
+      body: EMPTY_NOTE_BODY,
     });
     onApplyWorkspace(data);
     if (data.slug) {
@@ -140,16 +146,22 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
       <div className="notes-layout">
         <aside className="notes-sidebar">
           <div className="notes-list">
-            {notes.map((n) => (
-              <button
-                key={n.slug}
-                type="button"
-                className={"notes-item" + (n.slug === selectedSlug ? " on" : "")}
-                onClick={() => selectNote(n.slug)}
-              >
-                {n.title || "Untitled"}
-              </button>
-            ))}
+            {notes.map((n) => {
+              const preview = noteListPreview(n.body);
+              return (
+                <button
+                  key={n.slug}
+                  type="button"
+                  className={"notes-item" + (n.slug === selectedSlug ? " on" : "")}
+                  onClick={() => selectNote(n.slug)}
+                >
+                  <span className="notes-item-title">{noteListTitle(n.body)}</span>
+                  {preview ? (
+                    <span className="notes-item-preview">{preview}</span>
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
         </aside>
         <div className="notes-main">
@@ -158,22 +170,30 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
           ) : locked ? (
             <div className="notes-rte-wrap notes-preview">
               <div className="rte">
-                <div
-                  className="tiptap"
-                  dangerouslySetInnerHTML={{ __html: previewHtml(selected.body) }}
-                />
+                {isEmptyNoteBody(selected.body) ? (
+                  <div className="tiptap">
+                    <h1 className="notes-empty-title">{NOTE_PLACEHOLDER}</h1>
+                  </div>
+                ) : (
+                  <div
+                    className="tiptap"
+                    dangerouslySetInnerHTML={{ __html: previewHtml(selected.body) }}
+                  />
+                )}
               </div>
             </div>
           ) : (
             <div className="notes-rte-wrap">
               <RichTextEditor
                 key={selected.slug}
-                value={selected.body || ""}
+                value={selected.body || EMPTY_NOTE_BODY}
                 onChange={saveBody}
                 showLabel={false}
                 showToolbar={false}
+                autofocus
+                startInHeading
                 onEditor={setEditor}
-                placeholder="Write your note..."
+                placeholder={NOTE_PLACEHOLDER}
               />
             </div>
           )}

@@ -118,6 +118,7 @@ export function fromApi(data, loadStagesFn) {
             slug: n.slug,
             title: n.title || n.slug,
             body: n.body || "",
+            updatedAt: n.updatedAt || "",
           })),
         },
       ]);
@@ -168,6 +169,48 @@ export function slugifyClient(s) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "") || "item"
   );
+}
+
+/** Plain-text title from the first block of note HTML (h1/p/li/…). */
+export function noteListTitle(body) {
+  const html = String(body || "").trim();
+  if (!html) return "New note...";
+  try {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const first =
+      doc.body.querySelector("h1, h2, h3, p, li, blockquote") ||
+      doc.body.firstElementChild;
+    const text = (first?.textContent || "").replace(/\s+/g, " ").trim();
+    return text || "New note...";
+  } catch {
+    return "New note...";
+  }
+}
+
+/** Plain-text preview from blocks after the first, truncated. */
+export function noteListPreview(body, maxLen = 80) {
+  const html = String(body || "").trim();
+  if (!html) return "";
+  try {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const blocks = [
+      ...doc.body.querySelectorAll("h1, h2, h3, p, li, blockquote"),
+    ];
+    if (blocks.length < 2) return "";
+    const text = blocks
+      .slice(1)
+      .map((el) => (el.textContent || "").replace(/\s+/g, " ").trim())
+      .filter(Boolean)
+      .join(" ");
+    if (!text) return "";
+    return text.length > maxLen ? text.slice(0, maxLen).trimEnd() + "…" : text;
+  } catch {
+    return "";
+  }
+}
+
+export function isEmptyNoteBody(body) {
+  return noteListTitle(body) === "New note...";
 }
 
 export function isProjectArchived(folder) {

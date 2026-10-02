@@ -102,9 +102,11 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .notes-layout{display:flex;flex:1;min-height:0}
 .notes-sidebar{width:320px;flex:none;display:flex;flex-direction:column;padding:0;border-right:1px solid var(--line);background:color-mix(in srgb,var(--ink) 3%,var(--bg));color:var(--ink);min-height:0}
 .notes-list{flex:1;min-height:0;overflow:auto;padding:6px 6px 10px}
-.notes-item{display:block;width:100%;padding:8px 10px;border:none;border-radius:calc(var(--radius) - 4px);font:inherit;font-size:13px;font-weight:500;text-align:left;color:var(--ink);background:transparent;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notes-item{display:flex;flex-direction:column;align-items:stretch;gap:2px;width:100%;padding:8px 10px;border:none;border-radius:calc(var(--radius) - 4px);font:inherit;text-align:left;color:var(--ink);background:transparent;cursor:pointer;overflow:hidden}
 .notes-item:hover{background:var(--sel)}
 .notes-item.on{background:color-mix(in srgb,var(--tab,var(--acc)) 18%,var(--bg));color:var(--ink)}
+.notes-item-title{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notes-item-preview{font-size:12px;font-weight:400;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .notes-empty,.notes-placeholder{margin:16px 14px;font-size:13px;color:var(--mute)}
 .notes-main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;background:var(--card)}
 .notes-toolbar-left{min-width:0}
@@ -129,6 +131,13 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .notes-rte-wrap .tiptap p,.notes-rte-wrap .ProseMirror p{margin:0 0 .5em}
 .notes-rte-wrap .tiptap p:last-child,.notes-rte-wrap .ProseMirror p:last-child{margin-bottom:0}
 .notes-rte-wrap .tiptap h1,.notes-rte-wrap .ProseMirror h1{margin:0 0 .4em;font-size:1.35em;font-weight:700;line-height:1.25}
+.notes-rte-wrap .tiptap h1.is-empty::before,
+.notes-rte-wrap .tiptap h1.is-editor-empty::before,
+.notes-rte-wrap .ProseMirror h1.is-empty::before,
+.notes-rte-wrap .ProseMirror h1.is-editor-empty::before,
+.notes-rte-wrap .tiptap p.is-editor-empty:first-child::before,
+.notes-rte-wrap .ProseMirror p.is-editor-empty:first-child::before{content:attr(data-placeholder);float:left;color:var(--mute);pointer-events:none;height:0;font:inherit;font-weight:700}
+.notes-empty-title{color:var(--mute);font-weight:700}
 .notes-rte-wrap .tiptap ul,.notes-rte-wrap .tiptap ol,
 .notes-rte-wrap .ProseMirror ul,.notes-rte-wrap .ProseMirror ol{margin:.25em 0 .5em;padding-left:1.35em}
 .notes-rte-wrap .tiptap ul[data-type="taskList"],
