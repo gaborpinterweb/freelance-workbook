@@ -105,11 +105,6 @@
       "isDemo": true,
       "notesTabs": [
         {
-          "slug": "asd",
-          "name": "asd",
-          "notes": []
-        },
-        {
           "slug": "asdasd",
           "name": "asdasd",
           "notes": [
@@ -124,6 +119,19 @@
           "slug": "test-notes",
           "name": "Test Notes",
           "notes": []
+        },
+        {
+          "slug": "asd",
+          "name": "asd",
+          "notes": [
+            {
+              "slug": "trash-test-note",
+              "title": "Trash test note",
+              "body": "<h1>Trash test</h1>",
+              "createdAt": "2026-10-02T17:37:52.254Z",
+              "updatedAt": "2026-10-02T17:37:52.254Z"
+            }
+          ]
         }
       ],
       "tabOrder": [
@@ -137,15 +145,15 @@
         },
         {
           "type": "notes",
-          "slug": "asd"
-        },
-        {
-          "type": "notes",
           "slug": "asdasd"
         },
         {
           "type": "notes",
           "slug": "test-notes"
+        },
+        {
+          "type": "notes",
+          "slug": "asd"
         }
       ]
     },
@@ -346,13 +354,6 @@
               "body": "<h1>This is a note, super nice</h1><p>There is something cool about it.</p><p>Not sure what, but it feels awesome</p><p>There is something cool about it.</p><p>Not sure what, but it feels awesome</p><p></p>",
               "createdAt": "2026-10-02T09:31:36.669Z",
               "updatedAt": "2026-10-02T09:31:37.547Z"
-            },
-            {
-              "slug": "asd",
-              "title": "New note...",
-              "body": "<h1></h1>",
-              "createdAt": "2026-10-02T10:06:07.942Z",
-              "updatedAt": "2026-10-02T10:06:11.018Z"
             },
             {
               "slug": "new-note",
@@ -852,5 +853,54 @@
       "durationSec": 13
     }
   ],
-  "trash": []
+  "trash": [
+    {
+      "kind": "card",
+      "slug": "trash-smoke-card",
+      "deletedAt": "2026-10-02T17:37:59.821Z",
+      "project": "aurora-app-launch",
+      "board": "trash-board-smoke",
+      "card": "smoke-card",
+      "title": "Smoke card",
+      "status": "Design",
+      "master": "Backlog",
+      "body": "",
+      "doneAt": "",
+      "projectName": "Aurora app launch",
+      "boardName": "Trash Board Smoke",
+      "color": "#b45a3c"
+    },
+    {
+      "kind": "board",
+      "slug": "trash-trash-board-smoke",
+      "deletedAt": "2026-10-02T17:37:59.821Z",
+      "project": "aurora-app-launch",
+      "board": "trash-board-smoke",
+      "boardName": "Trash Board Smoke",
+      "columns": [
+        "Design",
+        "Frontend dev",
+        "Backend dev",
+        "Content"
+      ],
+      "projectName": "Aurora app launch",
+      "color": "#b45a3c",
+      "title": "Trash Board Smoke"
+    },
+    {
+      "kind": "note",
+      "slug": "trash-asd",
+      "deletedAt": "2026-10-02T18:24:44.261Z",
+      "project": "meridian-site-redesign",
+      "notesTab": "asdqwe",
+      "note": "asd",
+      "title": "Test note let's see what happens",
+      "body": "<h1>Test note let's see what happens</h1><p>Hello bello labello</p><p></p>",
+      "createdAt": "2026-10-02T10:06:07.942Z",
+      "updatedAt": "2026-10-02T18:24:40.470Z",
+      "projectName": "Meridian site redesign",
+      "notesTabName": "asdqwe",
+      "color": "#2f7a6e"
+    }
+  ]
 }

@@ -239,22 +239,11 @@ function renameTab(projectSlug, type, slug, name) {
 }
 
 function deleteTab(projectSlug, type, slug) {
+  if (type === "board") return softDeleteBoard(projectSlug, slug);
+  if (type === "notes") return softDeleteNotesTab(projectSlug, slug);
+  // databases stay hard-delete for now (not in UI)
   const project = findProject(projectSlug);
   if (!project) return { ok: false, error: "project not found" };
-  if (type === "board") {
-    const idx = (project.boards || []).findIndex((b) => b.slug === slug);
-    if (idx < 0) return { ok: false, error: "tab not found" };
-    project.boards.splice(idx, 1);
-    removeTabOrder(project, type, slug);
-    return { ok: true };
-  }
-  if (type === "notes") {
-    const idx = (project.notesTabs || []).findIndex((t) => t.slug === slug);
-    if (idx < 0) return { ok: false, error: "tab not found" };
-    project.notesTabs.splice(idx, 1);
-    removeTabOrder(project, type, slug);
-    return { ok: true };
-  }
   if (type === "database") {
     const idx = (project.databases || []).findIndex((d) => d.slug === slug);
     if (idx < 0) return { ok: false, error: "tab not found" };
@@ -555,6 +544,7 @@ function softDeleteCard(projectSlug, boardSlug, cardSlug) {
   const [card] = board.cards.splice(idx, 1);
   ensureTrash();
   const entry = {
+    kind: "card",
     slug: uniqueTrashSlug(card.slug || card.title || "card"),
     deletedAt: new Date().toISOString(),
     project: projectSlug,
@@ -574,6 +564,88 @@ function softDeleteCard(projectSlug, boardSlug, cardSlug) {
   return true;
 }
 
+function softDeleteNote(projectSlug, notesTabSlug, noteSlug) {
+  const project = findProject(projectSlug);
+  const tab = findNotesTab(project, notesTabSlug);
+  if (!project || !tab || !tab.notes) return false;
+  const idx = tab.notes.findIndex((n) => n.slug === noteSlug);
+  if (idx < 0) return false;
+  const [note] = tab.notes.splice(idx, 1);
+  ensureTrash();
+  store.trash.push({
+    kind: "note",
+    slug: uniqueTrashSlug(note.slug || note.title || "note"),
+    deletedAt: new Date().toISOString(),
+    project: projectSlug,
+    notesTab: notesTabSlug,
+    note: note.slug || "",
+    title: note.title || note.slug || "Untitled",
+    body: note.body || "",
+    createdAt: note.createdAt || "",
+    updatedAt: note.updatedAt || "",
+    projectName: project.name || projectSlug,
+    notesTabName: tab.name || notesTabSlug,
+    color: project.color || "#9a5b2e",
+  });
+  return true;
+}
+
+function softDeleteBoard(projectSlug, boardSlug) {
+  const project = findProject(projectSlug);
+  if (!project) return { ok: false, error: "project not found" };
+  const idx = (project.boards || []).findIndex((b) => b.slug === boardSlug);
+  if (idx < 0) return { ok: false, error: "tab not found" };
+  const board = project.boards[idx];
+  for (const card of [...(board.cards || [])]) {
+    softDeleteCard(projectSlug, boardSlug, card.slug);
+  }
+  ensureTrash();
+  store.trash.push({
+    kind: "board",
+    slug: uniqueTrashSlug(board.slug || board.name || "board"),
+    deletedAt: new Date().toISOString(),
+    project: projectSlug,
+    board: board.slug,
+    boardName: board.name || board.slug,
+    columns: Array.isArray(board.columns) && board.columns.length
+      ? board.columns.slice()
+      : DEFAULT_BOARD_COLS.slice(),
+    projectName: project.name || projectSlug,
+    color: project.color || "#9a5b2e",
+    title: board.name || board.slug,
+  });
+  if (isDemoValue(board.isDemo)) store.trash[store.trash.length - 1].isDemo = true;
+  project.boards.splice(idx, 1);
+  removeTabOrder(project, "board", boardSlug);
+  return { ok: true };
+}
+
+function softDeleteNotesTab(projectSlug, notesTabSlug) {
+  const project = findProject(projectSlug);
+  if (!project) return { ok: false, error: "project not found" };
+  const idx = (project.notesTabs || []).findIndex((t) => t.slug === notesTabSlug);
+  if (idx < 0) return { ok: false, error: "tab not found" };
+  const tab = project.notesTabs[idx];
+  for (const note of [...(tab.notes || [])]) {
+    softDeleteNote(projectSlug, notesTabSlug, note.slug);
+  }
+  ensureTrash();
+  store.trash.push({
+    kind: "notesTab",
+    slug: uniqueTrashSlug(tab.slug || tab.name || "notes"),
+    deletedAt: new Date().toISOString(),
+    project: projectSlug,
+    notesTab: tab.slug,
+    notesTabName: tab.name || tab.slug,
+    projectName: project.name || projectSlug,
+    color: project.color || "#9a5b2e",
+    title: tab.name || tab.slug,
+  });
+  project.notesTabs.splice(idx, 1);
+  removeTabOrder(project, "notes", notesTabSlug);
+  return { ok: true };
+}
+
 function hardDeleteCard(projectSlug, boardSlug, cardSlug) {
   const project = findProject(projectSlug);
   const board = findBoard(project, boardSlug);
@@ -587,39 +659,98 @@ function deleteCard(projectSlug, boardSlug, cardSlug, { permanent = false } = {}
   return softDeleteCard(projectSlug, boardSlug, cardSlug);
 }
 
-function readTrash() {
+function findTrashParent(kind, projectSlug, containerSlug) {
   ensureTrash();
-  return store.trash
-    .slice()
-    .sort((a, b) => String(b.deletedAt || "").localeCompare(String(a.deletedAt || "")))
-    .map((t) => ({
-      slug: t.slug,
-      deletedAt: t.deletedAt || "",
-      project: t.project || "",
-      board: t.board || "",
-      card: t.card || "",
-      title: t.title || t.card || "Untitled",
-      status: t.status || "",
-      master: t.master || "",
-      body: t.body || "",
-      doneAt: t.doneAt || "",
-      projectName: t.projectName || t.project || "",
-      boardName: t.boardName || t.board || "",
-      color: t.color || "#9a5b2e",
-      isDemo: isDemoValue(t.isDemo) || undefined,
-    }));
+  if (kind === "board") {
+    return (
+      store.trash.find(
+        (t) => t.kind === "board" && t.project === projectSlug && t.board === containerSlug
+      ) || null
+    );
+  }
+  if (kind === "notesTab") {
+    return (
+      store.trash.find(
+        (t) =>
+          t.kind === "notesTab" && t.project === projectSlug && t.notesTab === containerSlug
+      ) || null
+    );
+  }
+  return null;
 }
 
-function restoreTrashItem(trashSlug) {
-  ensureTrash();
-  const idx = store.trash.findIndex((t) => t.slug === trashSlug);
-  if (idx < 0) return { ok: false, error: "not found" };
-  const item = store.trash[idx];
+function restoreBoardFromTrash(item) {
   const project = findProject(item.project);
-  const board = findBoard(project, item.board);
-  if (!project || !board) return { ok: false, error: "original board not found" };
+  if (!project) return { ok: false, error: "project not found" };
   if (projectIsArchived(item.project)) return { ok: false, error: "project is archived" };
-  store.trash.splice(idx, 1);
+  if (!project.boards) project.boards = [];
+  let slug = item.board || slugify(item.boardName || item.title) || "board";
+  if (findBoard(project, slug)) {
+    // already restored
+    return { ok: true, project: item.project, board: slug, slug };
+  }
+  const cols = Array.isArray(item.columns) && item.columns.length
+    ? item.columns.slice()
+    : DEFAULT_BOARD_COLS.slice();
+  project.boards.push({
+    slug,
+    name: item.boardName || item.title || slug,
+    columns: cols,
+    cards: [],
+  });
+  if (isDemoValue(item.isDemo)) project.boards[project.boards.length - 1].isDemo = true;
+  appendTabOrder(project, "board", slug);
+  const trashIdx = store.trash.findIndex((t) => t.slug === item.slug);
+  if (trashIdx >= 0) store.trash.splice(trashIdx, 1);
+  return { ok: true, project: item.project, board: slug, slug };
+}
+
+function restoreNotesTabFromTrash(item) {
+  const project = findProject(item.project);
+  if (!project) return { ok: false, error: "project not found" };
+  if (projectIsArchived(item.project)) return { ok: false, error: "project is archived" };
+  if (!project.notesTabs) project.notesTabs = [];
+  let slug = item.notesTab || slugify(item.notesTabName || item.title) || "notes";
+  if (findNotesTab(project, slug)) {
+    return { ok: true, project: item.project, notesTab: slug, slug };
+  }
+  project.notesTabs.push({
+    slug,
+    name: item.notesTabName || item.title || slug,
+    notes: [],
+  });
+  appendTabOrder(project, "notes", slug);
+  const trashIdx = store.trash.findIndex((t) => t.slug === item.slug);
+  if (trashIdx >= 0) store.trash.splice(trashIdx, 1);
+  return { ok: true, project: item.project, notesTab: slug, slug };
+}
+
+function restoreCardFromTrash(item, { restoreParent = false } = {}) {
+  const project = findProject(item.project);
+  if (!project) return { ok: false, error: "project not found" };
+  if (projectIsArchived(item.project)) return { ok: false, error: "project is archived" };
+  let board = findBoard(project, item.board);
+  if (!board) {
+    const parent = findTrashParent("board", item.project, item.board);
+    if (parent && !restoreParent) {
+      return {
+        ok: false,
+        needsParent: true,
+        parentKind: "board",
+        parentName: parent.boardName || parent.title || item.board,
+        parentTrashSlug: parent.slug,
+      };
+    }
+    if (parent && restoreParent) {
+      const restored = restoreBoardFromTrash(parent);
+      if (!restored.ok) return restored;
+      board = findBoard(project, restored.board);
+    }
+  }
+  if (!board) return { ok: false, error: "original board not found" };
+  ensureTrash();
+  const idx = store.trash.findIndex((t) => t.slug === item.slug);
+  if (idx >= 0) store.trash.splice(idx, 1);
   if (!board.cards) board.cards = [];
   let slug = item.card || slugify(item.title) || "card";
   if (board.cards.some((c) => c.slug === slug)) slug = uniqueCardSlug(board, item.title || slug);
@@ -638,6 +769,115 @@ function restoreTrashItem(trashSlug) {
   if (isDemoValue(item.isDemo)) card.isDemo = true;
   board.cards.push(card);
   return { ok: true, project: item.project, board: item.board, slug };
+}
+
+function restoreNoteFromTrash(item, { restoreParent = false } = {}) {
+  const project = findProject(item.project);
+  if (!project) return { ok: false, error: "project not found" };
+  if (projectIsArchived(item.project)) return { ok: false, error: "project is archived" };
+  let tab = findNotesTab(project, item.notesTab);
+  if (!tab) {
+    const parent = findTrashParent("notesTab", item.project, item.notesTab);
+    if (parent && !restoreParent) {
+      return {
+        ok: false,
+        needsParent: true,
+        parentKind: "notesTab",
+        parentName: parent.notesTabName || parent.title || item.notesTab,
+        parentTrashSlug: parent.slug,
+      };
+    }
+    if (parent && restoreParent) {
+      const restored = restoreNotesTabFromTrash(parent);
+      if (!restored.ok) return restored;
+      tab = findNotesTab(project, restored.notesTab);
+    }
+  }
+  if (!tab) return { ok: false, error: "original notes tab not found" };
+  ensureTrash();
+  const idx = store.trash.findIndex((t) => t.slug === item.slug);
+  if (idx >= 0) store.trash.splice(idx, 1);
+  if (!tab.notes) tab.notes = [];
+  let slug = item.note || slugify(item.title) || "note";
+  if (tab.notes.some((n) => n.slug === slug)) slug = uniqueNoteSlug(tab, item.title || slug);
+  const now = new Date().toISOString();
+  tab.notes.push({
+    slug,
+    title: item.title || slug,
+    body: item.body || "",
+    createdAt: item.createdAt || now,
+    updatedAt: item.updatedAt || now,
+  });
+  return { ok: true, project: item.project, notesTab: item.notesTab, slug };
+}
+
+function readTrash() {
+  ensureTrash();
+  return store.trash
+    .slice()
+    .sort((a, b) => String(b.deletedAt || "").localeCompare(String(a.deletedAt || "")))
+    .map((t) => {
+      const kind = t.kind || "card";
+      const base = {
+        kind,
+        slug: t.slug,
+        deletedAt: t.deletedAt || "",
+        project: t.project || "",
+        projectName: t.projectName || t.project || "",
+        color: t.color || "#9a5b2e",
+        isDemo: isDemoValue(t.isDemo) || undefined,
+      };
+      if (kind === "note") {
+        return {
+          ...base,
+          notesTab: t.notesTab || "",
+          notesTabName: t.notesTabName || t.notesTab || "",
+          note: t.note || "",
+          title: t.title || t.note || "Untitled",
+          body: t.body || "",
+        };
+      }
+      if (kind === "board") {
+        return {
+          ...base,
+          board: t.board || "",
+          boardName: t.boardName || t.board || "",
+          title: t.boardName || t.title || t.board || "Board",
+          columns: Array.isArray(t.columns) ? t.columns.slice() : [],
+        };
+      }
+      if (kind === "notesTab") {
+        return {
+          ...base,
+          notesTab: t.notesTab || "",
+          notesTabName: t.notesTabName || t.notesTab || "",
+          title: t.notesTabName || t.title || t.notesTab || "Notes",
+        };
+      }
+      return {
+        ...base,
+        board: t.board || "",
+        card: t.card || "",
+        title: t.title || t.card || "Untitled",
+        status: t.status || "",
+        master: t.master || "",
+        body: t.body || "",
+        doneAt: t.doneAt || "",
+        boardName: t.boardName || t.board || "",
+      };
+    });
+}
+
+function restoreTrashItem(trashSlug, { restoreParent = false } = {}) {
+  ensureTrash();
+  const idx = store.trash.findIndex((t) => t.slug === trashSlug);
+  if (idx < 0) return { ok: false, error: "not found" };
+  const item = store.trash[idx];
+  const kind = item.kind || "card";
+  if (kind === "board") return restoreBoardFromTrash(item);
+  if (kind === "notesTab") return restoreNotesTabFromTrash(item);
+  if (kind === "note") return restoreNoteFromTrash(item, { restoreParent });
+  return restoreCardFromTrash(item, { restoreParent });
 }
 
 const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -797,12 +1037,9 @@ function writeNote(projectSlug, notesTabSlug, { slug, title, body }) {
 }
 
 function deleteNote(projectSlug, notesTabSlug, noteSlug) {
-  const project = findProject(projectSlug);
-  const tab = findNotesTab(project, notesTabSlug);
-  if (!project || !tab) return { ok: false, error: "notes tab not found" };
-  const idx = (tab.notes || []).findIndex((n) => n.slug === noteSlug);
-  if (idx < 0) return { ok: false, error: "note not found" };
-  tab.notes.splice(idx, 1);
+  if (!softDeleteNote(projectSlug, notesTabSlug, noteSlug)) {
+    return { ok: false, error: "note not found" };
+  }
   return { ok: true };
 }
 
@@ -1019,13 +1256,28 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/trash/restore") {
       const body = await readBody(req);
       if (!body.slug) return json(res, 400, { error: "missing fields" });
-      const result = restoreTrashItem(body.slug);
+      const result = restoreTrashItem(body.slug, { restoreParent: !!body.restoreParent });
+      if (result.needsParent) {
+        return json(res, 409, {
+          needsParent: true,
+          parentKind: result.parentKind,
+          parentName: result.parentName,
+          parentTrashSlug: result.parentTrashSlug,
+          error: "parent container is in trash",
+        });
+      }
       if (!result.ok) {
         const status = result.error === "not found" ? 404 : result.error === "project is archived" ? 403 : 400;
         return json(res, status, { error: result.error });
       }
       saveStore();
-      return json(res, 200, { slug: result.slug, project: result.project, board: result.board, ...readWorkspace() });
+      return json(res, 200, {
+        slug: result.slug,
+        project: result.project,
+        board: result.board || null,
+        notesTab: result.notesTab || null,
+        ...readWorkspace(),
+      });
     }
     if (req.method === "POST" && url.pathname === "/api/card") {
       const body = await readBody(req);

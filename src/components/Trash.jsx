@@ -3,6 +3,28 @@ import { fetchTrash } from "../api.js";
 import { GACC, formatTrashDate } from "../utils.js";
 import GlobalBar from "./GlobalBar.jsx";
 
+function trashKindLabel(kind) {
+  if (kind === "note") return "Note";
+  if (kind === "board") return "Board";
+  if (kind === "notesTab") return "Notes tab";
+  return "Card";
+}
+
+function trashMeta(entry) {
+  const project = entry.projectName || entry.project || "Project";
+  const kind = entry.kind || "card";
+  if (kind === "note") {
+    return `${project} · ${entry.notesTabName || entry.notesTab || "Notes"} · Note`;
+  }
+  if (kind === "board") {
+    return `${project} · Board`;
+  }
+  if (kind === "notesTab") {
+    return `${project} · Notes tab`;
+  }
+  return `${project} · ${entry.boardName || entry.board || "Board"} · Card`;
+}
+
 export default function Trash({ tabC = GACC, refreshKey, onRestore }) {
   const [items, setItems] = useState(null);
   const [busySlug, setBusySlug] = useState(null);
@@ -28,7 +50,7 @@ export default function Trash({ tabC = GACC, refreshKey, onRestore }) {
     try {
       await onRestore(entry);
     } catch (err) {
-      alert(err?.message || "Could not restore card.");
+      alert(err?.message || "Could not restore item.");
     } finally {
       setBusySlug(null);
     }
@@ -55,11 +77,7 @@ export default function Trash({ tabC = GACC, refreshKey, onRestore }) {
                 <b>{entry.title || "Untitled"}</b>
                 <div className="meta">
                   <span className="dot" style={{ background: entry.color || GACC }} />
-                  <span>
-                    {(entry.projectName || entry.project || "Project") +
-                      " · " +
-                      (entry.boardName || entry.board || "Board")}
-                  </span>
+                  <span>{trashMeta(entry)}</span>
                 </div>
               </div>
               <button
@@ -67,6 +85,7 @@ export default function Trash({ tabC = GACC, refreshKey, onRestore }) {
                 className="trash-restore"
                 disabled={busySlug === entry.slug}
                 onClick={() => handleRestore(entry)}
+                title={`Restore ${trashKindLabel(entry.kind || "card").toLowerCase()}`}
               >
                 {busySlug === entry.slug ? "Restoring…" : "Restore"}
               </button>

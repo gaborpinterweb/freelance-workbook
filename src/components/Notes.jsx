@@ -131,7 +131,7 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
     const title = noteListTitle(selected.body) || "this note";
     const ok = await askConfirm({
       title: `Delete "${title}"?`,
-      message: "This cannot be undone.",
+      message: "It will move to Trash and can be restored within 30 days.",
       confirmLabel: "Delete",
       danger: true,
     });

@@ -42,6 +42,7 @@ export async function restoreTrashApi(body) {
     body: JSON.stringify(body),
   });
   const data = await r.json();
+  if (data.needsParent) return data;
   if (!r.ok) throw new Error(data.error || "restore failed");
   return data;
 }

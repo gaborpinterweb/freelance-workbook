@@ -712,17 +712,17 @@ export default function App() {
       const mod = folder.mods?.[index];
       const type = modToTabType(mod);
       if (!mod || !type) return;
-      let message = "This cannot be undone.";
+      let message = "It will move to Trash and can be restored within 30 days.";
       if (mod[0] === "Board") {
         const count = (mod[2].rows || []).length;
         message = count
-          ? `This board has ${count} card${count === 1 ? "" : "s"}. This cannot be undone.`
-          : "This board has no cards. This cannot be undone.";
+          ? `This board and its ${count} card${count === 1 ? "" : "s"} will move to Trash.`
+          : "This board will move to Trash.";
       } else if (mod[0] === "Notes") {
         const count = (mod[2].notes || []).length;
         message = count
-          ? `This tab has ${count} note${count === 1 ? "" : "s"}. This cannot be undone.`
-          : "This tab has no notes. This cannot be undone.";
+          ? `This tab and its ${count} note${count === 1 ? "" : "s"} will move to Trash.`
+          : "This tab will move to Trash.";
       }
       const ok = await askConfirm({
         title: `Delete "${mod[1]}"?`,
@@ -740,6 +740,7 @@ export default function App() {
       applyWorkspace(data, keepNav(folder.slug, fallbackSlug));
       setBoardEdit(false);
       discardCoverEdit();
+      setTrashRefresh((n) => n + 1);
     },
     [applyWorkspace, keepNav, discardCoverEdit]
   );
@@ -928,11 +929,30 @@ export default function App() {
               tabC={GACC}
               refreshKey={trashRefresh}
               onRestore={async (entry) => {
-                const data = await restoreTrashApi({ slug: entry.slug });
+                let data = await restoreTrashApi({ slug: entry.slug });
+                if (data.needsParent) {
+                  const parentLabel =
+                    data.parentKind === "notesTab" ? "notes tab" : "board";
+                  const ok = await askConfirm({
+                    title: `Restore with ${parentLabel}?`,
+                    message: `“${entry.title || "This item"}” belongs to ${parentLabel} “${
+                      data.parentName || "Untitled"
+                    }”, which is also in Trash.\n\nRestoring will bring back both the ${parentLabel} and this item.`,
+                    confirmLabel: "Restore both",
+                  });
+                  if (!ok) return;
+                  data = await restoreTrashApi({
+                    slug: entry.slug,
+                    restoreParent: true,
+                  });
+                  if (data.needsParent || data.error) {
+                    throw new Error(data.error || "Could not restore parent");
+                  }
+                }
                 applyWorkspace(data, {
                   keepNav: {
                     project: data.project,
-                    board: data.board,
+                    board: data.board || data.notesTab || null,
                     g: "Trash",
                   },
                 });
