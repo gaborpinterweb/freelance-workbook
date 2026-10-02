@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { postNote, putNote } from "../api.js";
-import RichTextEditor from "./RichTextEditor.jsx";
+import { Icon } from "../icons.jsx";
+import RichTextEditor, { RteToolbar } from "./RichTextEditor.jsx";
 
 function previewHtml(body) {
   if (!body) return "<p></p>";
@@ -12,12 +13,18 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
   const notes = d.notes || [];
   const [selectedSlug, setSelectedSlug] = useState(notes[0]?.slug || null);
   const [locked, setLocked] = useState(true);
+  const [editor, setEditor] = useState(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (selectedSlug && notes.some((n) => n.slug === selectedSlug)) return;
     setSelectedSlug(notes[0]?.slug || null);
     setLocked(true);
   }, [notes, selectedSlug]);
+
+  useEffect(() => {
+    if (locked) setEditor(null);
+  }, [locked]);
 
   const selected = notes.find((n) => n.slug === selectedSlug) || null;
 
@@ -72,13 +79,66 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
 
   return (
     <div id="view" className="mod notes-view" style={{ ["--tab"]: tabC }}>
-      <div className="notes-layout">
-        <aside className="notes-sidebar">
+      <div className="modbar notes-chrome">
+        <div className="notes-chrome-list">
+          <input
+            className="url notes-search"
+            type="search"
+            placeholder="Search notes…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search notes"
+          />
+          <button
+            type="button"
+            className="notes-view-bar"
+            title="View options"
+            aria-label="View options"
+          >
+            <Icon name="gallery" size={15} />
+          </button>
           {!readonly && (
-            <button type="button" className="notes-add" onClick={addNote}>
-              + New note
+            <button
+              type="button"
+              className="notes-add-bar"
+              onClick={addNote}
+              title="New note"
+              aria-label="New note"
+            >
+              +
             </button>
           )}
+        </div>
+        <div className="notes-chrome-editor">
+          <div className="notes-toolbar-left" />
+          <div className="notes-toolbar-mid">
+            {selected && !locked && <RteToolbar editor={editor} />}
+          </div>
+          <div className="notes-toolbar-right">
+            {selected &&
+              !readonly &&
+              (locked ? (
+                <button
+                  type="button"
+                  className="notes-act"
+                  onClick={() => setLocked(false)}
+                >
+                  Unlock
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="notes-act on"
+                  onClick={() => setLocked(true)}
+                >
+                  Lock
+                </button>
+              ))}
+          </div>
+        </div>
+      </div>
+      <div className="notes-layout">
+        <aside className="notes-sidebar">
           <div className="notes-list">
             {notes.map((n) => (
               <button
@@ -95,49 +155,27 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
         <div className="notes-main">
           {!selected ? (
             <p className="notes-placeholder">Select or create a note</p>
-          ) : (
-            <>
-              <div className="notes-actions">
-                {!readonly &&
-                  (locked ? (
-                    <button
-                      type="button"
-                      className="notes-act"
-                      onClick={() => setLocked(false)}
-                    >
-                      Unlock
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="notes-act on"
-                      onClick={() => setLocked(true)}
-                    >
-                      Lock
-                    </button>
-                  ))}
+          ) : locked ? (
+            <div className="notes-rte-wrap notes-preview">
+              <div className="rte">
+                <div
+                  className="tiptap"
+                  dangerouslySetInnerHTML={{ __html: previewHtml(selected.body) }}
+                />
               </div>
-              {locked ? (
-                <div className="dlg notes-rte-wrap notes-preview">
-                  <div className="rte">
-                    <div
-                      className="tiptap"
-                      dangerouslySetInnerHTML={{ __html: previewHtml(selected.body) }}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="dlg notes-rte-wrap">
-                  <RichTextEditor
-                    key={selected.slug}
-                    value={selected.body || ""}
-                    onChange={saveBody}
-                    showLabel={false}
-                    placeholder="Write your note..."
-                  />
-                </div>
-              )}
-            </>
+            </div>
+          ) : (
+            <div className="notes-rte-wrap">
+              <RichTextEditor
+                key={selected.slug}
+                value={selected.body || ""}
+                onChange={saveBody}
+                showLabel={false}
+                showToolbar={false}
+                onEditor={setEditor}
+                placeholder="Write your note..."
+              />
+            </div>
           )}
         </div>
       </div>

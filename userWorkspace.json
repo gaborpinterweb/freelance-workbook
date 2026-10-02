@@ -119,6 +119,11 @@
               "body": ""
             }
           ]
+        },
+        {
+          "slug": "test-notes",
+          "name": "Test Notes",
+          "notes": []
         }
       ]
     },
@@ -296,6 +301,22 @@
               "slug": "qweqwe",
               "title": "qweqwe",
               "body": "<p>qweqweqweqwe</p>"
+            }
+          ]
+        },
+        {
+          "slug": "asdqwe",
+          "name": "asdqwe",
+          "notes": [
+            {
+              "slug": "qwe",
+              "title": "qwe",
+              "body": "<h1>This is a note, super nice</h1><p>There is something cool about it. </p><p>Not sure what, but it feels awesome</p><p></p>"
+            },
+            {
+              "slug": "asd",
+              "title": "asd",
+              "body": ""
             }
           ]
         }

@@ -1,4 +1,5 @@
 import { useEditor, EditorContent } from "@tiptap/react";
+import { useEffect, useState } from "react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
@@ -35,12 +36,94 @@ function ToolbarBtn({ onClick, active, title, children }) {
   );
 }
 
+export function RteToolbar({ editor }) {
+  const [, bump] = useState(0);
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => bump((n) => n + 1);
+    editor.on("selectionUpdate", update);
+    editor.on("transaction", update);
+    return () => {
+      editor.off("selectionUpdate", update);
+      editor.off("transaction", update);
+    };
+  }, [editor]);
+
+  if (!editor) return null;
+  return (
+    <div className="rte-toolbar">
+      <ToolbarBtn
+        title="Bold"
+        active={editor.isActive("bold")}
+        onClick={() => editor.chain().focus().toggleBold().run()}
+      >
+        <Icon name="bold" size={15} />
+      </ToolbarBtn>
+      <ToolbarBtn
+        title="Bullet list"
+        active={editor.isActive("bulletList")}
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+      >
+        <Icon name="list" size={15} />
+      </ToolbarBtn>
+      <ToolbarBtn
+        title="Checklist"
+        active={editor.isActive("taskList")}
+        onClick={() => editor.chain().focus().toggleTaskList().run()}
+      >
+        <Icon name="checklist" size={15} />
+      </ToolbarBtn>
+      <span className="dlg-desc-info" tabIndex={0} aria-label="Formatting help">
+        <Icon name="About" size={15} />
+        <div className="dlg-desc-tip" role="tooltip">
+          <div>
+            <b>Bold:</b> **text**
+          </div>
+          <div>
+            <b>Italic:</b> _text_
+          </div>
+          <div>
+            <b>Strikethrough:</b> ~~text~~
+          </div>
+          <div>
+            <b>Heading:</b> # text
+          </div>
+          <div>
+            <b>List:</b>
+            <br />- Item 1
+            <br />- Item 2
+          </div>
+          <div>
+            <b>Numbered list:</b>
+            <br />
+            1. Item 1
+            <br />
+            2. Item 2
+          </div>
+          <div>
+            <b>Checklist:</b>
+            <br />
+            [] Item 1
+            <br />
+            [x] Item 2
+          </div>
+          <div>
+            <b>Inline code:</b> `text`
+          </div>
+        </div>
+      </span>
+    </div>
+  );
+}
+
 export default function RichTextEditor({
   value,
   onChange,
   placeholder,
   showLabel = true,
+  showToolbar = true,
   editable = true,
+  onEditor,
 }) {
   const editor = useEditor({
     editable,
@@ -69,83 +152,26 @@ export default function RichTextEditor({
     },
   });
 
-  if (!editor) return null;
+  useEffect(() => {
+    onEditor?.(editor || null);
+    return () => onEditor?.(null);
+  }, [editor, onEditor]);
 
-  const toolbar = (
-        <div className="rte-toolbar">
-          <ToolbarBtn
-            title="Bold"
-            active={editor.isActive("bold")}
-            onClick={() => editor.chain().focus().toggleBold().run()}
-          >
-            <Icon name="bold" size={15} />
-          </ToolbarBtn>
-          <ToolbarBtn
-            title="Bullet list"
-            active={editor.isActive("bulletList")}
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-          >
-            <Icon name="list" size={15} />
-          </ToolbarBtn>
-          <ToolbarBtn
-            title="Checklist"
-            active={editor.isActive("taskList")}
-            onClick={() => editor.chain().focus().toggleTaskList().run()}
-          >
-            <Icon name="checklist" size={15} />
-          </ToolbarBtn>
-          <span className="dlg-desc-info" tabIndex={0} aria-label="Formatting help">
-            <Icon name="About" size={15} />
-            <div className="dlg-desc-tip" role="tooltip">
-              <div>
-                <b>Bold:</b> **text**
-              </div>
-              <div>
-                <b>Italic:</b> _text_
-              </div>
-              <div>
-                <b>Strikethrough:</b> ~~text~~
-              </div>
-              <div>
-                <b>Heading:</b> # text
-              </div>
-              <div>
-                <b>List:</b>
-                <br />- Item 1
-                <br />- Item 2
-              </div>
-              <div>
-                <b>Numbered list:</b>
-                <br />
-                1. Item 1
-                <br />
-                2. Item 2
-              </div>
-              <div>
-                <b>Checklist:</b>
-                <br />
-                [] Item 1
-                <br />
-                [x] Item 2
-              </div>
-              <div>
-                <b>Inline code:</b> `text`
-              </div>
-            </div>
-          </span>
-        </div>
-  );
+  if (!editor) return null;
 
   return (
     <div className="rte">
-      {showLabel ? (
-        <div className="dlg-desc-head">
-          <span className="dlg-desc-label">Description</span>
-          {toolbar}
-        </div>
-      ) : (
-        <div className="dlg-desc-head notes-rte-head">{toolbar}</div>
-      )}
+      {showToolbar &&
+        (showLabel ? (
+          <div className="dlg-desc-head">
+            <span className="dlg-desc-label">Description</span>
+            <RteToolbar editor={editor} />
+          </div>
+        ) : (
+          <div className="dlg-desc-head notes-rte-head">
+            <RteToolbar editor={editor} />
+          </div>
+        ))}
       <EditorContent editor={editor} />
     </div>
   );
