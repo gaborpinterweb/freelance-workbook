@@ -323,9 +323,9 @@
             {
               "slug": "new-note",
               "title": "This is a new note",
-              "body": "<h1>This is a new note</h1><p>Lets see how it performs</p><p>This seems quite nice actuallz</p><ul><li><p>asd</p></li><li><p>asd</p></li><li><p></p></li></ul><p></p>",
+              "body": "<h1>This is a new note</h1><p>Lets see how it performs</p><p>This seems quite nice actuallz</p><ul><li><p>asd</p></li><li><p>asd</p></li></ul><p></p><table style=\"min-width: 325px;\"><colgroup><col style=\"min-width: 25px;\"><col style=\"min-width: 25px;\"><col style=\"width: 225px;\"><col style=\"min-width: 25px;\"><col style=\"min-width: 25px;\"></colgroup><tbody><tr><th><p>asd</p></th><th><p>asd</p></th><th colwidth=\"225\"><p>qwe</p></th><th><p>qwe</p></th><th><p></p></th></tr><tr><td><p></p></td><td><p></p></td><td colwidth=\"225\"><p></p></td><td><p></p></td><td><p></p></td></tr><tr><td><p></p></td><td><p>qwe</p></td><td colwidth=\"225\"><p></p></td><td><p></p></td><td><p></p></td></tr><tr><td><p></p></td><td><p></p></td><td colwidth=\"225\"><p></p></td><td><p></p></td><td><p></p></td></tr><tr><td><p></p></td><td><p>qwe</p></td><td colwidth=\"225\"><p></p></td><td><p></p></td><td><p></p></td></tr></tbody></table><p></p>",
               "createdAt": "2026-10-02T09:32:23.308Z",
-              "updatedAt": "2026-10-02T09:32:37.690Z"
+              "updatedAt": "2026-10-02T09:36:00.047Z"
             }
           ]
         }

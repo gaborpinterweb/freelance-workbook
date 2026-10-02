@@ -4,6 +4,12 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
+import {
+  Table,
+  TableRow,
+  TableCell,
+  TableHeader,
+} from "@tiptap/extension-table";
 import { Icon } from "../icons.jsx";
 
 function toEditorContent(body) {
@@ -31,15 +37,17 @@ function isBlankHeadingHtml(html) {
   return !s || s === "<h1></h1>" || s === "<h1><br></h1>" || s === "<h1><br/></h1>";
 }
 
-function ToolbarBtn({ onClick, active, title, children }) {
+function ToolbarBtn({ onClick, active, title, disabled, children }) {
   return (
     <button
       type="button"
       className={"rte-btn" + (active ? " on" : "")}
       title={title}
       aria-label={title}
+      disabled={disabled}
       onMouseDown={(e) => {
         e.preventDefault();
+        if (disabled) return;
         onClick();
       }}
     >
@@ -48,7 +56,7 @@ function ToolbarBtn({ onClick, active, title, children }) {
   );
 }
 
-export function RteToolbar({ editor }) {
+export function RteToolbar({ editor, enableTables = false }) {
   const [, bump] = useState(0);
   useEffect(() => {
     if (!editor) return;
@@ -62,6 +70,7 @@ export function RteToolbar({ editor }) {
   }, [editor]);
 
   if (!editor) return null;
+  const inTable = enableTables && editor.isActive("table");
   return (
     <div className="rte-toolbar">
       <ToolbarBtn
@@ -85,6 +94,44 @@ export function RteToolbar({ editor }) {
       >
         <Icon name="checklist" size={15} />
       </ToolbarBtn>
+      {enableTables && (
+        <>
+          <ToolbarBtn
+            title="Insert table"
+            active={inTable}
+            onClick={() =>
+              editor
+                .chain()
+                .focus()
+                .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+                .run()
+            }
+          >
+            <Icon name="table" size={15} />
+          </ToolbarBtn>
+          <ToolbarBtn
+            title="Add column"
+            disabled={!inTable}
+            onClick={() => editor.chain().focus().addColumnAfter().run()}
+          >
+            <Icon name="tableCol" size={15} />
+          </ToolbarBtn>
+          <ToolbarBtn
+            title="Add row"
+            disabled={!inTable}
+            onClick={() => editor.chain().focus().addRowAfter().run()}
+          >
+            <Icon name="tableRow" size={15} />
+          </ToolbarBtn>
+          <ToolbarBtn
+            title="Delete table"
+            disabled={!inTable}
+            onClick={() => editor.chain().focus().deleteTable().run()}
+          >
+            <Icon name="tableDelete" size={15} />
+          </ToolbarBtn>
+        </>
+      )}
       <span className="dlg-desc-info" tabIndex={0} aria-label="Formatting help">
         <Icon name="About" size={15} />
         <div className="dlg-desc-tip" role="tooltip">
@@ -137,6 +184,7 @@ export default function RichTextEditor({
   editable = true,
   autofocus = false,
   startInHeading = false,
+  enableTables = false,
   onEditor,
 }) {
   const initialContent = (() => {
@@ -164,6 +212,14 @@ export default function RichTextEditor({
       }),
       TaskList,
       TaskItem.configure({ nested: true }),
+      ...(enableTables
+        ? [
+            Table.configure({ resizable: true }),
+            TableRow,
+            TableHeader,
+            TableCell,
+          ]
+        : []),
     ],
     content: initialContent,
     editorProps: {
@@ -207,11 +263,11 @@ export default function RichTextEditor({
         (showLabel ? (
           <div className="dlg-desc-head">
             <span className="dlg-desc-label">Description</span>
-            <RteToolbar editor={editor} />
+            <RteToolbar editor={editor} enableTables={enableTables} />
           </div>
         ) : (
           <div className="dlg-desc-head notes-rte-head">
-            <RteToolbar editor={editor} />
+            <RteToolbar editor={editor} enableTables={enableTables} />
           </div>
         ))}
       <EditorContent editor={editor} />

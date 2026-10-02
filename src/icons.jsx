@@ -112,6 +112,22 @@ export const IC = {
     '<rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1"/><path d="M3.5 4.7l1.2 1.2 2-2"/><path d="M9 4.5h4.5M2.5 10.5h4.5v3.5H2.5zM9 11.5h4.5"/>',
     "",
   ],
+  lock: [
+    '<rect x="4" y="7" width="8" height="6.5" rx="1.25"/><path d="M5.75 7V5.5a2.25 2.25 0 0 1 4.5 0V7"/>',
+    "",
+  ],
+  tableCol: [
+    '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 7h12M6 7v6"/><path d="M9.5 5.2h3M11 3.7v3"/>',
+    "",
+  ],
+  tableRow: [
+    '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 7h12M6 7v6"/><path d="M11 11.5h3M12.5 10v3"/>',
+    "",
+  ],
+  tableDelete: [
+    '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 7h12M6 7v6"/><path d="M5.2 9.2l5.6 2.6M10.8 9.2l-5.6 2.6"/>',
+    "",
+  ],
 };
 
 export function Icon({ name, size = 16 }) {

@@ -176,7 +176,7 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
         <div className="notes-chrome-editor">
           <div className="notes-toolbar-left" />
           <div className="notes-toolbar-mid">
-            {selected && !locked && <RteToolbar editor={editor} />}
+            {selected && !locked && <RteToolbar editor={editor} enableTables />}
           </div>
           <div className="notes-toolbar-right">
             {selected &&
@@ -187,7 +187,8 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
                   className="notes-act"
                   onClick={() => setLocked(false)}
                 >
-                  Unlock
+                  <Icon name="pencil" size={14} />
+                  Edit
                 </button>
               ) : (
                 <button
@@ -195,6 +196,7 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
                   className="notes-act on"
                   onClick={() => setLocked(true)}
                 >
+                  <Icon name="lock" size={14} />
                   Lock
                 </button>
               ))}
@@ -251,6 +253,7 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
                 onChange={saveBody}
                 showLabel={false}
                 showToolbar={false}
+                enableTables
                 autofocus
                 startInHeading
                 onEditor={setEditor}
