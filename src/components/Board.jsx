@@ -512,6 +512,7 @@ function ColMoreMenu({
             disabled={!canLeft}
             onClick={() => run(onMoveLeft)}
           >
+            <Icon name="arrowLeft" size={14} />
             Move left
           </button>
           <button
@@ -520,6 +521,7 @@ function ColMoreMenu({
             disabled={!canRight}
             onClick={() => run(onMoveRight)}
           >
+            <Icon name="arrowRight" size={14} />
             Move right
           </button>
           <button
@@ -527,6 +529,7 @@ function ColMoreMenu({
             role="menuitem"
             onClick={() => run(onRename)}
           >
+            <Icon name="pencil" size={14} />
             Rename
           </button>
           <button
@@ -536,6 +539,7 @@ function ColMoreMenu({
             disabled={!canDelete}
             onClick={() => run(onDelete)}
           >
+            <Icon name="Trash" size={14} />
             Delete
           </button>
         </div>

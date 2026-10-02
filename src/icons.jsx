@@ -71,11 +71,13 @@ export const IC = {
   ],
   pencil: ['<path d="M11.5 2.5l2 2L5.5 12.5H3.5v-2zM9.8 4.2l2 2"/>', ""],
   more: [
-    '<circle cx="8" cy="3.5" r="1.15"/><circle cx="8" cy="8" r="1.15"/><circle cx="8" cy="12.5" r="1.15"/>',
+    '<circle cx="8" cy="3.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none"/><circle cx="8" cy="12.5" r="1.4" fill="currentColor" stroke="none"/>',
     "",
   ],
   caret: ['<path d="M4 6l4 4 4-4"/>', ""],
   arrow: ['<path d="M6 4l4 4-4 4"/>', ""],
+  arrowLeft: ['<path d="M10 3.5L5.5 8 10 12.5M5.5 8h6"/>', ""],
+  arrowRight: ['<path d="M6 3.5L10.5 8 6 12.5M10.5 8h-6"/>', ""],
   Appearance: [
     '<rect x="2.5" y="2.5" width="5" height="5" rx="1"/><rect x="8.5" y="2.5" width="5" height="5" rx="1"/><rect x="2.5" y="8.5" width="5" height="5" rx="1"/><circle cx="11" cy="11" r="2.5"/>',
     "",
