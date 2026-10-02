@@ -2,14 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { deleteTimelogApi, fetchTimelogs, putTimelog } from "../api.js";
 import {
   GACC,
+  TIMELOG_GROUP_BYS,
   TIMELOG_PERIODS,
   allBoards,
   formatClock,
   formatDuration,
   formatSpent,
-  groupTimelogsByDayAndProject,
+  groupTimelogsByPeriodAndProject,
   matchesTimelogFilter,
   matchesTimelogPeriod,
+  pastel,
 } from "../utils.js";
 import { Icon } from "../icons.jsx";
 import GlobalBar from "./GlobalBar.jsx";
@@ -247,6 +249,106 @@ function BoardFilterDropdown({ boards, boardOff, onToggle }) {
   );
 }
 
+function formatFromTo(entry) {
+  const start = entry.startedAt ? formatClock(entry.startedAt) : "";
+  const end = entry.endedAt ? formatClock(entry.endedAt) : "";
+  if (start && end) return `${start} – ${end}`;
+  return start || end || "—";
+}
+
+function TimelogRow({
+  entry,
+  isEditing,
+  draftNote,
+  busySlug,
+  noteRef,
+  onOpenCard,
+  onStartEdit,
+  onDraftChange,
+  onSaveNote,
+  onCancelEdit,
+  onDelete,
+}) {
+  const color = entry.color || GACC;
+  const note = entry.note || "";
+  const src = [entry.projectName || entry.project, entry.boardName || entry.board]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <div className="timelog-row" style={{ ["--pc"]: color }}>
+      <div className="timelog-card-wrap">
+        <button
+          type="button"
+          className="card tint timelog-card"
+          style={{ background: pastel(color) }}
+          onClick={() => onOpenCard?.(entry.project, entry.board, entry.card)}
+        >
+          <b>
+            <span className="card-name">{entry.title || "Untitled"}</span>
+          </b>
+          {src ? <span className="src">{src}</span> : null}
+        </button>
+      </div>
+      <div className="timelog-note">
+        {isEditing ? (
+          <textarea
+            ref={noteRef}
+            className="entry-note-input"
+            rows={2}
+            value={draftNote}
+            disabled={busySlug === entry.slug}
+            placeholder="Add a note…"
+            onChange={(e) => onDraftChange(e.target.value)}
+            onBlur={() => onSaveNote(entry)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                onCancelEdit();
+              }
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            className={"entry-note" + (note ? "" : " entry-note-empty")}
+            onClick={() => onStartEdit(entry)}
+            disabled={!!busySlug}
+          >
+            <span className="entry-note-text">{note || "Add note"}</span>
+            <span className="entry-note-edit" aria-hidden="true">
+              <Icon name="pencil" size={12} />
+            </span>
+          </button>
+        )}
+      </div>
+      <time
+        className="timelog-range"
+        dateTime={entry.endedAt || entry.startedAt || ""}
+      >
+        {formatFromTo(entry)}
+      </time>
+      <div className="timelog-time">
+        <span className="dur">{formatDuration(entry.durationSec)}</span>
+        <button
+          type="button"
+          className="entry-delete"
+          title="Delete timelog"
+          aria-label="Delete timelog"
+          disabled={busySlug === entry.slug}
+          onClick={() => onDelete(entry)}
+        >
+          <Icon name="Trash" size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Timelogs({
   tabC = GACC,
   folders = [],
@@ -257,6 +359,7 @@ export default function Timelogs({
 }) {
   const [entries, setEntries] = useState(null);
   const [period, setPeriod] = useState("This week");
+  const [groupBy, setGroupBy] = useState("Day");
   const [boardOff, setBoardOff] = useState(() => new Set());
   const [editingSlug, setEditingSlug] = useState(null);
   const [draftNote, setDraftNote] = useState("");
@@ -308,8 +411,8 @@ export default function Timelogs({
   }, [entries, filter, period, boardOff]);
 
   const groups = useMemo(
-    () => (shown ? groupTimelogsByDayAndProject(shown) : null),
-    [shown]
+    () => (shown ? groupTimelogsByPeriodAndProject(shown, groupBy) : null),
+    [shown, groupBy]
   );
 
   const toggleBoard = (key) => {
@@ -393,6 +496,18 @@ export default function Timelogs({
           <Dropdown
             className="done-view-dd"
             buttonClassName="done-view"
+            ariaLabel="Group by"
+            title="Group by"
+            align="right"
+            value={groupBy}
+            options={TIMELOG_GROUP_BYS}
+            onChange={setGroupBy}
+          >
+            <span className="dd-lab">Group by: {groupBy}</span>
+          </Dropdown>
+          <Dropdown
+            className="done-view-dd"
+            buttonClassName="done-view"
             ariaLabel="Timelog period"
             title="Timelog period"
             align="right"
@@ -415,7 +530,7 @@ export default function Timelogs({
           </button>
         </div>
       )}
-      <div className="log">
+      <div className="log timelogs">
         {shown == null && <div className="empty-log">Loading…</div>}
         {shown && !shown.length && (
           <div className="empty-log">
@@ -427,115 +542,32 @@ export default function Timelogs({
           </div>
         )}
         {groups &&
-          groups.map((day) => (
-            <section className="log-day" key={day.key}>
-              <header className="log-day-head">
-                <h3>{day.label}</h3>
-                <span className="log-agg">{formatSpent(day.totalSec)}</span>
-              </header>
-              {day.projects.map((project) => (
-                <div
-                  className="log-project"
-                  key={day.key + ":" + project.key}
-                  style={{ ["--pc"]: project.color || GACC }}
-                >
-                  <header className="log-project-head">
-                    <span
-                      className="dot"
-                      style={{ background: project.color || GACC }}
-                    />
-                    <b>{project.name}</b>
-                    <span className="log-agg">{formatSpent(project.totalSec)}</span>
-                  </header>
-                  <div className="log-project-body">
-                  {project.entries.map((entry) => {
-                    const isEditing = editingSlug === entry.slug;
-                    const note = entry.note || "";
-                    return (
-                      <div className="entry timelog-entry" key={entry.slug}>
-                        <time dateTime={entry.endedAt || entry.startedAt || ""}>
-                          {formatClock(entry.endedAt || entry.startedAt)}
-                        </time>
-                        <div className="who">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onOpenCard?.(
-                                entry.project,
-                                entry.board,
-                                entry.card
-                              )
-                            }
-                          >
-                            <b>{entry.title || "Untitled"}</b>
-                          </button>
-                          <div className="meta">
-                            <span>{entry.boardName || entry.board || "Board"}</span>
-                          </div>
-                          {isEditing ? (
-                            <textarea
-                              ref={noteRef}
-                              className="entry-note-input"
-                              rows={2}
-                              value={draftNote}
-                              disabled={busySlug === entry.slug}
-                              placeholder="Add a note…"
-                              onChange={(e) => setDraftNote(e.target.value)}
-                              onBlur={() => saveNote(entry)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Escape") {
-                                  e.preventDefault();
-                                  cancelEdit();
-                                }
-                                if (
-                                  e.key === "Enter" &&
-                                  (e.metaKey || e.ctrlKey)
-                                ) {
-                                  e.preventDefault();
-                                  e.currentTarget.blur();
-                                }
-                              }}
-                            />
-                          ) : (
-                            <button
-                              type="button"
-                              className={
-                                "entry-note" +
-                                (note ? "" : " entry-note-empty")
-                              }
-                              onClick={() => startEdit(entry)}
-                              disabled={!!busySlug}
-                            >
-                              <span className="entry-note-text">
-                                {note || "Add note"}
-                              </span>
-                              <span className="entry-note-edit" aria-hidden="true">
-                                <Icon name="pencil" size={12} />
-                              </span>
-                            </button>
-                          )}
-                        </div>
-                        <div className="entry-side">
-                          <div className="dur">
-                            {formatDuration(entry.durationSec)}
-                          </div>
-                          <button
-                            type="button"
-                            className="entry-delete"
-                            title="Delete timelog"
-                            aria-label="Delete timelog"
-                            disabled={busySlug === entry.slug}
-                            onClick={() => handleDelete(entry)}
-                          >
-                            <Icon name="Trash" size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  </div>
-                </div>
-              ))}
+          groups.map((periodGroup) => (
+            <section className="log-period" key={periodGroup.key}>
+              {periodGroup.label != null && (
+                <header className="log-period-head">
+                  <h3>{periodGroup.label}</h3>
+                  <span className="log-agg">{formatSpent(periodGroup.totalSec)}</span>
+                </header>
+              )}
+              <div className="timelog-table">
+                {periodGroup.entries.map((entry) => (
+                  <TimelogRow
+                    key={entry.slug}
+                    entry={entry}
+                    isEditing={editingSlug === entry.slug}
+                    draftNote={draftNote}
+                    busySlug={busySlug}
+                    noteRef={noteRef}
+                    onOpenCard={onOpenCard}
+                    onStartEdit={startEdit}
+                    onDraftChange={setDraftNote}
+                    onSaveNote={saveNote}
+                    onCancelEdit={cancelEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
             </section>
           ))}
       </div>

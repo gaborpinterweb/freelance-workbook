@@ -312,18 +312,27 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .log-filter .clear{flex:none;margin-left:auto;padding:4px 10px;border-radius:calc(var(--radius) - 6px);font-size:12px;font-weight:600;color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent)}
 .log-filter .clear:hover{background:color-mix(in srgb,var(--acc) 20%,transparent)}
 .log-note{flex:none;padding:10px 20px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--ink) 3%,var(--bg));font-size:13px;line-height:1.4;color:var(--mute)}
-.log-day{flex:none;display:flex;flex-direction:column;gap:10px;padding:0 0 2px;border:1px solid var(--line);border-radius:calc(var(--radius) - 2px);background:var(--card);overflow:hidden}
-.log-day-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0;padding:11px 14px;background:color-mix(in srgb,var(--ink) 5%,var(--card));border-bottom:1px solid var(--line)}
-.log-day-head h3{margin:0;font-size:14px;font-weight:650;letter-spacing:.01em;color:var(--ink)}
-.log-day-head .log-agg{padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc);font-size:12px;font-weight:700}
+.log.timelogs{gap:22px}
+.log-period{flex:none;display:flex;flex-direction:column;gap:2px;padding:0;border:0;background:transparent}
+.log-period-head{flex:none;display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0;padding:0 2px 8px;background:transparent;border:0}
+.log-period-head h3{margin:0;font-size:13px;font-weight:650;letter-spacing:.01em;color:var(--mute)}
+.log-period-head .log-agg{padding:0;border-radius:0;background:transparent;color:var(--ink);font-size:13px;font-weight:700}
 .log-agg{flex:none;font-size:13px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink)}
-.log-project{--pc:var(--acc);flex:none;margin:0 10px;border:1px solid color-mix(in srgb,var(--pc) 28%,var(--line));border-radius:calc(var(--radius) - 4px);background:color-mix(in srgb,var(--pc) 7%,var(--card));overflow:hidden}
-.log-project:last-child{margin-bottom:10px}
-.log-project-head{flex:none;display:flex;align-items:center;gap:8px;margin:0;padding:9px 12px;min-width:0;background:color-mix(in srgb,var(--pc) 12%,var(--card));border-bottom:1px solid color-mix(in srgb,var(--pc) 22%,var(--line))}
-.log-project-head .dot{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px #0002}
-.log-project-head b{flex:1;min-width:0;font-size:13px;font-weight:650;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.log-project-head .log-agg{font-size:12px;font-weight:700;color:color-mix(in srgb,var(--pc) 55%,var(--ink))}
-.log-project-body{flex:none;display:flex;flex-direction:column;padding:0 4px}
+.timelog-table{flex:none;display:flex;flex-direction:column;gap:8px}
+.timelog-row{--pc:var(--acc);flex:none;display:grid;grid-template-columns:minmax(180px,240px) minmax(0,1fr) 110px 88px;gap:12px 16px;align-items:stretch;margin:0;padding:8px 10px;border:1px solid var(--line);border-radius:calc(var(--radius) - 2px);background:var(--card);box-sizing:border-box}
+.timelog-card-wrap,.timelog-note{min-width:0;min-height:0;display:flex;align-items:stretch}
+.timelog-card{display:flex;flex-direction:column;justify-content:center;flex:1;width:100%;margin:0;padding:8px 10px;box-sizing:border-box;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.timelog-card:hover{box-shadow:0 0 0 1px color-mix(in srgb,var(--pc) 35%,var(--line))}
+.timelog-card .src{margin-top:3px;font-size:11px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.timelog-note .entry-note{display:flex;align-items:flex-start;gap:6px;flex:1;width:100%;margin:0;padding:8px 10px;border:1px dashed color-mix(in srgb,var(--pc) 28%,var(--line));border-radius:var(--radius);background:color-mix(in srgb,var(--pc) 5%,var(--card));box-sizing:border-box;text-align:left;font:inherit;font-size:12px;line-height:1.4;color:var(--mute);cursor:pointer}
+.timelog-note .entry-note:hover{color:var(--ink);border-color:color-mix(in srgb,var(--pc) 45%,var(--line));background:color-mix(in srgb,var(--pc) 10%,var(--card))}
+.timelog-note .entry-note-input{display:block;flex:1;width:100%;margin:0;padding:8px 10px;border:1px solid color-mix(in srgb,var(--pc) 35%,var(--line));border-radius:var(--radius);background:var(--card);color:var(--ink);font:inherit;font-size:12px;line-height:1.4;resize:none;box-sizing:border-box}
+.timelog-note .entry-note-input:focus{outline:none;border-color:var(--acc)}
+.timelog-range{align-self:center;font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.timelog-time{align-self:center;display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:0}
+.timelog-time .dur{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+.timelog-row .entry-delete{opacity:0;transition:opacity .12s}
+.timelog-row:hover .entry-delete,.timelog-row:focus-within .entry-delete{opacity:1}
 .log .entry{flex:none;display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:start;margin:0 8px;padding:11px 8px;border-bottom:1px solid color-mix(in srgb,var(--pc) 14%,var(--line))}
 .log .entry:last-child{border-bottom:0}
 .log .entry time{font-size:12px;color:var(--mute);padding-top:2px;line-height:1.35;font-variant-numeric:tabular-nums}
@@ -405,6 +414,7 @@ select{font:inherit;color:inherit;background:var(--sel);border:0;border-radius:4
 .col.collapsed .col-name{order:2;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:.08em;text-transform:uppercase;font-size:12px;padding:14px 0 8px;color:var(--mute)}
 .col.collapsed .col-body{display:none}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:opacity .12s ease,box-shadow .12s ease}
+.timelog-row .timelog-card{margin:0;height:100%;padding:8px 10px}
 .board .card{cursor:grab;touch-action:none;user-select:none}
 .board .card:active,.board .card.dragging,.is-card-dragging{cursor:grabbing}
 .board .card.dragging{display:none}

@@ -368,6 +368,34 @@ export function timelogDayKey(iso) {
   return `${y}-${m}-${day}`;
 }
 
+function timelogWeekStart(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  const day = x.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  x.setDate(x.getDate() + diff);
+  return x;
+}
+
+export function timelogWeekKey(iso) {
+  const start = timelogWeekStart(iso);
+  if (!start) return "";
+  const y = start.getFullYear();
+  const m = String(start.getMonth() + 1).padStart(2, "0");
+  const day = String(start.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export function timelogMonthKey(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
 export function formatTimelogDay(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "Unknown day";
@@ -378,58 +406,87 @@ export function formatTimelogDay(iso) {
   });
 }
 
-/** Group newest-first by local day, then by project within each day. */
-export function groupTimelogsByDayAndProject(entries) {
-  const dayMap = new Map();
+export function formatTimelogWeek(iso) {
+  const start = timelogWeekStart(iso);
+  if (!start) return "Unknown week";
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const sameMonth = start.getMonth() === end.getMonth();
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const startLabel = start.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+  const endLabel = end.toLocaleDateString(undefined, {
+    month: sameMonth ? undefined : "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  return `${startLabel} – ${endLabel}`;
+}
+
+export function formatTimelogMonth(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Unknown month";
+  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}
+
+export const TIMELOG_GROUP_BYS = ["None", "Day", "Week", "Month"];
+
+function timelogPeriodBucket(stamp, groupBy) {
+  if (groupBy === "None") {
+    return { key: "all", label: null };
+  }
+  if (groupBy === "Week") {
+    const key = timelogWeekKey(stamp) || "unknown";
+    return { key, label: formatTimelogWeek(stamp) };
+  }
+  if (groupBy === "Month") {
+    const key = timelogMonthKey(stamp) || "unknown";
+    return { key, label: formatTimelogMonth(stamp) };
+  }
+  const key = timelogDayKey(stamp) || "unknown";
+  return { key, label: formatTimelogDay(stamp) };
+}
+
+/** Group newest-first by period (None/Day/Week/Month). */
+export function groupTimelogsByPeriodAndProject(entries, groupBy = "Day") {
+  const mode = TIMELOG_GROUP_BYS.includes(groupBy) ? groupBy : "Day";
+  const periodMap = new Map();
   for (const entry of entries || []) {
     const stamp = entry.endedAt || entry.startedAt || "";
-    const dayKey = timelogDayKey(stamp) || "unknown";
-    if (!dayMap.has(dayKey)) {
-      dayMap.set(dayKey, {
-        key: dayKey,
-        label: formatTimelogDay(stamp),
-        stamp,
-        totalSec: 0,
-        projects: new Map(),
-      });
-    }
-    const day = dayMap.get(dayKey);
-    const dur = Math.max(0, parseInt(entry.durationSec, 10) || 0);
-    day.totalSec += dur;
-    const projectKey = entry.project || entry.projectName || "project";
-    if (!day.projects.has(projectKey)) {
-      day.projects.set(projectKey, {
-        key: projectKey,
-        name: entry.projectName || entry.project || "Project",
-        color: entry.color || GACC,
+    const { key: periodKey, label } = timelogPeriodBucket(stamp, mode);
+    if (!periodMap.has(periodKey)) {
+      periodMap.set(periodKey, {
+        key: periodKey,
+        label,
         totalSec: 0,
         entries: [],
       });
     }
-    const project = day.projects.get(projectKey);
-    project.totalSec += dur;
-    if (!project.color && entry.color) project.color = entry.color;
-    project.entries.push(entry);
+    const period = periodMap.get(periodKey);
+    const dur = Math.max(0, parseInt(entry.durationSec, 10) || 0);
+    period.totalSec += dur;
+    period.entries.push(entry);
   }
 
-  const days = [...dayMap.values()].sort((a, b) =>
-    String(b.key).localeCompare(String(a.key))
-  );
-  return days.map((day) => ({
-    key: day.key,
-    label: day.label,
-    totalSec: day.totalSec,
-    projects: [...day.projects.values()]
-      .map((p) => ({
-        ...p,
-        entries: p.entries.slice().sort((a, b) =>
-          String(b.endedAt || b.startedAt).localeCompare(
-            String(a.endedAt || a.startedAt)
-          )
-        ),
-      }))
-      .sort((a, b) => b.totalSec - a.totalSec || a.name.localeCompare(b.name)),
-  }));
+  return [...periodMap.values()]
+    .sort((a, b) => String(b.key).localeCompare(String(a.key)))
+    .map((period) => ({
+      key: period.key,
+      label: period.label,
+      totalSec: period.totalSec,
+      entries: period.entries.slice().sort((a, b) =>
+        String(b.endedAt || b.startedAt).localeCompare(
+          String(a.endedAt || a.startedAt)
+        )
+      ),
+    }));
+}
+
+export function groupTimelogsByDayAndProject(entries) {
+  return groupTimelogsByPeriodAndProject(entries, "Day");
 }
 
 export function formatTrashDate(iso) {
