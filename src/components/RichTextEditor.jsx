@@ -99,58 +99,103 @@ export function RteToolbar({ editor, forNotes = false }) {
   if (!editor) return null;
   const inTable = forNotes && editor.isActive("table");
   return (
-    <div className="rte-toolbar">
-      <ToolbarBtn
-        title="Bold"
-        active={editor.isActive("bold")}
-        onClick={() => editor.chain().focus().toggleBold().run()}
-      >
-        <Icon name="bold" size={15} />
-      </ToolbarBtn>
-      <ToolbarBtn
-        title="Bullet list"
-        active={editor.isActive("bulletList")}
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-      >
-        <Icon name="list" size={15} />
-      </ToolbarBtn>
-      <ToolbarBtn
-        title="Checklist"
-        active={editor.isActive("taskList")}
-        onClick={() => editor.chain().focus().toggleTaskList().run()}
-      >
-        <Icon name="checklist" size={15} />
-      </ToolbarBtn>
+    <div className={"rte-toolbar" + (forNotes ? " notes-rte-toolbar" : "")}>
       {forNotes && (
-        <>
+        <div className="rte-group" role="group" aria-label="Blocks">
           <ToolbarBtn
-            title="Blockquote"
-            active={editor.isActive("blockquote")}
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            title="Heading 1"
+            active={editor.isActive("heading", { level: 1 })}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
           >
-            <Icon name="blockquote" size={15} />
+            <span className="rte-block-lab">H1</span>
           </ToolbarBtn>
           <ToolbarBtn
-            title="Code block"
-            active={editor.isActive("codeBlock")}
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            title="Heading 2"
+            active={editor.isActive("heading", { level: 2 })}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           >
-            <Icon name="codeBlock" size={15} />
+            <span className="rte-block-lab">H2</span>
           </ToolbarBtn>
           <ToolbarBtn
-            title="Highlight"
-            active={editor.isActive("highlight")}
-            onClick={() => editor.chain().focus().toggleHighlight().run()}
+            title="Heading 3"
+            active={editor.isActive("heading", { level: 3 })}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
           >
-            <Icon name="highlight" size={15} />
+            <span className="rte-block-lab">H3</span>
           </ToolbarBtn>
           <ToolbarBtn
-            title="Link"
-            active={editor.isActive("link")}
-            onClick={() => editLink(editor)}
+            title="Heading 4"
+            active={editor.isActive("heading", { level: 4 })}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
           >
-            <Icon name="link" size={15} />
+            <span className="rte-block-lab">H4</span>
           </ToolbarBtn>
+          <ToolbarBtn
+            title="Paragraph"
+            active={editor.isActive("paragraph")}
+            onClick={() => editor.chain().focus().setParagraph().run()}
+          >
+            <span className="rte-block-lab">P</span>
+          </ToolbarBtn>
+        </div>
+      )}
+      <div className="rte-group" role="group" aria-label="Text">
+        <ToolbarBtn
+          title="Bold"
+          active={editor.isActive("bold")}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+        >
+          <Icon name="bold" size={15} />
+        </ToolbarBtn>
+        <ToolbarBtn
+          title="Bullet list"
+          active={editor.isActive("bulletList")}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+        >
+          <Icon name="list" size={15} />
+        </ToolbarBtn>
+        <ToolbarBtn
+          title="Checklist"
+          active={editor.isActive("taskList")}
+          onClick={() => editor.chain().focus().toggleTaskList().run()}
+        >
+          <Icon name="checklist" size={15} />
+        </ToolbarBtn>
+        {forNotes && (
+          <>
+            <ToolbarBtn
+              title="Blockquote"
+              active={editor.isActive("blockquote")}
+              onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            >
+              <Icon name="blockquote" size={15} />
+            </ToolbarBtn>
+            <ToolbarBtn
+              title="Code block"
+              active={editor.isActive("codeBlock")}
+              onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            >
+              <Icon name="codeBlock" size={15} />
+            </ToolbarBtn>
+            <ToolbarBtn
+              title="Highlight"
+              active={editor.isActive("highlight")}
+              onClick={() => editor.chain().focus().toggleHighlight().run()}
+            >
+              <Icon name="highlight" size={15} />
+            </ToolbarBtn>
+            <ToolbarBtn
+              title="Link"
+              active={editor.isActive("link")}
+              onClick={() => editLink(editor)}
+            >
+              <Icon name="link" size={15} />
+            </ToolbarBtn>
+          </>
+        )}
+      </div>
+      {forNotes && (
+        <div className="rte-group" role="group" aria-label="Table">
           <ToolbarBtn
             title="Insert table"
             active={inTable}
@@ -185,63 +230,65 @@ export function RteToolbar({ editor, forNotes = false }) {
           >
             <Icon name="tableDelete" size={15} />
           </ToolbarBtn>
-        </>
-      )}
-      <span className="dlg-desc-info" tabIndex={0} aria-label="Formatting help">
-        <Icon name="About" size={15} />
-        <div className="dlg-desc-tip" role="tooltip">
-          <div>
-            <b>Bold:</b> **text**
-          </div>
-          <div>
-            <b>Italic:</b> _text_
-          </div>
-          <div>
-            <b>Strikethrough:</b> ~~text~~
-          </div>
-          <div>
-            <b>Heading:</b> # text
-          </div>
-          <div>
-            <b>List:</b>
-            <br />- Item 1
-            <br />- Item 2
-          </div>
-          <div>
-            <b>Numbered list:</b>
-            <br />
-            1. Item 1
-            <br />
-            2. Item 2
-          </div>
-          <div>
-            <b>Checklist:</b>
-            <br />
-            [] Item 1
-            <br />
-            [x] Item 2
-          </div>
-          <div>
-            <b>Inline code:</b> `text`
-          </div>
-          {forNotes && (
-            <>
-              <div>
-                <b>Code block:</b>
-                <br />
-                ```
-                <br />
-                code
-                <br />
-                ```
-              </div>
-              <div>
-                <b>Quote:</b> &gt; text
-              </div>
-            </>
-          )}
         </div>
-      </span>
+      )}
+      <div className="rte-group" role="group" aria-label="Help">
+        <span className="dlg-desc-info" tabIndex={0} aria-label="Formatting help">
+          <Icon name="About" size={15} />
+          <div className="dlg-desc-tip" role="tooltip">
+            <div>
+              <b>Bold:</b> **text**
+            </div>
+            <div>
+              <b>Italic:</b> _text_
+            </div>
+            <div>
+              <b>Strikethrough:</b> ~~text~~
+            </div>
+            <div>
+              <b>Heading:</b> # text
+            </div>
+            <div>
+              <b>List:</b>
+              <br />- Item 1
+              <br />- Item 2
+            </div>
+            <div>
+              <b>Numbered list:</b>
+              <br />
+              1. Item 1
+              <br />
+              2. Item 2
+            </div>
+            <div>
+              <b>Checklist:</b>
+              <br />
+              [] Item 1
+              <br />
+              [x] Item 2
+            </div>
+            <div>
+              <b>Inline code:</b> `text`
+            </div>
+            {forNotes && (
+              <>
+                <div>
+                  <b>Code block:</b>
+                  <br />
+                  ```
+                  <br />
+                  code
+                  <br />
+                  ```
+                </div>
+                <div>
+                  <b>Quote:</b> &gt; text
+                </div>
+              </>
+            )}
+          </div>
+        </span>
+      </div>
     </div>
   );
 }
@@ -271,7 +318,7 @@ export default function RichTextEditor({
     autofocus: false,
     extensions: [
       StarterKit.configure({
-        heading: { levels: [1] },
+        heading: { levels: forNotes ? [1, 2, 3, 4] : [1] },
         codeBlock: forNotes ? undefined : false,
         blockquote: forNotes ? undefined : false,
         horizontalRule: false,

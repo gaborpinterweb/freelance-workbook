@@ -101,7 +101,7 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .notes-chrome .notes-view-bar svg{display:block}
 .notes-chrome .notes-view-dd{flex:none}
 .notes-chrome .notes-view-dd .dd-btn{width:28px;height:28px;padding:0;justify-content:center}
-.notes-chrome .notes-view-dd .dd-menu{min-width:200px;right:0;left:auto}
+.notes-chrome .notes-view-dd .dd-menu{min-width:200px;right:0;left:auto;max-height:none;overflow:visible}
 .notes-layout{display:flex;flex:1;min-height:0}
 .notes-sidebar{width:320px;flex:none;display:flex;flex-direction:column;padding:0;border-right:1px solid var(--line);background:color-mix(in srgb,var(--ink) 3%,var(--bg));color:var(--ink);min-height:0}
 .notes-list{flex:1;min-height:0;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
@@ -118,8 +118,10 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .notes-toolbar-left{min-width:0}
 .notes-toolbar-mid{display:flex;justify-content:center;min-width:0}
 .notes-toolbar-right{display:flex;justify-content:flex-end;align-items:center;min-width:0}
-.notes-chrome .rte-toolbar{display:flex;align-items:center;gap:2px;margin:0}
+.notes-chrome .rte-toolbar{display:flex;align-items:center;gap:28px;margin:0}
+.notes-chrome .rte-toolbar .rte-group{display:flex;align-items:center;gap:2px}
 .notes-chrome .rte-btn{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0;border:none;border-radius:calc(var(--radius) - 6px);font:inherit;color:color-mix(in srgb,#fff 78%,transparent);background:transparent;cursor:pointer;box-shadow:none}
+.notes-chrome .rte-btn .rte-block-lab{font-size:11px;font-weight:700;letter-spacing:.02em;line-height:1}
 .notes-chrome .rte-btn:hover{color:#fff;background:color-mix(in srgb,#fff 14%,transparent)}
 .notes-chrome .rte-btn.on{color:#fff;background:color-mix(in srgb,#fff 22%,transparent)}
 .notes-chrome .dlg-desc-info{position:relative;display:inline-grid;place-items:center;min-width:26px;height:26px;color:color-mix(in srgb,#fff 78%,transparent);cursor:help;border-radius:calc(var(--radius) - 6px)}
@@ -135,13 +137,28 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .notes-rte-wrap .tiptap,
 .notes-rte-wrap .rte-content,
 .notes-rte-wrap .ProseMirror{flex:1;min-height:0;width:100%;height:100%;overflow:auto;padding:14px 18px;outline:none;box-sizing:border-box;font:inherit;color:var(--ink);line-height:1.45}
-.notes-rte-wrap .tiptap p,.notes-rte-wrap .ProseMirror p{margin:0 0 .5em}
+.notes-rte-wrap .tiptap p,.notes-rte-wrap .ProseMirror p{margin:0 0 .5em;min-height:1.45em}
 .notes-rte-wrap .tiptap p:last-child,.notes-rte-wrap .ProseMirror p:last-child{margin-bottom:0}
-.notes-rte-wrap .tiptap h1,.notes-rte-wrap .ProseMirror h1{margin:0 0 .4em;font-size:1.35em;font-weight:700;line-height:1.25}
+.notes-rte-wrap .tiptap h1,.notes-rte-wrap .ProseMirror h1{margin:0 0 .4em;font-size:1.5em;font-weight:700;line-height:1.25;min-height:1.25em}
+.notes-rte-wrap .tiptap h2,.notes-rte-wrap .ProseMirror h2{margin:0 0 .35em;font-size:1.3em;font-weight:700;line-height:1.25;min-height:1.25em}
+.notes-rte-wrap .tiptap h3,.notes-rte-wrap .ProseMirror h3{margin:0 0 .3em;font-size:1.15em;font-weight:700;line-height:1.3;min-height:1.3em}
+.notes-rte-wrap .tiptap h4,.notes-rte-wrap .ProseMirror h4{margin:0 0 .3em;font-size:1em;font-weight:700;line-height:1.35;min-height:1.35em}
 .notes-rte-wrap .tiptap h1.is-empty::before,
 .notes-rte-wrap .tiptap h1.is-editor-empty::before,
 .notes-rte-wrap .ProseMirror h1.is-empty::before,
 .notes-rte-wrap .ProseMirror h1.is-editor-empty::before,
+.notes-rte-wrap .tiptap h2.is-empty::before,
+.notes-rte-wrap .tiptap h2.is-editor-empty::before,
+.notes-rte-wrap .ProseMirror h2.is-empty::before,
+.notes-rte-wrap .ProseMirror h2.is-editor-empty::before,
+.notes-rte-wrap .tiptap h3.is-empty::before,
+.notes-rte-wrap .tiptap h3.is-editor-empty::before,
+.notes-rte-wrap .ProseMirror h3.is-empty::before,
+.notes-rte-wrap .ProseMirror h3.is-editor-empty::before,
+.notes-rte-wrap .tiptap h4.is-empty::before,
+.notes-rte-wrap .tiptap h4.is-editor-empty::before,
+.notes-rte-wrap .ProseMirror h4.is-empty::before,
+.notes-rte-wrap .ProseMirror h4.is-editor-empty::before,
 .notes-rte-wrap .tiptap p.is-editor-empty:first-child::before,
 .notes-rte-wrap .ProseMirror p.is-editor-empty:first-child::before{content:attr(data-placeholder);float:left;color:var(--mute);pointer-events:none;height:0;font:inherit;font-weight:700}
 .notes-empty-title{color:var(--mute);font-weight:700}
@@ -163,7 +180,15 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .notes-rte-wrap .tiptap td,
 .notes-rte-wrap .tiptap th,
 .notes-rte-wrap .ProseMirror td,
-.notes-rte-wrap .ProseMirror th{position:relative;border:1px solid var(--line);padding:6px 10px;vertical-align:top;min-width:48px;font:inherit;color:var(--ink)}
+.notes-rte-wrap .ProseMirror th{position:relative;border:1px solid var(--line);padding:6px 10px;vertical-align:top;min-width:48px;font:inherit;color:var(--ink);line-height:1.45}
+.notes-rte-wrap .tiptap td > p,
+.notes-rte-wrap .tiptap th > p,
+.notes-rte-wrap .ProseMirror td > p,
+.notes-rte-wrap .ProseMirror th > p{margin:0;min-height:1.45em}
+.notes-rte-wrap .tiptap td:empty::before,
+.notes-rte-wrap .tiptap th:empty::before,
+.notes-rte-wrap .ProseMirror td:empty::before,
+.notes-rte-wrap .ProseMirror th:empty::before{content:"";display:inline-block;height:1.45em}
 .notes-rte-wrap .tiptap th,
 .notes-rte-wrap .ProseMirror th{font-weight:600;background:color-mix(in srgb,var(--ink) 5%,#fff);text-align:left}
 .notes-rte-wrap .tiptap .selectedCell:after,
@@ -472,6 +497,7 @@ aside small{display:block;color:var(--mute);font-size:12px;font-weight:400}
 .dlg .dlg-desc-head{display:flex;align-items:center;gap:8px;padding:10px 10px 0 14px;min-width:0}
 .dlg .dlg-desc-label{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
 .dlg .rte-toolbar{display:flex;align-items:center;gap:2px;margin-left:auto}
+.dlg .rte-toolbar .rte-group{display:flex;align-items:center;gap:2px}
 .dlg .rte-btn{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0;border:none;border-radius:calc(var(--radius) - 6px);font:inherit;color:var(--mute);background:transparent;cursor:pointer;box-shadow:none}
 .dlg .rte-btn:hover{color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
 .dlg .rte-btn.on{color:var(--acc);background:transparent}
