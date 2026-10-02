@@ -57,6 +57,8 @@ import Trash from "./components/Trash.jsx";
 import Notes from "./components/Notes.jsx";
 import CardDialog from "./components/CardDialog.jsx";
 import SettingsDialog from "./components/SettingsDialog.jsx";
+import PromptDialog from "./components/PromptDialog.jsx";
+import { askPrompt } from "./promptDialog.js";
 import LaunchDialog from "./components/LaunchDialog.jsx";
 
 export default function App() {
@@ -617,7 +619,13 @@ export default function App() {
 
   const onAddTab = async (t, title) => {
     setMenuOpen(false);
-    const name = (prompt(title + " name") || "").trim();
+    const name = (
+      (await askPrompt({
+        title: `New ${title}`,
+        placeholder: `${title} name`,
+        confirmLabel: "Create",
+      })) || ""
+    ).trim();
     if (!name) return;
     const folder = foldersRef.current[pRef.current];
     let data;
@@ -1147,6 +1155,7 @@ export default function App() {
           }}
         />
       )}
+      <PromptDialog />
     </>
   );
 }

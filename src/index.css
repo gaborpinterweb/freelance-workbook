@@ -393,6 +393,15 @@ aside small{display:block;color:var(--mute);font-size:12px;font-weight:400}
 .none{color:var(--side-mute);font-size:13px;margin:0 8px}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:10;padding:16px}
 .ov.ov-top{align-items:start;padding-top:48px}
+.ov.ov-prompt{z-index:30}
+.prompt-dlg{width:min(400px,100%);box-shadow:0 12px 40px #0006}
+.prompt-body{gap:10px}
+.prompt-title{margin:0;font-size:16px;font-weight:650;color:var(--ink)}
+.prompt-msg{margin:0;font-size:13px;color:var(--mute);line-height:1.4}
+.prompt-form{display:flex;flex-direction:column;gap:14px;min-width:0}
+.prompt-input{font:inherit;font-size:15px;color:var(--ink);background:color-mix(in srgb,var(--ink) 4%,transparent);border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:10px 12px;width:100%;box-sizing:border-box}
+.prompt-input:focus{outline:none;border-color:color-mix(in srgb,var(--acc) 45%,var(--line));background:#fff}
+.prompt-actions{margin:0}
 .dlg{background:var(--card);border:1px solid var(--line);border-radius:calc(var(--radius) + 4px);width:min(560px,100%);padding:0;display:flex;flex-direction:column;box-shadow:0 12px 40px #0006;transition:background .15s ease,border-color .15s ease;--props-border:color-mix(in srgb,#000 12%,var(--card))}
 .dlg.tint{background:color-mix(in srgb,var(--pc) 32%,#fff);border-color:color-mix(in srgb,var(--pc) 25%,var(--line));--props-border:color-mix(in srgb,#000 14%,color-mix(in srgb,var(--pc) 32%,#fff))}
 .dlg .dlg-content{display:flex;flex-direction:column;gap:12px;padding:16px;min-width:0}

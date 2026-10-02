@@ -10,6 +10,7 @@ import {
   fetchWorkspace,
 } from "../api.js";
 import { Icon } from "../icons.jsx";
+import { askPrompt } from "../promptDialog.js";
 import {
   PC,
   STAGES,
@@ -555,8 +556,12 @@ function BoardCol({
   onBodyDblClick,
   children,
 }) {
-  const renameViaPrompt = () => {
-    const next = prompt("Column name", name);
+  const renameViaPrompt = async () => {
+    const next = await askPrompt({
+      title: "Rename column",
+      defaultValue: name,
+      confirmLabel: "Rename",
+    });
     if (next == null) return;
     const trimmed = next.trim().replace(/,/g, " ");
     if (!trimmed || trimmed === name) return;
@@ -739,7 +744,15 @@ function ProjectBoard({
   };
 
   const addBoardColumn = async () => {
-    const label = (prompt("Column name") || "").trim().replace(/,/g, " ");
+    const label = (
+      (await askPrompt({
+        title: "New column",
+        placeholder: "Column name",
+        confirmLabel: "Add",
+      })) || ""
+    )
+      .trim()
+      .replace(/,/g, " ");
     if (!label) return;
     const nextCols = (mod[2].columns || []).slice();
     if (nextCols.includes(label)) {
@@ -1048,7 +1061,15 @@ function MasterBoard({
   };
 
   const addMasterColumn = async () => {
-    const label = (prompt("Column name") || "").trim().replace(/,/g, " ");
+    const label = (
+      (await askPrompt({
+        title: "New column",
+        placeholder: "Column name",
+        confirmLabel: "Add",
+      })) || ""
+    )
+      .trim()
+      .replace(/,/g, " ");
     if (!label) return;
     const cols = stages.slice();
     if (cols.includes(label)) {
@@ -1303,7 +1324,13 @@ function DbTable({ d, folder, mod, stages, onOpen, onApplyWorkspace, setM, p, fo
             <th
               className="addcol"
               onClick={async () => {
-                const label = (prompt("Column name") || "").trim();
+                const label = (
+                  (await askPrompt({
+                    title: "New column",
+                    placeholder: "Column name",
+                    confirmLabel: "Add",
+                  })) || ""
+                ).trim();
                 if (!label) return;
                 const id = "f" + Date.now();
                 d.cols.push({ id, label, type: "text" });
