@@ -17,6 +17,14 @@ const NOTE_SORT_OPTIONS = [
   { value: "alpha-desc", label: "Alphabetical descending" },
 ];
 
+const NOTE_SIZE_OPTIONS = [
+  { value: "sm", label: "Small" },
+  { value: "md", label: "Medium" },
+  { value: "lg", label: "Large" },
+];
+
+const NOTE_PREVIEW_LEN = { sm: 0, md: 140, lg: 280 };
+
 function previewHtml(body) {
   if (!body) return "<p></p>";
   return body;
@@ -54,6 +62,7 @@ function sortNotes(list, sort) {
 export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace }) {
   const d = mod[2] || { slug: "", notes: [] };
   const [sort, setSort] = useState("updated-desc");
+  const [cardSize, setCardSize] = useState("md");
   const notes = useMemo(() => sortNotes(d.notes, sort), [d.notes, sort]);
   const [selectedSlug, setSelectedSlug] = useState(notes[0]?.slug || null);
   const [locked, setLocked] = useState(true);
@@ -140,9 +149,15 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
             title="View options"
             align="right"
             caret={false}
-            value={sort}
-            options={NOTE_SORT_OPTIONS}
-            onChange={setSort}
+            sections={[
+              { label: "Sort", value: sort, onChange: setSort, options: NOTE_SORT_OPTIONS },
+              {
+                label: "Card size",
+                value: cardSize,
+                onChange: setCardSize,
+                options: NOTE_SIZE_OPTIONS,
+              },
+            ]}
           >
             <Icon name="gallery" size={15} />
           </Dropdown>
@@ -188,9 +203,12 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
       </div>
       <div className="notes-layout">
         <aside className="notes-sidebar">
-          <div className="notes-list">
+          <div className={"notes-list size-" + cardSize}>
             {notes.map((n) => {
-              const preview = noteListPreview(n.body);
+              const preview =
+                cardSize === "sm"
+                  ? ""
+                  : noteListPreview(n.body, NOTE_PREVIEW_LEN[cardSize] || 140);
               return (
                 <button
                   key={n.slug}

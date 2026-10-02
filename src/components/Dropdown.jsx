@@ -17,11 +17,35 @@ export function optionKey(o) {
   return String(o);
 }
 
+function renderOptions({ options, value, onChange, renderOption, close }) {
+  return options.map((o) => {
+    const val = optionValue(o);
+    const selectedOpt = val === value;
+    return (
+      <button
+        key={optionKey(o)}
+        type="button"
+        role="option"
+        aria-selected={selectedOpt}
+        className={selectedOpt ? "on" : ""}
+        onClick={(e) => {
+          e.stopPropagation();
+          onChange?.(val, o);
+          close?.();
+        }}
+      >
+        {renderOption ? renderOption(o) : optionLabel(o)}
+      </button>
+    );
+  });
+}
+
 /** Generic single-select dropdown (replaces native &lt;select&gt;). */
 export default function Dropdown({
   options = [],
   value,
   onChange,
+  sections,
   className = "",
   buttonClassName = "",
   menuClassName = "",
@@ -47,6 +71,7 @@ export default function Dropdown({
 
   const selected = options.find((o) => optionValue(o) === value);
   const display = children ?? (selected != null ? optionLabel(selected) : value);
+  const close = () => setOpen(false);
 
   return (
     <div
@@ -81,26 +106,20 @@ export default function Dropdown({
       </button>
       {open && !disabled && (
         <div className={"pop dd-menu" + (menuClassName ? " " + menuClassName : "")} style={{ display: "block" }} role="listbox">
-          {options.map((o) => {
-            const val = optionValue(o);
-            const selectedOpt = val === value;
-            return (
-              <button
-                key={optionKey(o)}
-                type="button"
-                role="option"
-                aria-selected={selectedOpt}
-                className={selectedOpt ? "on" : ""}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChange?.(val, o);
-                  setOpen(false);
-                }}
-              >
-                {renderOption ? renderOption(o) : optionLabel(o)}
-              </button>
-            );
-          })}
+          {sections?.length
+            ? sections.map((sec, i) => (
+                <div key={sec.key || sec.label || i} className="dd-section" role="group" aria-label={sec.label}>
+                  {sec.label ? <div className="dd-heading">{sec.label}</div> : null}
+                  {renderOptions({
+                    options: sec.options || [],
+                    value: sec.value,
+                    onChange: sec.onChange,
+                    renderOption: sec.renderOption || renderOption,
+                    close,
+                  })}
+                </div>
+              ))
+            : renderOptions({ options, value, onChange, renderOption, close })}
         </div>
       )}
     </div>

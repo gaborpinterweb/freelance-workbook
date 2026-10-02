@@ -310,13 +310,22 @@
           "notes": [
             {
               "slug": "qwe",
-              "title": "qwe",
-              "body": "<h1>This is a note, super nice</h1><p>There is something cool about it. </p><p>Not sure what, but it feels awesome</p><p></p>"
+              "title": "This is a note, super nice",
+              "body": "<h1>This is a note, super nice</h1><p>There is something cool about it.</p><p>Not sure what, but it feels awesome</p><p>There is something cool about it.</p><p>Not sure what, but it feels awesome</p><p></p>",
+              "createdAt": "2026-10-02T09:31:36.669Z",
+              "updatedAt": "2026-10-02T09:31:37.547Z"
             },
             {
               "slug": "asd",
               "title": "asd",
               "body": ""
+            },
+            {
+              "slug": "new-note",
+              "title": "This is a new note",
+              "body": "<h1>This is a new note</h1><p>Lets see how it performs</p><p>This seems quite nice actuallz</p><ul><li><p>asd</p></li><li><p>asd</p></li><li><p></p></li></ul><p></p>",
+              "createdAt": "2026-10-02T09:32:23.308Z",
+              "updatedAt": "2026-10-02T09:32:37.690Z"
             }
           ]
         }

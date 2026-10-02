@@ -109,7 +109,10 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .notes-item:hover{box-shadow:0 1px 4px #0002}
 .notes-sidebar .notes-item.on{background:#fff;border-color:var(--tab,var(--acc));box-shadow:none;color:var(--ink)}
 .notes-item-title{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.notes-item-preview{font-size:12px;font-weight:400;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notes-item-preview{font-size:12px;font-weight:400;color:var(--mute);overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;white-space:normal;word-break:break-word}
+.notes-list.size-sm .notes-item-preview{display:none}
+.notes-list.size-md .notes-item-preview{-webkit-line-clamp:2}
+.notes-list.size-lg .notes-item-preview{-webkit-line-clamp:4}
 .notes-empty,.notes-placeholder{margin:16px 14px;font-size:13px;color:var(--mute)}
 .notes-main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;background:#fff}
 .notes-toolbar-left{min-width:0}
@@ -414,9 +417,11 @@ aside small{display:block;color:var(--mute);font-size:12px;font-weight:400}
 .dd-lab{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
 .dd-caret{flex:none;display:grid;place-items:center;opacity:.75}
 .dd-right .dd-menu,.dd.dd-right .pop{left:auto;right:0}
-.dd-menu{min-width:100%;max-height:min(280px,50vh);overflow:auto}
+.dd-menu{min-width:100%;max-height:min(360px,60vh);overflow:auto}
 .dd-menu button{display:block;width:100%;padding:8px 10px;border-radius:calc(var(--radius) - 6px);font-size:13px;font-weight:500;text-align:left;color:var(--ink)}
 .dd-menu button:hover,.dd-menu button.on{background:var(--sel)}
+.dd-section + .dd-section{margin-top:4px;padding-top:4px;border-top:1px solid var(--line)}
+.dd-heading{padding:6px 10px 4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
 .modbar .done-view-dd{margin-left:auto}
 .modbar .gbar-tools .done-view-dd{margin-left:0;max-width:220px}
 .modbar .done-view-dd .done-view{width:100%}
