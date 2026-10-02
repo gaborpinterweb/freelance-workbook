@@ -9,6 +9,7 @@ import {
 } from "../utils.js";
 import PropDropdown, { PropAffix, closePropDrops } from "./PropDropdown.jsx";
 import RichTextEditor from "./RichTextEditor.jsx";
+import { askConfirm } from "../confirmDialog.js";
 
 export default function CardDialog({
   row,
@@ -326,7 +327,12 @@ export default function CardDialog({
                     className="dlg-delete"
                     onClick={async () => {
                       const label = (draft.n || "").trim() || "Untitled";
-                      if (!confirm(`Delete "${label}"?`)) return;
+                      const ok = await askConfirm({
+                        title: `Delete "${label}"?`,
+                        confirmLabel: "Delete",
+                        danger: true,
+                      });
+                      if (!ok) return;
                       clearTimeout(persistTimer.current);
                       await onDelete(curLoc.folder, curLoc.mod, draft.slug);
                       onClose({ deleted: true });

@@ -10,6 +10,7 @@ import {
   fetchWorkspace,
 } from "../api.js";
 import { Icon } from "../icons.jsx";
+import Dropdown from "./Dropdown.jsx";
 import { askPrompt } from "../promptDialog.js";
 import {
   PC,
@@ -335,21 +336,23 @@ export function TaskCard({
 function CompletedViewBtn({ scope, completedViewByScope, onChange }) {
   const mode = getCompletedView(scope, completedViewByScope);
   return (
-    <select
-      className="done-view"
-      aria-label="Completed tasks view"
+    <Dropdown
+      className="done-view-dd"
+      buttonClassName="done-view"
+      ariaLabel="Completed tasks view"
       title="Completed tasks view"
+      align="right"
       value={mode}
-      onChange={(e) => {
-        const next = e.target.value;
+      options={[
+        { value: "hide", label: "Hide completed" },
+        { value: "inplace", label: "Show completed tasks" },
+        { value: "virtual", label: "Show completed column" },
+      ]}
+      onChange={(next) => {
         if (next === mode) return;
         onChange(scope, next);
       }}
-    >
-      <option value="hide">Hide completed</option>
-      <option value="inplace">Show completed tasks</option>
-      <option value="virtual">Show completed column</option>
-    </select>
+    />
   );
 }
 
@@ -777,7 +780,7 @@ function ProjectBoard({
     const remaining = nextCols.filter((c) => c !== name);
     const target = remaining[0];
     const count = (mod[2].rows || []).filter((r) => r.s === name).length;
-    if (!confirmDeleteColumn(name, count, target)) return;
+    if (!(await confirmDeleteColumn(name, count, target))) return;
     nextCols.splice(i, 1);
     (mod[2].rows || []).forEach((r) => {
       if (r.s === name) r.s = target;
@@ -1089,7 +1092,7 @@ function MasterBoard({
     const remaining = cols.filter((c) => c !== name);
     const target = remaining[0];
     const count = allBoardTasks(folders).filter((t) => t.row.ms === name).length;
-    if (!confirmDeleteColumn(name, count, target)) return;
+    if (!(await confirmDeleteColumn(name, count, target))) return;
     cols.splice(i, 1);
     allBoardTasks(folders).forEach((t) => {
       if (t.row.ms === name) t.row.ms = target;
@@ -1369,10 +1372,12 @@ function DbTable({ d, folder, mod, stages, onOpen, onApplyWorkspace, setM, p, fo
               {d.cols.map((c) =>
                 c.type === "stage" ? (
                   <td key={c.id}>
-                    <select
+                    <Dropdown
+                      className="table-dd"
                       value={r[c.id] || stages[0]}
-                      onChange={async (e) => {
-                        r[c.id] = e.target.value;
+                      options={stages}
+                      onChange={async (next) => {
+                        r[c.id] = next;
                         const fields = {};
                         d.cols.forEach((col) => {
                           fields[col.id] = r[col.id] != null ? r[col.id] : "";
@@ -1385,13 +1390,7 @@ function DbTable({ d, folder, mod, stages, onOpen, onApplyWorkspace, setM, p, fo
                           body: r.body || "",
                         });
                       }}
-                    >
-                      {stages.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </td>
                 ) : (
                   <td

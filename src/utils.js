@@ -1,3 +1,5 @@
+import { askConfirm } from "./confirmDialog.js";
+
 export const STAGES = ["Backlog", "This week", "Today", "Tomorrow", "Next week"];
 export const APP_NAME = "Project Binder";
 export const APP_VERSION = "0.1.0";
@@ -562,11 +564,16 @@ export function colCollapseKey(scope, s) {
   return scope + "\0" + s;
 }
 
-export function confirmDeleteColumn(name, count, target) {
+export async function confirmDeleteColumn(name, count, target) {
   const cards = count
     ? `${count} card${count === 1 ? "" : "s"} will move to "${target}".`
     : `No cards are in this column.`;
-  return confirm(`Delete column "${name}"?\n\n${cards}`);
+  return askConfirm({
+    title: `Delete column "${name}"?`,
+    message: cards,
+    confirmLabel: "Delete",
+    danger: true,
+  });
 }
 
 export function coverColorChoices(current) {

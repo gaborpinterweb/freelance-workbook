@@ -398,10 +398,33 @@ aside small{display:block;color:var(--mute);font-size:12px;font-weight:400}
 .prompt-body{gap:10px}
 .prompt-title{margin:0;font-size:16px;font-weight:650;color:var(--ink)}
 .prompt-msg{margin:0;font-size:13px;color:var(--mute);line-height:1.4}
+.prompt-msg-pre{white-space:pre-wrap}
 .prompt-form{display:flex;flex-direction:column;gap:14px;min-width:0}
 .prompt-input{font:inherit;font-size:15px;color:var(--ink);background:color-mix(in srgb,var(--ink) 4%,transparent);border:1px solid var(--line);border-radius:calc(var(--radius) - 4px);padding:10px 12px;width:100%;box-sizing:border-box}
 .prompt-input:focus{outline:none;border-color:color-mix(in srgb,var(--acc) 45%,var(--line));background:#fff}
 .prompt-actions{margin:0}
+.prompt-danger{background:color-mix(in srgb,#b42318 88%,#000)!important;color:#fff!important}
+.prompt-danger:hover{background:#b42318!important}
+.dd{position:relative;display:inline-flex;min-width:0;max-width:100%}
+.dd.open{z-index:40}
+.dd-btn{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%;font:inherit;cursor:pointer}
+.dd-lab{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.dd-caret{flex:none;display:grid;place-items:center;opacity:.75}
+.dd-right .dd-menu,.dd.dd-right .pop{left:auto;right:0}
+.dd-menu{min-width:100%;max-height:min(280px,50vh);overflow:auto}
+.dd-menu button{display:block;width:100%;padding:8px 10px;border-radius:calc(var(--radius) - 6px);font-size:13px;font-weight:500;text-align:left;color:var(--ink)}
+.dd-menu button:hover,.dd-menu button.on{background:var(--sel)}
+.modbar .done-view-dd{margin-left:auto}
+.modbar .gbar-tools .done-view-dd{margin-left:0;max-width:220px}
+.modbar .done-view-dd .done-view{width:100%}
+.modbar .done-view-dd .dd-caret{display:none}
+.modbar .done-view-dd .dd-menu{min-width:max(100%,180px)}
+.table-dd{width:100%}
+.table-dd .dd-btn{width:100%;padding:2px 6px;border-radius:4px;background:var(--sel);border:0;color:inherit;font:inherit}
+.table-dd .dd-menu{min-width:max(100%,120px)}
+.dlg .prop-dd.dd{width:100%}
+.dlg .prop-dd .dd-btn.prop-dd-btn{width:100%}
+.dlg .prop-dd .dd-menu{min-width:100%}
 .dlg{background:var(--card);border:1px solid var(--line);border-radius:calc(var(--radius) + 4px);width:min(560px,100%);padding:0;display:flex;flex-direction:column;box-shadow:0 12px 40px #0006;transition:background .15s ease,border-color .15s ease;--props-border:color-mix(in srgb,#000 12%,var(--card))}
 .dlg.tint{background:color-mix(in srgb,var(--pc) 32%,#fff);border-color:color-mix(in srgb,var(--pc) 25%,var(--line));--props-border:color-mix(in srgb,#000 14%,color-mix(in srgb,var(--pc) 32%,#fff))}
 .dlg .dlg-content{display:flex;flex-direction:column;gap:12px;padding:16px;min-width:0}

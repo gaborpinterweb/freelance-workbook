@@ -58,7 +58,9 @@ import Notes from "./components/Notes.jsx";
 import CardDialog from "./components/CardDialog.jsx";
 import SettingsDialog from "./components/SettingsDialog.jsx";
 import PromptDialog from "./components/PromptDialog.jsx";
+import ConfirmDialog from "./components/ConfirmDialog.jsx";
 import { askPrompt } from "./promptDialog.js";
+import { askConfirm } from "./confirmDialog.js";
 import LaunchDialog from "./components/LaunchDialog.jsx";
 
 export default function App() {
@@ -561,41 +563,48 @@ export default function App() {
     }
   };
 
-  const confirmArchiveProject = (folder) => {
+  const confirmArchiveProject = async (folder) => {
     setMoreOpen(false);
     if (!folder) return;
-    if (
-      !confirm(
-        `Archive "${folder.name}"?\n\nArchived projects are read-only until you unarchive them.`
-      )
-    )
-      return;
+    const ok = await askConfirm({
+      title: `Archive "${folder.name}"?`,
+      message: "Archived projects are read-only until you unarchive them.",
+      confirmLabel: "Archive",
+    });
+    if (!ok) return;
     setProjectArchived(folder, true);
   };
 
-  const confirmUnarchiveProject = (folder) => {
+  const confirmUnarchiveProject = async (folder) => {
     setMoreOpen(false);
     if (!folder) return;
-    if (
-      !confirm(
-        `Unarchive "${folder.name}"?\n\nThe project will become editable again.`
-      )
-    )
-      return;
+    const ok = await askConfirm({
+      title: `Unarchive "${folder.name}"?`,
+      message: "The project will become editable again.",
+      confirmLabel: "Unarchive",
+    });
+    if (!ok) return;
     setProjectArchived(folder, false);
   };
 
-  const confirmDeleteProject = (folder) => {
+  const confirmDeleteProject = async (folder) => {
     setMoreOpen(false);
     if (!folder) return;
-    if (
-      !confirm(
-        `Delete "${folder.name}" permanently?\n\nThis cannot be undone. All boards and tasks in this project will be removed.`
-      )
-    )
-      return;
-    if (!confirm(`Final confirmation: permanently delete "${folder.name}"?`))
-      return;
+    const ok = await askConfirm({
+      title: `Delete "${folder.name}" permanently?`,
+      message:
+        "This cannot be undone. All boards and tasks in this project will be removed.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
+    const okFinal = await askConfirm({
+      title: `Final confirmation`,
+      message: `Permanently delete "${folder.name}"?`,
+      confirmLabel: "Delete forever",
+      danger: true,
+    });
+    if (!okFinal) return;
     deleteProjectPermanently(folder);
   };
 
@@ -1156,6 +1165,7 @@ export default function App() {
         />
       )}
       <PromptDialog />
+      <ConfirmDialog />
     </>
   );
 }

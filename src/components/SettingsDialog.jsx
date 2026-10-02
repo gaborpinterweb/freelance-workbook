@@ -7,6 +7,7 @@ import {
   SIDEBAR_VIS_ITEMS,
   globalLabel,
 } from "../utils.js";
+import { askConfirm } from "../confirmDialog.js";
 
 const BMC_URL = "https://buymeacoffee.com/gaborpinter";
 const GITHUB_URL = "https://github.com/gaborpinterweb/freelance-workbook";
@@ -48,8 +49,14 @@ export default function SettingsDialog({
     }
   };
 
-  const runReset = async (kind, message, action) => {
-    if (!confirm(message)) return;
+  const runReset = async (kind, title, message, action) => {
+    const ok = await askConfirm({
+      title,
+      message,
+      confirmLabel: "Reset",
+      danger: true,
+    });
+    if (!ok) return;
     setResetting(kind);
     try {
       await action?.();
@@ -64,21 +71,24 @@ export default function SettingsDialog({
   const handleResetSeed = () =>
     runReset(
       "seed",
-      "Reset to seed workspace?\n\nThis replaces all current data with seedWorkspace.json. Your changes will be lost.",
+      "Reset to seed workspace?",
+      "This replaces all current data with seedWorkspace.json. Your changes will be lost.",
       onResetSeed
     );
 
   const handleResetEmpty = () =>
     runReset(
       "empty",
-      "Reset to empty workspace?\n\nThis deletes all projects, tasks, and timelogs. Your changes will be lost.",
+      "Reset to empty workspace?",
+      "This deletes all projects, tasks, and timelogs. Your changes will be lost.",
       onResetEmpty
     );
 
   const handleResetFirstLaunch = () =>
     runReset(
       "first-launch",
-      "Reset to first launch?\n\nThis restores seed data, clears saved views and settings, and reloads the app. Your changes will be lost.",
+      "Reset to first launch?",
+      "This restores seed data, clears saved views and settings, and reloads the app. Your changes will be lost.",
       onResetFirstLaunch
     );
 

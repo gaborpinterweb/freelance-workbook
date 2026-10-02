@@ -13,6 +13,8 @@ import {
 } from "../utils.js";
 import { Icon } from "../icons.jsx";
 import GlobalBar from "./GlobalBar.jsx";
+import Dropdown from "./Dropdown.jsx";
+import { askConfirm } from "../confirmDialog.js";
 
 function entryBoardKey(entry) {
   return `${entry.project || ""}/${entry.board || ""}`;
@@ -361,7 +363,12 @@ export default function Timelogs({
   const handleDelete = async (entry) => {
     if (busySlug) return;
     const label = entry.title || "Untitled";
-    if (!confirm(`Delete timelog for "${label}"?`)) return;
+    const ok = await askConfirm({
+      title: `Delete timelog for "${label}"?`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     setBusySlug(entry.slug);
     if (editingSlug === entry.slug) cancelEdit();
     try {
@@ -383,19 +390,16 @@ export default function Timelogs({
             boardOff={boardOff}
             onToggle={toggleBoard}
           />
-          <select
-            className="done-view"
-            aria-label="Timelog period"
+          <Dropdown
+            className="done-view-dd"
+            buttonClassName="done-view"
+            ariaLabel="Timelog period"
             title="Timelog period"
+            align="right"
             value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-          >
-            {TIMELOG_PERIODS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
+            options={TIMELOG_PERIODS}
+            onChange={setPeriod}
+          />
           <ExportDropdown
             entries={shown || []}
             period={period}
