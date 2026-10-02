@@ -172,6 +172,20 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 .notes-rte-wrap .ProseMirror .column-resize-handle{position:absolute;right:-2px;top:0;bottom:0;width:4px;background:var(--tab,var(--acc));pointer-events:none}
 .notes-rte-wrap .tiptap.resize-cursor,
 .notes-rte-wrap .ProseMirror.resize-cursor{cursor:col-resize}
+.notes-rte-wrap .tiptap blockquote,
+.notes-rte-wrap .ProseMirror blockquote{margin:.5em 0;padding:.35em 0 .35em 14px;border-left:3px solid color-mix(in srgb,var(--tab,var(--acc)) 55%,var(--line));color:color-mix(in srgb,var(--ink) 78%,var(--mute))}
+.notes-rte-wrap .tiptap blockquote p:last-child,
+.notes-rte-wrap .ProseMirror blockquote p:last-child{margin-bottom:0}
+.notes-rte-wrap .tiptap code,
+.notes-rte-wrap .ProseMirror code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:.9em;padding:.1em .35em;border-radius:4px;background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.notes-rte-wrap .tiptap pre,
+.notes-rte-wrap .ProseMirror pre{margin:.5em 0 1em;padding:12px 14px;border-radius:calc(var(--radius) - 4px);background:color-mix(in srgb,var(--ink) 6%,#fff);border:1px solid var(--line);overflow:auto}
+.notes-rte-wrap .tiptap pre code,
+.notes-rte-wrap .ProseMirror pre code{padding:0;background:none;font-size:12.5px;line-height:1.45;color:var(--ink)}
+.notes-rte-wrap .tiptap mark,
+.notes-rte-wrap .ProseMirror mark{background:color-mix(in srgb,#e8c547 55%,#fff);color:inherit;border-radius:2px;padding:.05em .15em}
+.notes-rte-wrap .tiptap a,
+.notes-rte-wrap .ProseMirror a{color:var(--tab,var(--acc));text-decoration:underline;text-underline-offset:2px}
 .notes-chrome .rte-btn:disabled{opacity:.35;cursor:default;pointer-events:none}
 .vbar,.modbar{position:relative;background-color:var(--tab,var(--bar));background-image:var(--leather),linear-gradient(180deg,transparent 30%,color-mix(in srgb,#000 14%,transparent));background-size:160px 160px,auto;background-blend-mode:soft-light,soft-light;display:flex;align-items:center;gap:4px;padding:7px 14px 10px;min-height:42px;border-bottom:none;box-shadow:inset 0 -1px 0 color-mix(in srgb,#000 22%,transparent),0 3px 5px color-mix(in srgb,#000 16%,transparent)}
 .vbar::after,.modbar::after{content:"";position:absolute;left:12px;right:12px;bottom:4px;border-top:1.5px dashed color-mix(in srgb,#fff 38%,transparent);box-shadow:0 1px 0 color-mix(in srgb,#000 30%,transparent);pointer-events:none;opacity:.75}

@@ -4,6 +4,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
+import Link from "@tiptap/extension-link";
+import Highlight from "@tiptap/extension-highlight";
 import {
   Table,
   TableRow,
@@ -11,6 +13,7 @@ import {
   TableHeader,
 } from "@tiptap/extension-table";
 import { Icon } from "../icons.jsx";
+import { askPrompt } from "../promptDialog.js";
 
 function toEditorContent(body) {
   if (!body) return "";
@@ -37,6 +40,30 @@ function isBlankHeadingHtml(html) {
   return !s || s === "<h1></h1>" || s === "<h1><br></h1>" || s === "<h1><br/></h1>";
 }
 
+function normalizeHref(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  if (/^(https?:|mailto:|tel:|#|\/)/i.test(s)) return s;
+  return "https://" + s;
+}
+
+async function editLink(editor) {
+  const prev = editor.getAttributes("link").href || "";
+  const next = await askPrompt({
+    title: prev ? "Edit link" : "Add link",
+    defaultValue: prev,
+    placeholder: "https://",
+    confirmLabel: prev ? "Save" : "Add",
+  });
+  if (next == null) return;
+  const href = normalizeHref(next);
+  if (!href) {
+    editor.chain().focus().extendMarkRange("link").unsetLink().run();
+    return;
+  }
+  editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
+}
+
 function ToolbarBtn({ onClick, active, title, disabled, children }) {
   return (
     <button
@@ -56,7 +83,7 @@ function ToolbarBtn({ onClick, active, title, disabled, children }) {
   );
 }
 
-export function RteToolbar({ editor, enableTables = false }) {
+export function RteToolbar({ editor, forNotes = false }) {
   const [, bump] = useState(0);
   useEffect(() => {
     if (!editor) return;
@@ -70,7 +97,7 @@ export function RteToolbar({ editor, enableTables = false }) {
   }, [editor]);
 
   if (!editor) return null;
-  const inTable = enableTables && editor.isActive("table");
+  const inTable = forNotes && editor.isActive("table");
   return (
     <div className="rte-toolbar">
       <ToolbarBtn
@@ -94,8 +121,36 @@ export function RteToolbar({ editor, enableTables = false }) {
       >
         <Icon name="checklist" size={15} />
       </ToolbarBtn>
-      {enableTables && (
+      {forNotes && (
         <>
+          <ToolbarBtn
+            title="Blockquote"
+            active={editor.isActive("blockquote")}
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          >
+            <Icon name="blockquote" size={15} />
+          </ToolbarBtn>
+          <ToolbarBtn
+            title="Code block"
+            active={editor.isActive("codeBlock")}
+            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          >
+            <Icon name="codeBlock" size={15} />
+          </ToolbarBtn>
+          <ToolbarBtn
+            title="Highlight"
+            active={editor.isActive("highlight")}
+            onClick={() => editor.chain().focus().toggleHighlight().run()}
+          >
+            <Icon name="highlight" size={15} />
+          </ToolbarBtn>
+          <ToolbarBtn
+            title="Link"
+            active={editor.isActive("link")}
+            onClick={() => editLink(editor)}
+          >
+            <Icon name="link" size={15} />
+          </ToolbarBtn>
           <ToolbarBtn
             title="Insert table"
             active={inTable}
@@ -169,6 +224,22 @@ export function RteToolbar({ editor, enableTables = false }) {
           <div>
             <b>Inline code:</b> `text`
           </div>
+          {forNotes && (
+            <>
+              <div>
+                <b>Code block:</b>
+                <br />
+                ```
+                <br />
+                code
+                <br />
+                ```
+              </div>
+              <div>
+                <b>Quote:</b> &gt; text
+              </div>
+            </>
+          )}
         </div>
       </span>
     </div>
@@ -184,7 +255,7 @@ export default function RichTextEditor({
   editable = true,
   autofocus = false,
   startInHeading = false,
-  enableTables = false,
+  forNotes = false,
   onEditor,
 }) {
   const initialContent = (() => {
@@ -201,8 +272,8 @@ export default function RichTextEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1] },
-        codeBlock: false,
-        blockquote: false,
+        codeBlock: forNotes ? undefined : false,
+        blockquote: forNotes ? undefined : false,
         horizontalRule: false,
       }),
       Placeholder.configure({
@@ -212,8 +283,18 @@ export default function RichTextEditor({
       }),
       TaskList,
       TaskItem.configure({ nested: true }),
-      ...(enableTables
+      ...(forNotes
         ? [
+            Link.configure({
+              openOnClick: false,
+              autolink: true,
+              defaultProtocol: "https",
+              HTMLAttributes: {
+                rel: "noopener noreferrer nofollow",
+                target: "_blank",
+              },
+            }),
+            Highlight,
             Table.configure({ resizable: true }),
             TableRow,
             TableHeader,
@@ -263,11 +344,11 @@ export default function RichTextEditor({
         (showLabel ? (
           <div className="dlg-desc-head">
             <span className="dlg-desc-label">Description</span>
-            <RteToolbar editor={editor} enableTables={enableTables} />
+            <RteToolbar editor={editor} forNotes={forNotes} />
           </div>
         ) : (
           <div className="dlg-desc-head notes-rte-head">
-            <RteToolbar editor={editor} enableTables={enableTables} />
+            <RteToolbar editor={editor} forNotes={forNotes} />
           </div>
         ))}
       <EditorContent editor={editor} />

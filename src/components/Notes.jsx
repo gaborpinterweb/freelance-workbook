@@ -192,7 +192,7 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
         <div className="notes-chrome-editor">
           <div className="notes-toolbar-left" />
           <div className="notes-toolbar-mid">
-            {selected && !locked && <RteToolbar editor={editor} enableTables />}
+            {selected && !locked && <RteToolbar editor={editor} forNotes />}
           </div>
           <div className="notes-toolbar-right">
             {selected &&
@@ -269,7 +269,7 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
                 onChange={saveBody}
                 showLabel={false}
                 showToolbar={false}
-                enableTables
+                forNotes
                 autofocus
                 startInHeading
                 onEditor={setEditor}
