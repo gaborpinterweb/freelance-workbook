@@ -186,6 +186,33 @@ export async function postNotesTab(body) {
   return r.json();
 }
 
+export async function putTab(body) {
+  const r = await fetch("/api/tab", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
+export async function deleteTabApi(body) {
+  const r = await fetch("/api/tab", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
+export async function putTabOrder(body) {
+  const r = await fetch("/api/tab-order", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
 export async function postNote(body) {
   const r = await fetch("/api/note", {
     method: "POST",

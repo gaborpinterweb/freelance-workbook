@@ -161,6 +161,139 @@ function findNotesTab(project, tabSlug) {
   return (project.notesTabs || []).find((t) => t.slug === tabSlug) || null;
 }
 
+function tabKey(type, slug) {
+  return `${type}:${slug}`;
+}
+
+function defaultTabOrderEntries(project) {
+  return [
+    ...(project.boards || []).map((b) => ({ type: "board", slug: b.slug })),
+    ...(project.notesTabs || []).map((t) => ({ type: "notes", slug: t.slug })),
+    ...(project.databases || []).map((d) => ({ type: "database", slug: d.slug })),
+  ];
+}
+
+function normalizeTabOrder(project) {
+  const valid = new Map();
+  for (const e of defaultTabOrderEntries(project)) {
+    valid.set(tabKey(e.type, e.slug), e);
+  }
+  const next = [];
+  const seen = new Set();
+  for (const raw of project.tabOrder || []) {
+    if (!raw || !raw.type || !raw.slug) continue;
+    const type = String(raw.type);
+    const slug = String(raw.slug);
+    const key = tabKey(type, slug);
+    if (!valid.has(key) || seen.has(key)) continue;
+    next.push({ type, slug });
+    seen.add(key);
+  }
+  for (const e of defaultTabOrderEntries(project)) {
+    const key = tabKey(e.type, e.slug);
+    if (seen.has(key)) continue;
+    next.push(e);
+    seen.add(key);
+  }
+  project.tabOrder = next;
+  return next;
+}
+
+function appendTabOrder(project, type, slug) {
+  normalizeTabOrder(project);
+  const key = tabKey(type, slug);
+  if (project.tabOrder.some((e) => tabKey(e.type, e.slug) === key)) return;
+  project.tabOrder.push({ type, slug });
+}
+
+function removeTabOrder(project, type, slug) {
+  if (!project.tabOrder) return;
+  const key = tabKey(type, slug);
+  project.tabOrder = project.tabOrder.filter((e) => tabKey(e.type, e.slug) !== key);
+}
+
+function renameTab(projectSlug, type, slug, name) {
+  const project = findProject(projectSlug);
+  if (!project) return { ok: false, error: "project not found" };
+  const title = String(name || "").trim();
+  if (!title) return { ok: false, error: "missing fields" };
+  if (type === "board") {
+    const board = findBoard(project, slug);
+    if (!board) return { ok: false, error: "tab not found" };
+    board.name = title;
+    return { ok: true };
+  }
+  if (type === "notes") {
+    const tab = findNotesTab(project, slug);
+    if (!tab) return { ok: false, error: "tab not found" };
+    tab.name = title;
+    return { ok: true };
+  }
+  if (type === "database") {
+    const db = findDatabase(project, slug);
+    if (!db) return { ok: false, error: "tab not found" };
+    db.name = title;
+    return { ok: true };
+  }
+  return { ok: false, error: "invalid type" };
+}
+
+function deleteTab(projectSlug, type, slug) {
+  const project = findProject(projectSlug);
+  if (!project) return { ok: false, error: "project not found" };
+  if (type === "board") {
+    const idx = (project.boards || []).findIndex((b) => b.slug === slug);
+    if (idx < 0) return { ok: false, error: "tab not found" };
+    project.boards.splice(idx, 1);
+    removeTabOrder(project, type, slug);
+    return { ok: true };
+  }
+  if (type === "notes") {
+    const idx = (project.notesTabs || []).findIndex((t) => t.slug === slug);
+    if (idx < 0) return { ok: false, error: "tab not found" };
+    project.notesTabs.splice(idx, 1);
+    removeTabOrder(project, type, slug);
+    return { ok: true };
+  }
+  if (type === "database") {
+    const idx = (project.databases || []).findIndex((d) => d.slug === slug);
+    if (idx < 0) return { ok: false, error: "tab not found" };
+    project.databases.splice(idx, 1);
+    removeTabOrder(project, type, slug);
+    return { ok: true };
+  }
+  return { ok: false, error: "invalid type" };
+}
+
+function writeTabOrder(projectSlug, order) {
+  const project = findProject(projectSlug);
+  if (!project) return { ok: false, error: "project not found" };
+  if (!Array.isArray(order)) return { ok: false, error: "missing fields" };
+  const valid = new Map();
+  for (const e of defaultTabOrderEntries(project)) {
+    valid.set(tabKey(e.type, e.slug), e);
+  }
+  const next = [];
+  const seen = new Set();
+  for (const raw of order) {
+    if (!raw || !raw.type || !raw.slug) continue;
+    const type = String(raw.type);
+    const slug = String(raw.slug);
+    const key = tabKey(type, slug);
+    if (!valid.has(key) || seen.has(key)) continue;
+    next.push({ type, slug });
+    seen.add(key);
+  }
+  for (const e of defaultTabOrderEntries(project)) {
+    const key = tabKey(e.type, e.slug);
+    if (seen.has(key)) continue;
+    next.push(e);
+    seen.add(key);
+  }
+  project.tabOrder = next;
+  return { ok: true };
+}
+
 function projectIsArchived(slug) {
   const p = findProject(slug);
   return p ? isArchivedValue(p.archived) : false;
@@ -233,6 +366,7 @@ function projectToApi(p) {
         updatedAt: n.updatedAt || "",
       })),
     })),
+    tabOrder: normalizeTabOrder(p).map((e) => ({ type: e.type, slug: e.slug })),
   };
   if (isDemoValue(p.isDemo)) out.isDemo = true;
   if (isArchivedValue(p.archived)) out.archived = true;
@@ -529,6 +663,7 @@ function createBoard(projectSlug, name) {
     existing.name = name;
     if (!existing.columns || !existing.columns.length) existing.columns = DEFAULT_BOARD_COLS.slice();
     if (!existing.cards) existing.cards = [];
+    appendTabOrder(project, "board", bSlug);
     return bSlug;
   }
   project.boards.push({
@@ -537,6 +672,7 @@ function createBoard(projectSlug, name) {
     columns: DEFAULT_BOARD_COLS.slice(),
     cards: [],
   });
+  appendTabOrder(project, "board", bSlug);
   return bSlug;
 }
 
@@ -602,8 +738,10 @@ function writeDatabase(projectSlug, databaseSlug, { name, columns }) {
 }
 
 function createDatabase(projectSlug, name) {
+  const project = findProject(projectSlug);
   const dSlug = slugify(name);
   writeDatabase(projectSlug, dSlug, { name, columns: DEFAULT_DB_COLS });
+  if (project) appendTabOrder(project, "database", dSlug);
   return dSlug;
 }
 
@@ -625,9 +763,11 @@ function createNotesTab(projectSlug, name) {
   if (existing) {
     existing.name = name;
     if (!existing.notes) existing.notes = [];
+    appendTabOrder(project, "notes", tabSlug);
     return tabSlug;
   }
   project.notesTabs.push({ slug: tabSlug, name, notes: [] });
+  appendTabOrder(project, "notes", tabSlug);
   return tabSlug;
 }
 
@@ -939,6 +1079,48 @@ const server = http.createServer(async (req, res) => {
       const slug = createNotesTab(body.project, body.name);
       saveStore();
       return json(res, 201, { slug, ...readWorkspace() });
+    }
+    if (req.method === "PUT" && url.pathname === "/api/tab") {
+      const body = await readBody(req);
+      if (!body.project || !body.type || !body.slug || body.name == null) {
+        return json(res, 400, { error: "missing fields" });
+      }
+      if (projectIsArchived(body.project)) return json(res, 403, { error: "project is archived" });
+      const result = renameTab(body.project, body.type, body.slug, body.name);
+      if (!result.ok) {
+        const status = result.error === "project not found" || result.error === "tab not found" ? 404 : 400;
+        return json(res, status, { error: result.error });
+      }
+      saveStore();
+      return json(res, 200, readWorkspace());
+    }
+    if (req.method === "DELETE" && url.pathname === "/api/tab") {
+      const body = await readBody(req);
+      if (!body.project || !body.type || !body.slug) {
+        return json(res, 400, { error: "missing fields" });
+      }
+      if (projectIsArchived(body.project)) return json(res, 403, { error: "project is archived" });
+      const result = deleteTab(body.project, body.type, body.slug);
+      if (!result.ok) {
+        const status = result.error === "project not found" || result.error === "tab not found" ? 404 : 400;
+        return json(res, status, { error: result.error });
+      }
+      saveStore();
+      return json(res, 200, readWorkspace());
+    }
+    if (req.method === "PUT" && url.pathname === "/api/tab-order") {
+      const body = await readBody(req);
+      if (!body.project || !Array.isArray(body.order)) {
+        return json(res, 400, { error: "missing fields" });
+      }
+      if (projectIsArchived(body.project)) return json(res, 403, { error: "project is archived" });
+      const result = writeTabOrder(body.project, body.order);
+      if (!result.ok) {
+        const status = result.error === "project not found" ? 404 : 400;
+        return json(res, status, { error: result.error });
+      }
+      saveStore();
+      return json(res, 200, readWorkspace());
     }
     if (req.method === "POST" && url.pathname === "/api/note") {
       const body = await readBody(req);

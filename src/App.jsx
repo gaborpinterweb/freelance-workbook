@@ -10,6 +10,9 @@ import {
   postBoard,
   postDatabase,
   postNotesTab,
+  putTab,
+  deleteTabApi,
+  putTabOrder,
   putItem,
   postTimelog,
   resetWorkspaceToSeed,
@@ -38,6 +41,8 @@ import {
   pomoElapsedSec,
   locateRow,
   findCardBySlugs,
+  modToTabType,
+  tabsOrderPayload,
   isProjectArchived,
   slugifyClient,
   loadWorkspaceVisibility,
@@ -652,6 +657,99 @@ export default function App() {
     rememberCurrentTab(next, pi, mi);
   };
 
+  const onMoveTab = useCallback(
+    (index, dir) => {
+      const folder = foldersRef.current[pRef.current];
+      if (!folder || isProjectArchived(folder)) return;
+      const mods = folder.mods || [];
+      const j = index + dir;
+      // Cover stays at index 0
+      if (index < 1 || j < 1 || j >= mods.length) return;
+      const nextMods = mods.slice();
+      [nextMods[index], nextMods[j]] = [nextMods[j], nextMods[index]];
+      const nextFolders = foldersRef.current.map((f, i) =>
+        i === pRef.current ? { ...f, mods: nextMods } : f
+      );
+      foldersRef.current = nextFolders;
+      setFolders(nextFolders);
+      setM(j);
+      mRef.current = j;
+      rememberCurrentTab(nextFolders, pRef.current, j);
+      putTabOrder({
+        project: folder.slug,
+        order: tabsOrderPayload(nextMods),
+      }).then((data) => {
+        applyWorkspace(data, keepNav(folder.slug, nextMods[j][2]?.slug));
+      });
+    },
+    [applyWorkspace, keepNav, rememberCurrentTab]
+  );
+
+  const onRenameTab = useCallback(
+    async (index) => {
+      const folder = foldersRef.current[pRef.current];
+      if (!folder || isProjectArchived(folder)) return;
+      const mod = folder.mods?.[index];
+      const type = modToTabType(mod);
+      if (!mod || !type) return;
+      const next = await askPrompt({
+        title: "Rename tab",
+        defaultValue: mod[1],
+        confirmLabel: "Rename",
+      });
+      if (next == null) return;
+      const name = next.trim();
+      if (!name || name === mod[1]) return;
+      const data = await putTab({
+        project: folder.slug,
+        type,
+        slug: mod[2].slug,
+        name,
+      });
+      applyWorkspace(data, keepNav(folder.slug, mod[2].slug));
+    },
+    [applyWorkspace, keepNav]
+  );
+
+  const onDeleteTab = useCallback(
+    async (index) => {
+      const folder = foldersRef.current[pRef.current];
+      if (!folder || isProjectArchived(folder)) return;
+      const mod = folder.mods?.[index];
+      const type = modToTabType(mod);
+      if (!mod || !type) return;
+      let message = "This cannot be undone.";
+      if (mod[0] === "Board") {
+        const count = (mod[2].rows || []).length;
+        message = count
+          ? `This board has ${count} card${count === 1 ? "" : "s"}. This cannot be undone.`
+          : "This board has no cards. This cannot be undone.";
+      } else if (mod[0] === "Notes") {
+        const count = (mod[2].notes || []).length;
+        message = count
+          ? `This tab has ${count} note${count === 1 ? "" : "s"}. This cannot be undone.`
+          : "This tab has no notes. This cannot be undone.";
+      }
+      const ok = await askConfirm({
+        title: `Delete "${mod[1]}"?`,
+        message,
+        confirmLabel: "Delete",
+        danger: true,
+      });
+      if (!ok) return;
+      const data = await deleteTabApi({
+        project: folder.slug,
+        type,
+        slug: mod[2].slug,
+      });
+      const fallbackSlug = folder.mods[Math.max(0, index - 1)]?.[2]?.slug || "cover";
+      applyWorkspace(data, keepNav(folder.slug, fallbackSlug));
+      setBoardEdit(false);
+      discardCoverEdit();
+    },
+    [applyWorkspace, keepNav, discardCoverEdit]
+  );
+
   const folder = folders[p];
   const archived = folder ? isProjectArchived(folder) : false;
   const mods = folder?.mods || [];
@@ -782,6 +880,9 @@ export default function App() {
               onArchive={confirmArchiveProject}
               onUnarchive={confirmUnarchiveProject}
               onDelete={confirmDeleteProject}
+              onMoveTab={onMoveTab}
+              onRenameTab={onRenameTab}
+              onDeleteTab={onDeleteTab}
             />
           )}
           {isGlobal && <div id="bar" style={{ display: "none" }} />}

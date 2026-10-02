@@ -125,6 +125,28 @@
           "name": "Test Notes",
           "notes": []
         }
+      ],
+      "tabOrder": [
+        {
+          "type": "board",
+          "slug": "launch"
+        },
+        {
+          "type": "board",
+          "slug": "bjk"
+        },
+        {
+          "type": "notes",
+          "slug": "asd"
+        },
+        {
+          "type": "notes",
+          "slug": "asdasd"
+        },
+        {
+          "type": "notes",
+          "slug": "test-notes"
+        }
       ]
     },
     {
@@ -217,6 +239,16 @@
               "body": "<ul><li><p>qweasdqwe</p></li></ul><h1>asd </h1><p></p><p>qwe</p><ul><li><p>qwe</p></li></ul><p></p>"
             }
           ]
+        }
+      ],
+      "tabOrder": [
+        {
+          "type": "board",
+          "slug": "brand"
+        },
+        {
+          "type": "notes",
+          "slug": "qweqwe"
         }
       ]
     },
@@ -331,6 +363,20 @@
             }
           ]
         }
+      ],
+      "tabOrder": [
+        {
+          "type": "board",
+          "slug": "website"
+        },
+        {
+          "type": "notes",
+          "slug": "qweqwe"
+        },
+        {
+          "type": "notes",
+          "slug": "asdqwe"
+        }
       ]
     },
     {
@@ -430,6 +476,16 @@
               "body": "<h1>Hello bello</h1><p>Wunderful new note</p><p></p>"
             }
           ]
+        }
+      ],
+      "tabOrder": [
+        {
+          "type": "board",
+          "slug": "migration"
+        },
+        {
+          "type": "notes",
+          "slug": "qwe"
         }
       ]
     }

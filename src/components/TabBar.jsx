@@ -1,6 +1,63 @@
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { Icon, IC } from "../icons.jsx";
 import { TYPES } from "../utils.js";
+
+function findTabEl(tabsEl, slug) {
+  if (!tabsEl || !slug) return null;
+  return [...tabsEl.querySelectorAll(":scope > .tab")].find(
+    (el) => el.dataset.tabSlug === slug
+  );
+}
+
+/** FLIP-animate two tabs after applyOrder reorders the DOM. */
+function flipSwapTabs(tabsEl, leftSlug, rightSlug, applyOrder) {
+  const leftEl = findTabEl(tabsEl, leftSlug);
+  const rightEl = findTabEl(tabsEl, rightSlug);
+  if (!leftEl || !rightEl) {
+    applyOrder();
+    return;
+  }
+
+  const firstLeft = leftEl.getBoundingClientRect();
+  const firstRight = rightEl.getBoundingClientRect();
+
+  flushSync(() => {
+    applyOrder();
+  });
+
+  const leftAfter = findTabEl(tabsEl, leftSlug);
+  const rightAfter = findTabEl(tabsEl, rightSlug);
+  if (!leftAfter || !rightAfter) return;
+
+  const lastLeft = leftAfter.getBoundingClientRect();
+  const lastRight = rightAfter.getBoundingClientRect();
+  const dxLeft = firstLeft.left - lastLeft.left;
+  const dxRight = firstRight.left - lastRight.left;
+  if (dxLeft === 0 && dxRight === 0) return;
+
+  leftAfter.classList.add("tab-swapping");
+  rightAfter.classList.add("tab-swapping");
+  leftAfter.style.transition = "none";
+  rightAfter.style.transition = "none";
+  leftAfter.style.transform = `translateX(${dxLeft}px)`;
+  rightAfter.style.transform = `translateX(${dxRight}px)`;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      leftAfter.style.transition = "";
+      rightAfter.style.transition = "";
+      leftAfter.style.transform = "";
+      rightAfter.style.transform = "";
+      const cleanup = () => {
+        leftAfter.classList.remove("tab-swapping");
+        rightAfter.classList.remove("tab-swapping");
+      };
+      leftAfter.addEventListener("transitionend", cleanup, { once: true });
+      window.setTimeout(cleanup, 380);
+    });
+  });
+}
 
 export default function TabBar({
   folder,
@@ -21,13 +78,35 @@ export default function TabBar({
   onArchive,
   onUnarchive,
   onDelete,
+  onMoveTab,
+  onRenameTab,
+  onDeleteTab,
 }) {
+  const tabsRef = useRef(null);
+  const swappingRef = useRef(false);
+
+  const moveAnimated = (index, dir) => {
+    if (swappingRef.current || archived || boardEdit) return;
+    const j = index + dir;
+    if (index < 1 || j < 1 || j >= mods.length) return;
+    const leftSlug = dir > 0 ? mods[index][2]?.slug : mods[j][2]?.slug;
+    const rightSlug = dir > 0 ? mods[j][2]?.slug : mods[index][2]?.slug;
+    if (!leftSlug || !rightSlug) return;
+    swappingRef.current = true;
+    flipSwapTabs(tabsRef.current, leftSlug, rightSlug, () => {
+      onMoveTab?.(index, dir);
+    });
+    window.setTimeout(() => {
+      swappingRef.current = false;
+    }, 320);
+  };
+
   if (draftProject) {
     const c = draftProject.color || tabC;
     return (
       <div id="bar" style={{ ["--tab"]: c }}>
         <div id="tabs">
-          <TabBtn label="Cover" c={c} on type="Cover" />
+          <TabBtn label="Cover" c={c} on type="Cover" slug="cover" />
         </div>
       </div>
     );
@@ -42,25 +121,31 @@ export default function TabBar({
         className={boardEdit ? "board-editing" : undefined}
         style={{ ["--tab"]: tabC }}
       >
-        <div id="tabs">
+        <div id="tabs" ref={tabsRef}>
           {mods.map((mod, i) => {
             const active = i === m;
             const locked = boardEdit && !active;
+            const slug = mod[2]?.slug || mod[1] + i;
             return (
               <TabBtn
-                key={mod[2]?.slug || mod[1] + i}
+                key={slug}
                 label={mod[1]}
                 c={tabC}
                 on={active}
                 type={mod[0]}
+                slug={slug}
                 disabled={locked}
-                showMenu={active && mod[0] !== "Cover"}
-                canLeft={i > 0}
+                showMenu={active && mod[0] !== "Cover" && !archived}
+                canLeft={i > 1}
                 canRight={i < mods.length - 1}
                 onClick={() => {
                   if (locked) return;
                   onSelectTab(i);
                 }}
+                onMoveLeft={() => moveAnimated(i, -1)}
+                onMoveRight={() => moveAnimated(i, 1)}
+                onRename={() => onRenameTab?.(i)}
+                onDelete={() => onDeleteTab?.(i)}
               />
             );
           })}
@@ -172,7 +257,14 @@ export default function TabBar({
   );
 }
 
-function TabMoreMenu({ canLeft, canRight }) {
+function TabMoreMenu({
+  canLeft,
+  canRight,
+  onMoveLeft,
+  onMoveRight,
+  onRename,
+  onDelete,
+}) {
   const wrapRef = useRef(null);
   const btnRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -200,6 +292,11 @@ function TabMoreMenu({ canLeft, canRight }) {
       window.removeEventListener("scroll", onReposition, true);
     };
   }, [open]);
+
+  const run = (fn) => {
+    setOpen(false);
+    fn?.();
+  };
 
   return (
     <div
@@ -234,7 +331,7 @@ function TabMoreMenu({ canLeft, canRight }) {
             disabled={!canLeft}
             onClick={(e) => {
               e.stopPropagation();
-              setOpen(false);
+              run(onMoveLeft);
             }}
           >
             <Icon name="arrowLeft" size={14} />
@@ -246,7 +343,7 @@ function TabMoreMenu({ canLeft, canRight }) {
             disabled={!canRight}
             onClick={(e) => {
               e.stopPropagation();
-              setOpen(false);
+              run(onMoveRight);
             }}
           >
             <Icon name="arrowRight" size={14} />
@@ -257,7 +354,7 @@ function TabMoreMenu({ canLeft, canRight }) {
             role="menuitem"
             onClick={(e) => {
               e.stopPropagation();
-              setOpen(false);
+              run(onRename);
             }}
           >
             <Icon name="pencil" size={14} />
@@ -269,7 +366,7 @@ function TabMoreMenu({ canLeft, canRight }) {
             className="danger"
             onClick={(e) => {
               e.stopPropagation();
-              setOpen(false);
+              run(onDelete);
             }}
           >
             <Icon name="Trash" size={14} />
@@ -286,11 +383,16 @@ function TabBtn({
   c,
   on,
   type,
+  slug,
   onClick,
   disabled,
   showMenu,
   canLeft,
   canRight,
+  onMoveLeft,
+  onMoveRight,
+  onRename,
+  onDelete,
 }) {
   const className =
     "tab" + (on ? " on" : "") + (disabled ? " locked" : "");
@@ -304,7 +406,14 @@ function TabBtn({
       ) : null}
       <span className="tab-label">{label}</span>
       {showMenu ? (
-        <TabMoreMenu canLeft={canLeft} canRight={canRight} />
+        <TabMoreMenu
+          canLeft={canLeft}
+          canRight={canRight}
+          onMoveLeft={onMoveLeft}
+          onMoveRight={onMoveRight}
+          onRename={onRename}
+          onDelete={onDelete}
+        />
       ) : null}
     </>
   );
@@ -317,6 +426,7 @@ function TabBtn({
         tabIndex={disabled ? -1 : 0}
         className={className}
         style={{ ["--c"]: c }}
+        data-tab-slug={slug}
         aria-disabled={disabled || undefined}
         onClick={(e) => {
           if (disabled) return;
@@ -341,6 +451,7 @@ function TabBtn({
       type="button"
       className={className}
       style={{ ["--c"]: c }}
+      data-tab-slug={slug}
       disabled={disabled}
       aria-disabled={disabled || undefined}
       onClick={onClick}

@@ -75,18 +75,9 @@ export function fromApi(data, loadStagesFn) {
   if (data.stages && data.stages.length && loadStagesFn) loadStagesFn(data.stages);
   return (data.projects || []).map((pr) => {
     const cover = pr.cover || { values: { description: "" } };
-    const mods = [
-      [
-        "Cover",
-        "Cover",
-        {
-          slug: "cover",
-          values: { description: (cover.values && cover.values.description) || "" },
-        },
-      ],
-    ];
+    const boardMods = new Map();
     (pr.boards || []).forEach((b) => {
-      mods.push([
+      boardMods.set(b.slug, [
         "Board",
         b.name,
         {
@@ -110,8 +101,9 @@ export function fromApi(data, loadStagesFn) {
         },
       ]);
     });
+    const notesMods = new Map();
     (pr.notesTabs || []).forEach((nt) => {
-      mods.push([
+      notesMods.set(nt.slug, [
         "Notes",
         nt.name,
         {
@@ -126,6 +118,38 @@ export function fromApi(data, loadStagesFn) {
         },
       ]);
     });
+
+    const pick = (type, slug) => {
+      if (type === "board") return boardMods.get(slug);
+      if (type === "notes") return notesMods.get(slug);
+      return null;
+    };
+
+    const mods = [
+      [
+        "Cover",
+        "Cover",
+        {
+          slug: "cover",
+          values: { description: (cover.values && cover.values.description) || "" },
+        },
+      ],
+    ];
+    const seen = new Set();
+    const pushMod = (mod) => {
+      if (!mod) return;
+      const key = `${mod[0]}:${mod[2]?.slug}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      mods.push(mod);
+    };
+
+    for (const entry of pr.tabOrder || []) {
+      pushMod(pick(entry.type, entry.slug));
+    }
+    for (const mod of boardMods.values()) pushMod(mod);
+    for (const mod of notesMods.values()) pushMod(mod);
+
     return {
       slug: pr.slug,
       name: pr.name,
@@ -136,6 +160,25 @@ export function fromApi(data, loadStagesFn) {
       mods,
     };
   });
+}
+
+export function modToTabType(mod) {
+  if (!mod) return null;
+  if (mod[0] === "Board") return "board";
+  if (mod[0] === "Notes") return "notes";
+  if (mod[0] === "Database") return "database";
+  return null;
+}
+
+export function tabsOrderPayload(mods) {
+  return (mods || [])
+    .map((mod) => {
+      const type = modToTabType(mod);
+      const slug = mod[2]?.slug;
+      if (!type || !slug) return null;
+      return { type, slug };
+    })
+    .filter(Boolean);
 }
 
 /** Normalize master stage after stages are known */
