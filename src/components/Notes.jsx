@@ -11,37 +11,25 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
   const d = mod[2] || { slug: "", notes: [] };
   const notes = d.notes || [];
   const [selectedSlug, setSelectedSlug] = useState(notes[0]?.slug || null);
-  const [mode, setMode] = useState("preview");
-  const [draft, setDraft] = useState("");
+  const [locked, setLocked] = useState(true);
 
   useEffect(() => {
     if (selectedSlug && notes.some((n) => n.slug === selectedSlug)) return;
     setSelectedSlug(notes[0]?.slug || null);
-    setMode("preview");
+    setLocked(true);
   }, [notes, selectedSlug]);
 
   const selected = notes.find((n) => n.slug === selectedSlug) || null;
 
-  const enterEdit = () => {
-    setDraft(selected?.body || "");
-    setMode("edit");
-  };
-
-  const leavePreview = () => {
-    setMode("preview");
-    setDraft("");
-  };
-
-  const save = async () => {
+  const saveBody = async (body) => {
     if (!selected || readonly) return;
     const data = await putNote({
       project: folder.slug,
       notesTab: d.slug,
       note: selected.slug,
-      body: draft,
+      body,
     });
     onApplyWorkspace(data);
-    leavePreview();
   };
 
   const addNote = async () => {
@@ -56,15 +44,14 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
     onApplyWorkspace(data);
     if (data.slug) {
       setSelectedSlug(data.slug);
-      setDraft("");
-      setMode("edit");
+      setLocked(false);
     }
   };
 
   const selectNote = (slug) => {
     if (slug === selectedSlug) return;
     setSelectedSlug(slug);
-    leavePreview();
+    setLocked(true);
   };
 
   if (notes.length === 0) {
@@ -111,34 +98,26 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
           ) : (
             <>
               <div className="notes-actions">
-                {mode === "preview" ? (
-                  !readonly && (
-                    <button type="button" className="notes-act" onClick={enterEdit}>
-                      Edit
+                {!readonly &&
+                  (locked ? (
+                    <button
+                      type="button"
+                      className="notes-act"
+                      onClick={() => setLocked(false)}
+                    >
+                      Unlock
                     </button>
-                  )
-                ) : (
-                  <>
-                    <button type="button" className="notes-act on" onClick={save}>
-                      Save
+                  ) : (
+                    <button
+                      type="button"
+                      className="notes-act on"
+                      onClick={() => setLocked(true)}
+                    >
+                      Lock
                     </button>
-                    <button type="button" className="notes-act" onClick={leavePreview}>
-                      Cancel
-                    </button>
-                  </>
-                )}
+                  ))}
               </div>
-              {mode === "edit" ? (
-                <div className="dlg notes-rte-wrap">
-                  <RichTextEditor
-                    key={selected.slug}
-                    value={draft}
-                    onChange={setDraft}
-                    showLabel={false}
-                    placeholder="Write your note..."
-                  />
-                </div>
-              ) : (
+              {locked ? (
                 <div className="dlg notes-rte-wrap notes-preview">
                   <div className="rte">
                     <div
@@ -146,6 +125,16 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
                       dangerouslySetInnerHTML={{ __html: previewHtml(selected.body) }}
                     />
                   </div>
+                </div>
+              ) : (
+                <div className="dlg notes-rte-wrap">
+                  <RichTextEditor
+                    key={selected.slug}
+                    value={selected.body || ""}
+                    onChange={saveBody}
+                    showLabel={false}
+                    placeholder="Write your note..."
+                  />
                 </div>
               )}
             </>

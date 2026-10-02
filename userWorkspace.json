@@ -366,7 +366,20 @@
         }
       ],
       "databases": [],
-      "isDemo": true
+      "isDemo": true,
+      "notesTabs": [
+        {
+          "slug": "qwe",
+          "name": "qwe",
+          "notes": [
+            {
+              "slug": "asdqwd",
+              "title": "asdqwd",
+              "body": "<h1>asd qwe</h1><ul><li><p>asd</p></li><li><p>qwe</p></li><li><p>qwe</p></li></ul><p></p><ul data-type=\"taskList\"><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p>Task is being made</p></div></li><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p>asd</p></div></li><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p>asd</p></div></li><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p></p></div></li></ul><p></p>"
+            }
+          ]
+        }
+      ]
     }
   ],
   "timelogs": [
