@@ -88,6 +88,23 @@ aside .side-empty{margin:4px 8px 8px;padding:0;font-size:13px;font-style:italic;
 #view.db,#view.mod{display:flex;flex-direction:column;align-items:stretch;text-align:left;padding:0;font-size:15px;color:var(--ink);flex:1;min-height:0;margin:0;border-radius:0 var(--radius) var(--radius) var(--radius);overflow:hidden;background:var(--bg)}
 #view.mod{place-items:unset}
 #view.cover-view{background-color:var(--tab);background-image:var(--leather),linear-gradient(180deg,transparent 12%,color-mix(in srgb,#000 12%,transparent));background-size:160px 160px,auto;background-blend-mode:soft-light,soft-light}
+.notes-layout{display:flex;flex:1;min-height:0}
+.notes-sidebar{width:220px;flex:none;display:flex;flex-direction:column;border-right:1px solid var(--line);background:color-mix(in srgb,var(--ink) 3%,var(--bg))}
+.notes-add{margin:10px 10px 6px;padding:8px 10px;border-radius:calc(var(--radius) - 4px);font:inherit;font-size:13px;font-weight:600;text-align:left;color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent);cursor:pointer}
+.notes-add:hover{background:color-mix(in srgb,var(--ink) 10%,transparent)}
+.notes-list{flex:1;min-height:0;overflow:auto;padding:0 6px 10px}
+.notes-item{display:block;width:100%;padding:8px 10px;border:none;border-radius:calc(var(--radius) - 4px);font:inherit;font-size:13px;font-weight:500;text-align:left;color:var(--ink);background:transparent;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notes-item:hover{background:var(--sel)}
+.notes-item.on{background:color-mix(in srgb,var(--tab,var(--acc)) 18%,var(--bg));color:var(--ink)}
+.notes-empty,.notes-placeholder{margin:16px 14px;font-size:13px;color:var(--mute)}
+.notes-main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+.notes-actions{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line);flex:none}
+.notes-act{padding:6px 12px;border-radius:calc(var(--radius) - 4px);font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent);cursor:pointer}
+.notes-act:hover{background:color-mix(in srgb,var(--ink) 10%,transparent)}
+.notes-act.on{color:#fff;background:var(--tab,var(--acc))}
+.notes-rte-wrap{flex:1;min-height:0;display:flex;flex-direction:column;border:0;border-radius:0;background:transparent;overflow:auto}
+.notes-rte-wrap .rte{flex:1;min-height:0;display:flex;flex-direction:column}
+.notes-rte-head .rte-toolbar{margin-left:0;width:100%}
 .vbar,.modbar{position:relative;background-color:var(--tab,var(--bar));background-image:var(--leather),linear-gradient(180deg,transparent 30%,color-mix(in srgb,#000 14%,transparent));background-size:160px 160px,auto;background-blend-mode:soft-light,soft-light;display:flex;align-items:center;gap:4px;padding:7px 14px 10px;min-height:42px;border-bottom:none;box-shadow:inset 0 -1px 0 color-mix(in srgb,#000 22%,transparent),0 3px 5px color-mix(in srgb,#000 16%,transparent)}
 .vbar::after,.modbar::after{content:"";position:absolute;left:12px;right:12px;bottom:4px;border-top:1.5px dashed color-mix(in srgb,#fff 38%,transparent);box-shadow:0 1px 0 color-mix(in srgb,#000 30%,transparent);pointer-events:none;opacity:.75}
 .modbar .bedit{margin-left:auto;display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:calc(var(--radius) - 4px);color:color-mix(in srgb,#fff 78%,transparent);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;transition:background .12s,color .12s}

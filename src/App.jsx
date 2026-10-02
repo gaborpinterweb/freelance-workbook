@@ -9,6 +9,7 @@ import {
   deleteProjectApi,
   postBoard,
   postDatabase,
+  postNotesTab,
   putItem,
   postTimelog,
   resetWorkspaceToSeed,
@@ -53,6 +54,7 @@ import Cover from "./components/Cover.jsx";
 import Calendar from "./components/Calendar.jsx";
 import Timelogs from "./components/Timelogs.jsx";
 import Trash from "./components/Trash.jsx";
+import Notes from "./components/Notes.jsx";
 import CardDialog from "./components/CardDialog.jsx";
 import SettingsDialog from "./components/SettingsDialog.jsx";
 import LaunchDialog from "./components/LaunchDialog.jsx";
@@ -618,10 +620,14 @@ export default function App() {
     const name = (prompt(title + " name") || "").trim();
     if (!name) return;
     const folder = foldersRef.current[pRef.current];
-    const data =
-      t === "Board"
-        ? await postBoard({ project: folder.slug, name })
-        : await postDatabase({ project: folder.slug, name });
+    let data;
+    if (t === "Board") {
+      data = await postBoard({ project: folder.slug, name });
+    } else if (t === "Notes") {
+      data = await postNotesTab({ project: folder.slug, name });
+    } else {
+      data = await postDatabase({ project: folder.slug, name });
+    }
     const next = applyWorkspace(data, { project: folder.slug, board: data.slug });
     const pi = next.findIndex((f) => f.slug === folder.slug);
     const mi = next[pi]?.mods.findIndex((mod) => mod[2]?.slug === data.slug);
@@ -955,10 +961,25 @@ export default function App() {
             !draftProject &&
             !g &&
             folder &&
+            x?.[0] === "Notes" && (
+              <Notes
+                mod={x}
+                folder={folder}
+                tabC={tabC}
+                readonly={archived}
+                onApplyWorkspace={applyWorkspace}
+              />
+            )}
+          {loaded &&
+            !loadError &&
+            !draftProject &&
+            !g &&
+            folder &&
             x &&
             x[0] !== "Cover" &&
             x[0] !== "Board" &&
-            x[0] !== "Database" && (
+            x[0] !== "Database" &&
+            x[0] !== "Notes" && (
               <div id="view" className="mod" style={{ ["--tab"]: tabC }}>
                 <div className="modbar" />
                 <div

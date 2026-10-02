@@ -4,6 +4,7 @@ export const APP_VERSION = "0.1.0";
 
 export const TYPES = [
   { t: "Board", title: "Task board", sub: "Kanban columns and cards" },
+  { t: "Notes", title: "Notes", sub: "Notes with rich text editor" },
   { t: "Database", title: "Database", sub: "Tables and structured records", off: true },
   { t: "Files", title: "Files", sub: "Assets, kits, and uploads", off: true },
   { t: "Docs", title: "Docs", sub: "Knowledge base notes and briefs", off: true },
@@ -41,7 +42,7 @@ export const COMPLETED_VIEW_KEY = `${STORAGE_PREFIX}completedView`;
 export const POMO_KEY = `${STORAGE_PREFIX}pomodoro`;
 export const WORKSPACE_VIS_KEY = `${STORAGE_PREFIX}workspaceVisibility`;
 export const LAUNCH_SEEN_KEY = `${STORAGE_PREFIX}launchSeen`;
-export const WORKSPACE_ITEMS = ["Masterboard", "Timelogs", "Calendar", "Trash"];
+export const WORKSPACE_ITEMS = ["Masterboard", "Timelogs", "Trash"];
 /** Only Archived is hideable; workspace items are always shown. */
 export const SIDEBAR_VIS_ITEMS = ["Archived"];
 export const POMO_DURATION_SEC = 25 * 60;
@@ -104,6 +105,20 @@ export function fromApi(data, loadStagesFn) {
             }
             return row;
           }),
+        },
+      ]);
+    });
+    (pr.notesTabs || []).forEach((nt) => {
+      mods.push([
+        "Notes",
+        nt.name,
+        {
+          slug: nt.slug,
+          notes: (nt.notes || []).map((n) => ({
+            slug: n.slug,
+            title: n.title || n.slug,
+            body: n.body || "",
+          })),
         },
       ]);
     });

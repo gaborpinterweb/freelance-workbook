@@ -21,6 +21,7 @@ export const IC = {
   ],
   Files: ['<path d="M2.5 3h4l1.5 2h5.5v8h-11z"/>', "#8a5c2e"],
   Docs: ['<path d="M4 2h6l3 3v9H4zM6.5 8h4M6.5 11h4"/>', "#5a6e4a"],
+  Notes: ['<path d="M4 2h6l3 3v9H4zM6.5 8h4M6.5 11h4"/>', "#5a6e4a"],
   Links: [
     '<path d="M7 9a3 3 0 0 0 4 0l2-2a3 3 0 0 0-4-4l-1 1M9 7a3 3 0 0 0-4 0l-2 2a3 3 0 0 0 4 4l1-1"/>',
     "#a04d6e",

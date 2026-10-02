@@ -177,6 +177,33 @@ export async function postDatabase(body) {
   return r.json();
 }
 
+export async function postNotesTab(body) {
+  const r = await fetch("/api/notes-tab", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
+export async function postNote(body) {
+  const r = await fetch("/api/note", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
+export async function putNote(body) {
+  const r = await fetch("/api/note", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
 export async function cardTimeSpentSec(project, board, card) {
   if (!project || !board || !card) return 0;
   try {

@@ -102,7 +102,25 @@
         }
       ],
       "databases": [],
-      "isDemo": true
+      "isDemo": true,
+      "notesTabs": [
+        {
+          "slug": "asd",
+          "name": "asd",
+          "notes": []
+        },
+        {
+          "slug": "asdasd",
+          "name": "asdasd",
+          "notes": [
+            {
+              "slug": "asd",
+              "title": "asd",
+              "body": ""
+            }
+          ]
+        }
+      ]
     },
     {
       "slug": "cove-brand-redesign",
@@ -177,7 +195,25 @@
         }
       ],
       "databases": [],
-      "isDemo": true
+      "isDemo": true,
+      "notesTabs": [
+        {
+          "slug": "qweqwe",
+          "name": "qweqwe",
+          "notes": [
+            {
+              "slug": "asdqwe",
+              "title": "asdqwe",
+              "body": "<p>hello</p>"
+            },
+            {
+              "slug": "asdqwe-2",
+              "title": "asdqwe",
+              "body": "<ul><li><p>qweasdqwe</p></li></ul><h1>asd </h1><p></p><p>qwe</p><ul><li><p>qwe</p></li></ul><p></p>"
+            }
+          ]
+        }
+      ]
     },
     {
       "slug": "meridian-site-redesign",
@@ -250,7 +286,20 @@
         }
       ],
       "databases": [],
-      "isDemo": true
+      "isDemo": true,
+      "notesTabs": [
+        {
+          "slug": "qweqwe",
+          "name": "qweqwe",
+          "notes": [
+            {
+              "slug": "qweqwe",
+              "title": "qweqwe",
+              "body": "<p>qweqweqweqwe</p>"
+            }
+          ]
+        }
+      ]
     },
     {
       "slug": "shopify-store-migration",

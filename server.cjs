@@ -156,6 +156,11 @@ function findDatabase(project, dbSlug) {
   return (project.databases || []).find((d) => d.slug === dbSlug) || null;
 }
 
+function findNotesTab(project, tabSlug) {
+  if (!project) return null;
+  return (project.notesTabs || []).find((t) => t.slug === tabSlug) || null;
+}
+
 function projectIsArchived(slug) {
   const p = findProject(slug);
   return p ? isArchivedValue(p.archived) : false;
@@ -215,6 +220,15 @@ function projectToApi(p) {
         slug: item.slug,
         fields: { ...(item.fields || {}) },
         body: item.body || "",
+      })),
+    })),
+    notesTabs: (p.notesTabs || []).map((t) => ({
+      slug: t.slug,
+      name: t.name || t.slug,
+      notes: (t.notes || []).map((n) => ({
+        slug: n.slug,
+        title: n.title || n.slug,
+        body: n.body || "",
       })),
     })),
   };
@@ -305,6 +319,7 @@ function createProject({ name, color, icon, cover }) {
     description,
     boards: [],
     databases: [],
+    notesTabs: [],
   };
   const iconName = String(icon || "").trim();
   if (iconName) project.icon = iconName;
@@ -590,6 +605,46 @@ function createDatabase(projectSlug, name) {
   return dSlug;
 }
 
+function uniqueNoteSlug(notesTab, title) {
+  const base = slugify(title) || "note";
+  const notes = notesTab.notes || [];
+  if (!notes.some((n) => n.slug === base)) return base;
+  let i = 2;
+  while (notes.some((n) => n.slug === `${base}-${i}`)) i += 1;
+  return `${base}-${i}`;
+}
+
+function createNotesTab(projectSlug, name) {
+  const project = findProject(projectSlug);
+  if (!project) throw new Error("project not found");
+  if (!project.notesTabs) project.notesTabs = [];
+  const tabSlug = slugify(name);
+  const existing = findNotesTab(project, tabSlug);
+  if (existing) {
+    existing.name = name;
+    if (!existing.notes) existing.notes = [];
+    return tabSlug;
+  }
+  project.notesTabs.push({ slug: tabSlug, name, notes: [] });
+  return tabSlug;
+}
+
+function writeNote(projectSlug, notesTabSlug, { slug, title, body }) {
+  const project = findProject(projectSlug);
+  const tab = findNotesTab(project, notesTabSlug);
+  if (!project || !tab) throw new Error("notes tab not found");
+  if (!tab.notes) tab.notes = [];
+  let note = tab.notes.find((n) => n.slug === slug);
+  if (!note) {
+    note = { slug, title: title || slug, body: body || "" };
+    tab.notes.push(note);
+  } else {
+    if (title != null) note.title = String(title).trim() || note.title || slug;
+    if (body != null) note.body = String(body);
+  }
+  return slug;
+}
+
 function writeItem(projectSlug, databaseSlug, item, columns) {
   const project = findProject(projectSlug);
   const db = findDatabase(project, databaseSlug);
@@ -865,6 +920,42 @@ const server = http.createServer(async (req, res) => {
       const slug = createDatabase(body.project, body.name);
       saveStore();
       return json(res, 201, { slug, ...readWorkspace() });
+    }
+    if (req.method === "POST" && url.pathname === "/api/notes-tab") {
+      const body = await readBody(req);
+      if (!body.project || !body.name) return json(res, 400, { error: "missing fields" });
+      if (!findProject(body.project)) return json(res, 404, { error: "project not found" });
+      const slug = createNotesTab(body.project, body.name);
+      saveStore();
+      return json(res, 201, { slug, ...readWorkspace() });
+    }
+    if (req.method === "POST" && url.pathname === "/api/note") {
+      const body = await readBody(req);
+      if (!body.project || !body.notesTab) return json(res, 400, { error: "missing fields" });
+      const tab = findNotesTab(findProject(body.project), body.notesTab);
+      if (!tab) return json(res, 404, { error: "notes tab not found" });
+      const title = String(body.title || "").trim() || "Untitled";
+      const slug = uniqueNoteSlug(tab, title);
+      writeNote(body.project, body.notesTab, { slug, title, body: "" });
+      saveStore();
+      return json(res, 201, { slug, ...readWorkspace() });
+    }
+    if (req.method === "PUT" && url.pathname === "/api/note") {
+      const body = await readBody(req);
+      if (!body.project || !body.notesTab || !body.note) {
+        return json(res, 400, { error: "missing fields" });
+      }
+      const tab = findNotesTab(findProject(body.project), body.notesTab);
+      if (!tab || !(tab.notes || []).some((n) => n.slug === body.note)) {
+        return json(res, 404, { error: "note not found" });
+      }
+      writeNote(body.project, body.notesTab, {
+        slug: body.note,
+        title: body.title,
+        body: body.body,
+      });
+      saveStore();
+      return json(res, 200, readWorkspace());
     }
     if (req.method === "PUT" && url.pathname === "/api/database") {
       const body = await readBody(req);

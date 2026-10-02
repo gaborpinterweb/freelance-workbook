@@ -35,8 +35,15 @@ function ToolbarBtn({ onClick, active, title, children }) {
   );
 }
 
-export default function RichTextEditor({ value, onChange, placeholder }) {
+export default function RichTextEditor({
+  value,
+  onChange,
+  placeholder,
+  showLabel = true,
+  editable = true,
+}) {
   const editor = useEditor({
+    editable,
     extensions: [
       StarterKit.configure({
         heading: { levels: [1] },
@@ -57,16 +64,14 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
       },
     },
     onUpdate: ({ editor: ed }) => {
+      if (!editable) return;
       onChange(ed.isEmpty ? "" : ed.getHTML());
     },
   });
 
   if (!editor) return null;
 
-  return (
-    <div className="rte">
-      <div className="dlg-desc-head">
-        <span className="dlg-desc-label">Description</span>
+  const toolbar = (
         <div className="rte-toolbar">
           <ToolbarBtn
             title="Bold"
@@ -129,7 +134,18 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
             </div>
           </span>
         </div>
-      </div>
+  );
+
+  return (
+    <div className="rte">
+      {showLabel ? (
+        <div className="dlg-desc-head">
+          <span className="dlg-desc-label">Description</span>
+          {toolbar}
+        </div>
+      ) : (
+        <div className="dlg-desc-head notes-rte-head">{toolbar}</div>
+      )}
       <EditorContent editor={editor} />
     </div>
   );
