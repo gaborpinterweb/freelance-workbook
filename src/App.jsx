@@ -95,8 +95,6 @@ export default function App() {
   const [dialog, setDialog] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ left: 0, top: 0 });
-  const [moreOpen, setMoreOpen] = useState(false);
-  const [morePos, setMorePos] = useState({ top: 0, right: 8 });
   const [timelogRefresh, setTimelogRefresh] = useState(0);
   const [trashRefresh, setTrashRefresh] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -289,7 +287,6 @@ export default function App() {
   useEffect(() => {
     const closeMenus = () => {
       setMenuOpen(false);
-      setMoreOpen(false);
     };
     document.addEventListener("click", closeMenus);
     return () => document.removeEventListener("click", closeMenus);
@@ -569,7 +566,6 @@ export default function App() {
   };
 
   const confirmArchiveProject = async (folder) => {
-    setMoreOpen(false);
     if (!folder) return;
     const ok = await askConfirm({
       title: `Archive "${folder.name}"?`,
@@ -581,7 +577,6 @@ export default function App() {
   };
 
   const confirmUnarchiveProject = async (folder) => {
-    setMoreOpen(false);
     if (!folder) return;
     const ok = await askConfirm({
       title: `Unarchive "${folder.name}"?`,
@@ -593,7 +588,6 @@ export default function App() {
   };
 
   const confirmDeleteProject = async (folder) => {
-    setMoreOpen(false);
     if (!folder) return;
     const ok = await askConfirm({
       title: `Delete "${folder.name}" permanently?`,
@@ -842,8 +836,6 @@ export default function App() {
               boardEdit={boardEdit && !archived}
               menuOpen={menuOpen}
               menuPos={menuPos}
-              moreOpen={moreOpen}
-              morePos={morePos}
               onSelectTab={(i) => {
                 if (boardEdit) return;
                 if (i !== m) discardCoverEdit();
@@ -852,7 +844,6 @@ export default function App() {
               onOpenAddMenu={(e) => {
                 if (boardEdit) return;
                 discardCoverEdit();
-                setMoreOpen(false);
                 const r = e.currentTarget.getBoundingClientRect();
                 setMenuPos({
                   left: Math.min(r.left, window.innerWidth - 160),
@@ -861,25 +852,6 @@ export default function App() {
                 setMenuOpen(true);
               }}
               onAddTab={onAddTab}
-              onOpenMore={(e) => {
-                if (boardEdit) return;
-                e.stopPropagation();
-                setMenuOpen(false);
-                const open = moreOpen;
-                if (open) {
-                  setMoreOpen(false);
-                  return;
-                }
-                const r = e.currentTarget.getBoundingClientRect();
-                setMorePos({
-                  top: Math.round(r.bottom + 4),
-                  right: Math.max(8, Math.round(window.innerWidth - r.right)),
-                });
-                setMoreOpen(true);
-              }}
-              onArchive={confirmArchiveProject}
-              onUnarchive={confirmUnarchiveProject}
-              onDelete={confirmDeleteProject}
               onMoveTab={onMoveTab}
               onRenameTab={onRenameTab}
               onDeleteTab={onDeleteTab}
@@ -1039,7 +1011,6 @@ export default function App() {
                   setBoardEdit((v) => {
                     if (!v) {
                       setMenuOpen(false);
-                      setMoreOpen(false);
                     }
                     return !v;
                   });

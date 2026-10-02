@@ -231,6 +231,15 @@ export async function putNote(body) {
   return r.json();
 }
 
+export async function deleteNoteApi(body) {
+  const r = await fetch("/api/note", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
 export async function cardTimeSpentSec(project, board, card) {
   if (!project || !board || !card) return 0;
   try {

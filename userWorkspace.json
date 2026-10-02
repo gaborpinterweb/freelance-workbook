@@ -84,7 +84,7 @@
               "status": "Design",
               "master": "Tomorrow",
               "body": "<ul data-type=\"taskList\"><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qweqwe asd</strong></p></div></li><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qwe</strong></p></div></li><li data-checked=\"false\" data-type=\"taskItem\"><label><input type=\"checkbox\"><span></span></label><div><p><strong>qwe</strong></p></div></li></ul><p></p>",
-              "ord": 1
+              "ord": 0
             }
           ],
           "isDemo": true
@@ -177,10 +177,10 @@
               "slug": "case-study-template",
               "title": "Case study template",
               "status": "Content",
-              "master": "Today",
+              "master": "Tomorrow",
               "body": "Reusable layout for property stories; first pass on Casa Verde.",
               "isDemo": true,
-              "ord": 2
+              "ord": 1
             },
             {
               "slug": "component-library",
@@ -198,7 +198,7 @@
               "master": "Today",
               "body": "Desktop + mobile wires for hero, stays grid, and booking CTA.",
               "isDemo": true,
-              "ord": 1
+              "ord": 0
             },
             {
               "slug": "moodboard-signoff",
@@ -213,9 +213,9 @@
               "slug": "type-color-system",
               "title": "Type & color system",
               "status": "Design",
-              "master": "Tomorrow",
+              "master": "Today",
               "body": "<p>Document scales, tokens, and Figma styles for the new brand.</p><p><code>console.log(x)</code> is nice</p><p></p>",
-              "ord": 2
+              "ord": 1
             }
           ],
           "isDemo": true
@@ -279,10 +279,10 @@
               "slug": "blog-templates",
               "title": "Insights blog templates",
               "status": "Design",
-              "master": "Today",
+              "master": "Tomorrow",
               "body": "Article and author layouts in the new design system.",
               "isDemo": true,
-              "ord": 0
+              "ord": 2
             },
             {
               "slug": "discovery-workshop",

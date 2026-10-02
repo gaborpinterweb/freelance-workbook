@@ -796,6 +796,16 @@ function writeNote(projectSlug, notesTabSlug, { slug, title, body }) {
   return slug;
 }
 
+function deleteNote(projectSlug, notesTabSlug, noteSlug) {
+  const project = findProject(projectSlug);
+  const tab = findNotesTab(project, notesTabSlug);
+  if (!project || !tab) return { ok: false, error: "notes tab not found" };
+  const idx = (tab.notes || []).findIndex((n) => n.slug === noteSlug);
+  if (idx < 0) return { ok: false, error: "note not found" };
+  tab.notes.splice(idx, 1);
+  return { ok: true };
+}
+
 function writeItem(projectSlug, databaseSlug, item, columns) {
   const project = findProject(projectSlug);
   const db = findDatabase(project, databaseSlug);
@@ -1149,6 +1159,20 @@ const server = http.createServer(async (req, res) => {
         title: body.title,
         body: body.body,
       });
+      saveStore();
+      return json(res, 200, readWorkspace());
+    }
+    if (req.method === "DELETE" && url.pathname === "/api/note") {
+      const body = await readBody(req);
+      if (!body.project || !body.notesTab || !body.note) {
+        return json(res, 400, { error: "missing fields" });
+      }
+      if (projectIsArchived(body.project)) return json(res, 403, { error: "project is archived" });
+      const result = deleteNote(body.project, body.notesTab, body.note);
+      if (!result.ok) {
+        const status = result.error === "note not found" || result.error === "notes tab not found" ? 404 : 400;
+        return json(res, status, { error: result.error });
+      }
       saveStore();
       return json(res, 200, readWorkspace());
     }

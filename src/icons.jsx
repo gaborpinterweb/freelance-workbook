@@ -90,6 +90,10 @@ export const IC = {
     '<circle cx="8" cy="8" r="5.5"/><path d="M8 7v4M8 5.2h.01"/>',
     "",
   ],
+  Support: [
+    '<circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/><path d="M8 2.5v1.8M8 11.7v1.8M2.5 8h1.8M11.7 8h1.8"/>',
+    "",
+  ],
   bold: [
     '<path d="M4.5 3.5h4.2a2.6 2.6 0 0 1 0 5.2H4.5zM4.5 8.7h4.8a2.7 2.7 0 0 1 0 5.4H4.5z"/>',
     "",

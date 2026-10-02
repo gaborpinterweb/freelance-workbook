@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { postNote, putNote } from "../api.js";
+import { postNote, putNote, deleteNoteApi } from "../api.js";
 import { Icon } from "../icons.jsx";
 import { noteListTitle, noteListPreview, isEmptyNoteBody } from "../utils.js";
+import { askConfirm } from "../confirmDialog.js";
 import Dropdown from "./Dropdown.jsx";
 import RichTextEditor, { RteToolbar } from "./RichTextEditor.jsx";
 
@@ -125,6 +126,32 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
     }
   };
 
+  const deleteNote = async () => {
+    if (!selected || readonly) return;
+    const title = noteListTitle(selected.body) || "this note";
+    const ok = await askConfirm({
+      title: `Delete "${title}"?`,
+      message: "This cannot be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
+    const data = await deleteNoteApi({
+      project: folder.slug,
+      notesTab: d.slug,
+      note: selected.slug,
+    });
+    const key = unlockKey(selected.slug);
+    setUnlocked((prev) => {
+      if (!prev[key]) return prev;
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
+    setSelectedSlug(null);
+    onApplyWorkspace(data);
+  };
+
   const selectNote = (slug) => {
     if (slug === selectedSlug) return;
     setSelectedSlug(slug);
@@ -195,27 +222,38 @@ export default function Notes({ mod, folder, tabC, readonly, onApplyWorkspace })
             {selected && !locked && <RteToolbar editor={editor} forNotes />}
           </div>
           <div className="notes-toolbar-right">
-            {selected &&
-              !readonly &&
-              (locked ? (
+            {selected && !readonly && (
+              <>
                 <button
                   type="button"
-                  className="notes-act"
-                  onClick={() => setLocked(false)}
+                  className="notes-act notes-act-danger"
+                  onClick={deleteNote}
+                  title="Delete note"
                 >
-                  <Icon name="pencil" size={14} />
-                  Edit
+                  <Icon name="Trash" size={14} />
+                  Delete
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  className="notes-act on"
-                  onClick={() => setLocked(true)}
-                >
-                  <Icon name="lock" size={14} />
-                  Lock
-                </button>
-              ))}
+                {locked ? (
+                  <button
+                    type="button"
+                    className="notes-act"
+                    onClick={() => setLocked(false)}
+                  >
+                    <Icon name="pencil" size={14} />
+                    Edit
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="notes-act on"
+                    onClick={() => setLocked(true)}
+                  >
+                    <Icon name="lock" size={14} />
+                    Lock
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Icon, IC } from "../icons.jsx";
-import { TYPES } from "../utils.js";
+import { APP_NAME, TYPES } from "../utils.js";
+
+const SUPPORT_URL =
+  "https://github.com/gaborpinterweb/freelance-workbook/issues";
 
 function findTabEl(tabsEl, slug) {
   if (!tabsEl || !slug) return null;
@@ -59,201 +62,64 @@ function flipSwapTabs(tabsEl, leftSlug, rightSlug, applyOrder) {
   });
 }
 
-export default function TabBar({
-  folder,
-  mods,
-  m,
-  tabC,
-  archived,
-  draftProject,
-  boardEdit,
-  menuOpen,
-  menuPos,
-  moreOpen,
-  morePos,
-  onSelectTab,
-  onOpenAddMenu,
-  onAddTab,
-  onOpenMore,
-  onArchive,
-  onUnarchive,
-  onDelete,
-  onMoveTab,
-  onRenameTab,
-  onDeleteTab,
-}) {
-  const tabsRef = useRef(null);
-  const swappingRef = useRef(false);
+function SupportDialog({ onClose }) {
+  const ctaRef = useRef(null);
 
-  const moveAnimated = (index, dir) => {
-    if (swappingRef.current || archived || boardEdit) return;
-    const j = index + dir;
-    if (index < 1 || j < 1 || j >= mods.length) return;
-    const leftSlug = dir > 0 ? mods[index][2]?.slug : mods[j][2]?.slug;
-    const rightSlug = dir > 0 ? mods[j][2]?.slug : mods[index][2]?.slug;
-    if (!leftSlug || !rightSlug) return;
-    swappingRef.current = true;
-    flipSwapTabs(tabsRef.current, leftSlug, rightSlug, () => {
-      onMoveTab?.(index, dir);
-    });
-    window.setTimeout(() => {
-      swappingRef.current = false;
-    }, 320);
-  };
+  useEffect(() => {
+    const t = requestAnimationFrame(() => ctaRef.current?.focus());
+    return () => cancelAnimationFrame(t);
+  }, []);
 
-  if (draftProject) {
-    const c = draftProject.color || tabC;
-    return (
-      <div id="bar" style={{ ["--tab"]: c }}>
-        <div id="tabs">
-          <TabBtn label="Cover" c={c} on type="Cover" slug="cover" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!folder) return <div id="bar" style={{ display: "none" }} />;
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   return (
-    <>
+    <div
+      className="ov ov-prompt"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
-        id="bar"
-        className={boardEdit ? "board-editing" : undefined}
-        style={{ ["--tab"]: tabC }}
+        className="dlg prompt-dlg support-dlg"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="support-title"
+        aria-describedby="support-msg"
       >
-        <div id="tabs" ref={tabsRef}>
-          {mods.map((mod, i) => {
-            const active = i === m;
-            const locked = boardEdit && !active;
-            const slug = mod[2]?.slug || mod[1] + i;
-            return (
-              <TabBtn
-                key={slug}
-                label={mod[1]}
-                c={tabC}
-                on={active}
-                type={mod[0]}
-                slug={slug}
-                disabled={locked}
-                showMenu={active && mod[0] !== "Cover" && !archived}
-                canLeft={i > 1}
-                canRight={i < mods.length - 1}
-                onClick={() => {
-                  if (locked) return;
-                  onSelectTab(i);
-                }}
-                onMoveLeft={() => moveAnimated(i, -1)}
-                onMoveRight={() => moveAnimated(i, 1)}
-                onRename={() => onRenameTab?.(i)}
-                onDelete={() => onDeleteTab?.(i)}
-              />
-            );
-          })}
-          {!archived && (
-            <button
-              type="button"
-              className={"tab add" + (boardEdit ? " locked" : "")}
-              id="add"
-              title="Add tab"
-              disabled={!!boardEdit}
-              aria-disabled={boardEdit || undefined}
-              onClick={(e) => {
-                if (boardEdit) return;
-                e.stopPropagation();
-                onOpenAddMenu(e);
-              }}
-            >
-              +
+        <div className="dlg-content prompt-body">
+          <h2 id="support-title" className="prompt-title">
+            Need help?
+          </h2>
+          <p id="support-msg" className="prompt-msg">
+            Get support for {APP_NAME}, report a bug, or share a feature idea on
+            GitHub.
+          </p>
+          <div className="actions prompt-actions">
+            <button type="button" className="dlg-delete" onClick={onClose}>
+              Close
             </button>
-          )}
-        </div>
-        {!boardEdit && (
-          <div className="actions">
-            <button
-              type="button"
-              id="more"
-              title="More"
-              aria-label="More"
-              onClick={(e) => onOpenMore(e, folder)}
+            <a
+              ref={ctaRef}
+              className="dlg-create support-cta"
+              href={SUPPORT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              ⋯
-            </button>
+              Open support
+            </a>
           </div>
-        )}
+        </div>
       </div>
-      <div
-        id="menu"
-        style={{
-          display: menuOpen ? "block" : "none",
-          left: menuPos?.left ?? 0,
-          top: menuPos?.top ?? 0,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {TYPES.map(({ t, title, sub, off }) => (
-          <button
-            key={t}
-            type="button"
-            disabled={!!off}
-            title={off ? "Coming soon" : undefined}
-            onClick={() => {
-              if (off) return;
-              onAddTab(t, title);
-            }}
-          >
-            <span className="mi" style={{ background: tabC }}>
-              <Icon name={t} />
-            </span>
-            <span className="mt">
-              <b>{title}</b>
-              <span>{sub}</span>
-            </span>
-          </button>
-        ))}
-      </div>
-      <div
-        id="more-menu"
-        style={{
-          display: moreOpen ? "block" : "none",
-          top: morePos?.top ?? 0,
-          right: morePos?.right ?? 8,
-          left: "auto",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {archived ? (
-          <button
-            type="button"
-            onClick={(ev) => {
-              ev.stopPropagation();
-              onUnarchive(folder);
-            }}
-          >
-            Unarchive project
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={(ev) => {
-              ev.stopPropagation();
-              onArchive(folder);
-            }}
-          >
-            Archive project
-          </button>
-        )}
-        <button
-          type="button"
-          className="danger"
-          onClick={(ev) => {
-            ev.stopPropagation();
-            onDelete(folder);
-          }}
-        >
-          Delete project
-        </button>
-      </div>
-    </>
+    </div>
   );
 }
 
@@ -299,10 +165,7 @@ function TabMoreMenu({
   };
 
   return (
-    <div
-      className={"tab-more" + (open ? " open" : "")}
-      ref={wrapRef}
-    >
+    <div className={"tab-more" + (open ? " open" : "")} ref={wrapRef}>
       <button
         type="button"
         ref={btnRef}
@@ -418,7 +281,6 @@ function TabBtn({
     </>
   );
 
-  // Div when menu is present so the ⋮ can be a real nested button.
   if (showMenu) {
     return (
       <div
@@ -458,5 +320,157 @@ function TabBtn({
     >
       {body}
     </button>
+  );
+}
+
+export default function TabBar({
+  folder,
+  mods,
+  m,
+  tabC,
+  archived,
+  draftProject,
+  boardEdit,
+  menuOpen,
+  menuPos,
+  onSelectTab,
+  onOpenAddMenu,
+  onAddTab,
+  onMoveTab,
+  onRenameTab,
+  onDeleteTab,
+}) {
+  const tabsRef = useRef(null);
+  const swappingRef = useRef(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+
+  const moveAnimated = (index, dir) => {
+    if (swappingRef.current || archived || boardEdit) return;
+    const j = index + dir;
+    if (index < 1 || j < 1 || j >= mods.length) return;
+    const leftSlug = dir > 0 ? mods[index][2]?.slug : mods[j][2]?.slug;
+    const rightSlug = dir > 0 ? mods[j][2]?.slug : mods[index][2]?.slug;
+    if (!leftSlug || !rightSlug) return;
+    swappingRef.current = true;
+    flipSwapTabs(tabsRef.current, leftSlug, rightSlug, () => {
+      onMoveTab?.(index, dir);
+    });
+    window.setTimeout(() => {
+      swappingRef.current = false;
+    }, 320);
+  };
+
+  if (draftProject) {
+    const c = draftProject.color || tabC;
+    return (
+      <div id="bar" style={{ ["--tab"]: c }}>
+        <div id="tabs">
+          <TabBtn label="Cover" c={c} on type="Cover" slug="cover" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!folder) return <div id="bar" style={{ display: "none" }} />;
+
+  return (
+    <>
+      <div
+        id="bar"
+        className={boardEdit ? "board-editing" : undefined}
+        style={{ ["--tab"]: tabC }}
+      >
+        <div id="tabs" ref={tabsRef}>
+          {mods.map((mod, i) => {
+            const active = i === m;
+            const locked = boardEdit && !active;
+            const slug = mod[2]?.slug || mod[1] + i;
+            return (
+              <TabBtn
+                key={slug}
+                label={mod[1]}
+                c={tabC}
+                on={active}
+                type={mod[0]}
+                slug={slug}
+                disabled={locked}
+                showMenu={active && mod[0] !== "Cover" && !archived}
+                canLeft={i > 1}
+                canRight={i < mods.length - 1}
+                onClick={() => {
+                  if (locked) return;
+                  onSelectTab(i);
+                }}
+                onMoveLeft={() => moveAnimated(i, -1)}
+                onMoveRight={() => moveAnimated(i, 1)}
+                onRename={() => onRenameTab?.(i)}
+                onDelete={() => onDeleteTab?.(i)}
+              />
+            );
+          })}
+          {!archived && (
+            <button
+              type="button"
+              className={"tab add" + (boardEdit ? " locked" : "")}
+              id="add"
+              title="Add tab"
+              disabled={!!boardEdit}
+              aria-disabled={boardEdit || undefined}
+              onClick={(e) => {
+                if (boardEdit) return;
+                e.stopPropagation();
+                onOpenAddMenu(e);
+              }}
+            >
+              +
+            </button>
+          )}
+        </div>
+        <div className="actions">
+          <button
+            type="button"
+            id="support"
+            title="Support"
+            aria-label="Support"
+            onClick={() => setSupportOpen(true)}
+          >
+            <Icon name="Support" size={18} />
+          </button>
+        </div>
+      </div>
+      <div
+        id="menu"
+        style={{
+          display: menuOpen ? "block" : "none",
+          left: menuPos?.left ?? 0,
+          top: menuPos?.top ?? 0,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {TYPES.map(({ t, title, sub, off }) => (
+          <button
+            key={t}
+            type="button"
+            disabled={!!off}
+            title={off ? "Coming soon" : undefined}
+            onClick={() => {
+              if (off) return;
+              onAddTab(t, title);
+            }}
+          >
+            <span className="mi" style={{ background: tabC }}>
+              <Icon name={t} />
+            </span>
+            <span className="mt">
+              <b>{title}</b>
+              <span>{sub}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+      {supportOpen ? (
+        <SupportDialog onClose={() => setSupportOpen(false)} />
+      ) : null}
+    </>
   );
 }
