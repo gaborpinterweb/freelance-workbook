@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchTrash } from "../api.js";
+import { Icon } from "../icons.jsx";
 import { GACC, formatTrashDate } from "../utils.js";
 import GlobalBar from "./GlobalBar.jsx";
 
@@ -7,25 +8,74 @@ function trashKindLabel(kind) {
   if (kind === "note") return "Note";
   if (kind === "board") return "Board";
   if (kind === "notesTab") return "Notes tab";
-  return "Card";
+  return "Task";
+}
+
+function trashKindIcon(kind) {
+  if (kind === "note" || kind === "notesTab") return "Notes";
+  if (kind === "board") return "Board";
+  return "Task";
 }
 
 function trashMeta(entry) {
+  const type = trashKindLabel(entry.kind || "card");
   const project = entry.projectName || entry.project || "Project";
   const kind = entry.kind || "card";
   if (kind === "note") {
-    return `${project} · ${entry.notesTabName || entry.notesTab || "Notes"} · Note`;
+    const tab = entry.notesTabName || entry.notesTab || "Notes";
+    return `${type} on ${project} / ${tab}`;
   }
-  if (kind === "board") {
-    return `${project} · Board`;
+  if (kind === "board" || kind === "notesTab") {
+    return `${type} in ${project}`;
   }
-  if (kind === "notesTab") {
-    return `${project} · Notes tab`;
-  }
-  return `${project} · ${entry.boardName || entry.board || "Board"} · Card`;
+  const board = entry.boardName || entry.board || "Board";
+  return `${type} on ${project} / ${board}`;
 }
 
-export default function Trash({ tabC = GACC, refreshKey, onRestore }) {
+function canPreview(entry) {
+  const kind = entry.kind || "card";
+  return kind === "card" || kind === "note";
+}
+
+export function TrashNotePreview({ entry, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="ov ov-top"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="dlg trash-note-dlg"
+        role="dialog"
+        aria-modal="true"
+        aria-label={entry.title || "Note"}
+      >
+        <div className="dlg-content trash-note-body">
+          <div
+            className="tiptap"
+            dangerouslySetInnerHTML={{
+              __html: entry.body || "<p></p>",
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Trash({ tabC = GACC, refreshKey, onRestore, onPreview }) {
   const [items, setItems] = useState(null);
   const [busySlug, setBusySlug] = useState(null);
 
@@ -68,29 +118,62 @@ export default function Trash({ tabC = GACC, refreshKey, onRestore }) {
           <div className="empty-log">Trash is empty.</div>
         )}
         {items &&
-          items.map((entry) => (
-            <div className="entry trash-entry" key={entry.slug}>
-              <time dateTime={entry.deletedAt || ""}>
-                {formatTrashDate(entry.deletedAt)}
-              </time>
-              <div className="who">
-                <b>{entry.title || "Untitled"}</b>
-                <div className="meta">
-                  <span className="dot" style={{ background: entry.color || GACC }} />
-                  <span>{trashMeta(entry)}</span>
+          items.map((entry) => {
+            const kind = entry.kind || "card";
+            const previewable = canPreview(entry);
+            return (
+              <div className="entry trash-entry" key={entry.slug}>
+                <time dateTime={entry.deletedAt || ""}>
+                  {formatTrashDate(entry.deletedAt)}
+                </time>
+                <span
+                  className="trash-kind"
+                  title={trashKindLabel(kind)}
+                  aria-hidden="true"
+                >
+                  <Icon name={trashKindIcon(kind)} size={32} />
+                </span>
+                <div className="who">
+                  {previewable ? (
+                    <button
+                      type="button"
+                      onClick={() => onPreview?.(entry)}
+                      title="Preview"
+                    >
+                      <b>{entry.title || "Untitled"}</b>
+                      <div className="meta">
+                        <span
+                          className="dot"
+                          style={{ background: entry.color || GACC }}
+                        />
+                        <span>{trashMeta(entry)}</span>
+                      </div>
+                    </button>
+                  ) : (
+                    <>
+                      <b>{entry.title || "Untitled"}</b>
+                      <div className="meta">
+                        <span
+                          className="dot"
+                          style={{ background: entry.color || GACC }}
+                        />
+                        <span>{trashMeta(entry)}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
+                <button
+                  type="button"
+                  className="trash-restore"
+                  disabled={busySlug === entry.slug}
+                  onClick={() => handleRestore(entry)}
+                  title={`Restore ${trashKindLabel(kind).toLowerCase()}`}
+                >
+                  {busySlug === entry.slug ? "Restoring…" : "Restore"}
+                </button>
               </div>
-              <button
-                type="button"
-                className="trash-restore"
-                disabled={busySlug === entry.slug}
-                onClick={() => handleRestore(entry)}
-                title={`Restore ${trashKindLabel(entry.kind || "card").toLowerCase()}`}
-              >
-                {busySlug === entry.slug ? "Restoring…" : "Restore"}
-              </button>
-            </div>
-          ))}
+            );
+          })}
       </div>
     </div>
   );

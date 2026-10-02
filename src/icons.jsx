@@ -19,6 +19,10 @@ export const IC = {
     '<rect x="2" y="3" width="3.5" height="10" rx="1"/><rect x="6.5" y="3" width="3.5" height="6" rx="1"/><rect x="11" y="3" width="3" height="8" rx="1"/>',
     "#b45a3c",
   ],
+  Task: [
+    '<rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/><path d="M5 8.2l2 2 4-4.5"/>',
+    "",
+  ],
   Files: ['<path d="M2.5 3h4l1.5 2h5.5v8h-11z"/>', "#8a5c2e"],
   Docs: ['<path d="M4 2h6l3 3v9H4zM6.5 8h4M6.5 11h4"/>', "#5a6e4a"],
   Notes: ['<path d="M4 2h6l3 3v9H4zM6.5 8h4M6.5 11h4"/>', "#5a6e4a"],

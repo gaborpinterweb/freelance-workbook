@@ -18,6 +18,7 @@ export default function CardDialog({
   folders,
   stages,
   g,
+  readonly = false,
   onClose,
   onPersist,
   onCreate,
@@ -51,7 +52,7 @@ export default function CardDialog({
   const isDb = !isDraft && originLoc?.mod?.[0] === "Database";
 
   useEffect(() => {
-    if (isDraft || !curLoc || curLoc.mod[0] !== "Board" || !draft.slug) return;
+    if (readonly || isDraft || !curLoc || curLoc.mod[0] !== "Board" || !draft.slug) return;
     let cancelled = false;
     cardTimeSpentSec(curLoc.folder.slug, curLoc.mod[2].slug, draft.slug).then(
       (total) => {
@@ -61,7 +62,7 @@ export default function CardDialog({
     return () => {
       cancelled = true;
     };
-  }, [isDraft, curLoc, draft.slug]);
+  }, [readonly, isDraft, curLoc, draft.slug]);
 
   useEffect(() => {
     const esc = (e) => {
@@ -79,7 +80,7 @@ export default function CardDialog({
   })();
 
   const persist = async () => {
-    if (isDraft || !curLocRef.current) return;
+    if (readonly || isDraft || !curLocRef.current) return;
     const r = draftRef.current;
     const cur = curLocRef.current;
     const origin = originLocRef.current;
@@ -101,7 +102,7 @@ export default function CardDialog({
   };
 
   const persistSoon = () => {
-    if (isDraft) return;
+    if (readonly || isDraft) return;
     clearTimeout(persistTimer.current);
     persistTimer.current = setTimeout(() => {
       persist();
@@ -119,6 +120,10 @@ export default function CardDialog({
 
   const close = async (create) => {
     clearTimeout(persistTimer.current);
+    if (readonly) {
+      onClose({});
+      return;
+    }
     if (isDraft) {
       if (create) {
         if (!curLoc || curLoc.mod[0] !== "Board") return;
@@ -162,8 +167,16 @@ export default function CardDialog({
                 type="checkbox"
                 className="card-check"
                 checked={isDone(draft)}
-                title={isDone(draft) ? "Mark active" : "Mark completed"}
+                disabled={readonly}
+                title={
+                  readonly
+                    ? undefined
+                    : isDone(draft)
+                      ? "Mark active"
+                      : "Mark completed"
+                }
                 onChange={(e) => {
+                  if (readonly) return;
                   const doneAt = e.target.checked
                     ? new Date().toISOString()
                     : "";
@@ -177,8 +190,12 @@ export default function CardDialog({
                 className={"title" + (isDone(draft) ? " done" : "")}
                 value={draft.n || ""}
                 placeholder="Untitled"
-                autoFocus
-                onChange={(e) => patch({ n: e.target.value })}
+                autoFocus={!readonly}
+                readOnly={readonly}
+                onChange={(e) => {
+                  if (readonly) return;
+                  patch({ n: e.target.value });
+                }}
               />
             </div>
           )}
@@ -197,92 +214,120 @@ export default function CardDialog({
                   <tr>
                     <td>Task board</td>
                     <td>
-                      <div className="prop-split">
-                        <PropDropdown
-                          value={
-                            curLoc
-                              ? curLoc.folder.slug + "/" + curLoc.mod[2].slug
-                              : ""
-                          }
-                          options={boards.map(({ folder, mod }) => ({
-                            value: folder.slug + "/" + mod[2].slug,
-                            label: `${folder.name} · ${mod[1]}`,
-                            folder,
-                            mod,
-                          }))}
-                          onChange={(_v, o) => {
-                            const next = { folder: o.folder, mod: o.mod };
-                            setCurLoc(next);
-                            curLocRef.current = next;
-                            const cols = next.mod[2]?.columns || stages;
-                            if (!cols.includes(draftRef.current.s)) {
-                              patch({ s: cols[0] || stages[0] });
-                            }
-                            clearTimeout(persistTimer.current);
-                            persist();
-                          }}
-                          renderOption={(o) => (
-                            <>
-                              <span
-                                className="dot"
-                                style={{
-                                  background: o.folder.color || PC[0],
-                                }}
-                              />
-                              {o.label}
-                            </>
-                          )}
-                        >
+                      {readonly ? (
+                        <div className="prop-readonly">
                           <span
                             className="dot"
                             style={{
                               background: curLoc?.folder.color || PC[0],
                             }}
                           />
-                          <span className="lab">
+                          <span>
                             {(curLoc?.folder.name || "Project") +
                               " · " +
-                              (curLoc?.mod[1] || "Tab")}
+                              (curLoc?.mod[1] || "Tab") +
+                              " / " +
+                              (draft.s || "")}
                           </span>
-                        </PropDropdown>
-                        <span className="prop-split-sep" aria-hidden="true">
-                          /
-                        </span>
-                        <PropDropdown
-                          value={draft.s || ""}
-                          options={curLoc?.mod[2]?.columns || stages}
-                          onChange={(o) => {
-                            patch({ s: o });
-                            clearTimeout(persistTimer.current);
-                            draftRef.current = { ...draftRef.current, s: o };
-                            persist();
-                          }}
-                        >
-                          <span className="lab">{draft.s || ""}</span>
-                        </PropDropdown>
-                      </div>
+                        </div>
+                      ) : (
+                        <div className="prop-split">
+                          <PropDropdown
+                            value={
+                              curLoc
+                                ? curLoc.folder.slug + "/" + curLoc.mod[2].slug
+                                : ""
+                            }
+                            options={boards.map(({ folder, mod }) => ({
+                              value: folder.slug + "/" + mod[2].slug,
+                              label: `${folder.name} · ${mod[1]}`,
+                              folder,
+                              mod,
+                            }))}
+                            onChange={(_v, o) => {
+                              const next = { folder: o.folder, mod: o.mod };
+                              setCurLoc(next);
+                              curLocRef.current = next;
+                              const cols = next.mod[2]?.columns || stages;
+                              if (!cols.includes(draftRef.current.s)) {
+                                patch({ s: cols[0] || stages[0] });
+                              }
+                              clearTimeout(persistTimer.current);
+                              persist();
+                            }}
+                            renderOption={(o) => (
+                              <>
+                                <span
+                                  className="dot"
+                                  style={{
+                                    background: o.folder.color || PC[0],
+                                  }}
+                                />
+                                {o.label}
+                              </>
+                            )}
+                          >
+                            <span
+                              className="dot"
+                              style={{
+                                background: curLoc?.folder.color || PC[0],
+                              }}
+                            />
+                            <span className="lab">
+                              {(curLoc?.folder.name || "Project") +
+                                " · " +
+                                (curLoc?.mod[1] || "Tab")}
+                            </span>
+                          </PropDropdown>
+                          <span className="prop-split-sep" aria-hidden="true">
+                            /
+                          </span>
+                          <PropDropdown
+                            value={draft.s || ""}
+                            options={curLoc?.mod[2]?.columns || stages}
+                            onChange={(o) => {
+                              patch({ s: o });
+                              clearTimeout(persistTimer.current);
+                              draftRef.current = { ...draftRef.current, s: o };
+                              persist();
+                            }}
+                          >
+                            <span className="lab">{draft.s || ""}</span>
+                          </PropDropdown>
+                        </div>
+                      )}
                     </td>
                   </tr>
                   {showMasterColumn && (
                     <tr>
                       <td>Master board</td>
                       <td>
-                        <PropDropdown
-                          value={draft.ms || stages[0]}
-                          options={stages}
-                          onChange={(o) => {
-                            patch({ ms: o });
-                            clearTimeout(persistTimer.current);
-                            draftRef.current = { ...draftRef.current, ms: o };
-                            persist();
-                          }}
-                        >
-                          <span className="lab">{draft.ms || ""}</span>
-                        </PropDropdown>
+                        {readonly ? (
+                          <div className="prop-readonly">
+                            <span>{draft.ms || stages[0]}</span>
+                          </div>
+                        ) : (
+                          <PropDropdown
+                            value={draft.ms || stages[0]}
+                            options={stages}
+                            onChange={(o) => {
+                              patch({ ms: o });
+                              clearTimeout(persistTimer.current);
+                              draftRef.current = { ...draftRef.current, ms: o };
+                              persist();
+                            }}
+                          >
+                            <span className="lab">{draft.ms || ""}</span>
+                          </PropDropdown>
+                        )}
                       </td>
                     </tr>
                   )}
-                  {!isDraft && curLoc?.mod[0] === "Board" && draft.slug && spent > 0 && (
+                  {!isDraft &&
+                    !readonly &&
+                    curLoc?.mod[0] === "Board" &&
+                    draft.slug &&
+                    spent > 0 && (
                     <tr>
                       <td>Time spent</td>
                       <td>
@@ -313,11 +358,17 @@ export default function CardDialog({
             <RichTextEditor
               value={draft.body || ""}
               placeholder="Write something…"
-              onChange={(html) => patch({ body: html })}
+              editable={!readonly}
+              showToolbar={!readonly}
+              onChange={(html) => {
+                if (readonly) return;
+                patch({ body: html });
+              }}
             />
           </div>
         </div>
-        {(!isDraft && curLoc?.mod[0] === "Board" && draft.slug) || isDraft ? (
+        {!readonly &&
+        ((!isDraft && curLoc?.mod[0] === "Board" && draft.slug) || isDraft) ? (
           <div className="dlg-controls">
             <div className="actions">
               {!isDraft && curLoc?.mod[0] === "Board" && draft.slug ? (

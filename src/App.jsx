@@ -58,7 +58,7 @@ import Board, { DatabaseView } from "./components/Board.jsx";
 import Cover from "./components/Cover.jsx";
 import Calendar from "./components/Calendar.jsx";
 import Timelogs from "./components/Timelogs.jsx";
-import Trash from "./components/Trash.jsx";
+import Trash, { TrashNotePreview } from "./components/Trash.jsx";
 import Notes from "./components/Notes.jsx";
 import CardDialog from "./components/CardDialog.jsx";
 import SettingsDialog from "./components/SettingsDialog.jsx";
@@ -93,6 +93,7 @@ export default function App() {
   const [loaded, setLoaded] = useState(false);
   const [uiTick, setUiTick] = useState(0);
   const [dialog, setDialog] = useState(null);
+  const [trashPreview, setTrashPreview] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ left: 0, top: 0 });
   const [timelogRefresh, setTimelogRefresh] = useState(0);
@@ -928,6 +929,41 @@ export default function App() {
             <Trash
               tabC={GACC}
               refreshKey={trashRefresh}
+              onPreview={(entry) => {
+                const kind = entry.kind || "card";
+                if (kind === "note") {
+                  setTrashPreview({ kind: "note", entry });
+                  return;
+                }
+                if (kind !== "card") return;
+                setDialog({
+                  readonly: true,
+                  isDraft: false,
+                  row: {
+                    n: entry.title || "",
+                    s: entry.status || "",
+                    ms: entry.master || "",
+                    body: entry.body || "",
+                    slug: entry.card || entry.slug,
+                    doneAt: entry.doneAt || "",
+                  },
+                  loc: {
+                    folder: {
+                      slug: entry.project,
+                      name: entry.projectName || entry.project,
+                      color: entry.color || GACC,
+                    },
+                    mod: [
+                      "Board",
+                      entry.boardName || entry.board || "Board",
+                      {
+                        slug: entry.board,
+                        columns: entry.status ? [entry.status] : stages.slice(),
+                      },
+                    ],
+                  },
+                });
+              }}
               onRestore={async (entry) => {
                 let data = await restoreTrashApi({ slug: entry.slug });
                 if (data.needsParent) {
@@ -949,6 +985,7 @@ export default function App() {
                     throw new Error(data.error || "Could not restore parent");
                   }
                 }
+                setTrashPreview(null);
                 applyWorkspace(data, {
                   keepNav: {
                     project: data.project,
@@ -1137,6 +1174,7 @@ export default function App() {
           folders={folders}
           stages={stages}
           g={g}
+          readonly={!!dialog.readonly}
           onClose={(result) => {
             if (result?.draftRemember) {
               setCardDraft({
@@ -1152,7 +1190,7 @@ export default function App() {
             setDialog(null);
             bump();
           }}
-          onPersist={saveCard}
+          onPersist={dialog.readonly ? async () => {} : saveCard}
           onCreate={async (r, curLoc) => {
             await createCard(curLoc.folder, curLoc.mod, {
               title: r.n,
@@ -1171,7 +1209,7 @@ export default function App() {
               board: "",
             });
           }}
-          onDelete={deleteCard}
+          onDelete={dialog.readonly ? undefined : deleteCard}
           onDuplicate={async (r, curLoc) => {
             const projectSlug = curLoc.folder.slug;
             const boardSlug = curLoc.mod[2].slug;
@@ -1206,6 +1244,13 @@ export default function App() {
               body: r.body || "",
             });
           }}
+        />
+      )}
+
+      {trashPreview?.kind === "note" && (
+        <TrashNotePreview
+          entry={trashPreview.entry}
+          onClose={() => setTrashPreview(null)}
         />
       )}
 
