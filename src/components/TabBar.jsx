@@ -112,7 +112,7 @@ export default function TabBar({
               onAddTab(t, title);
             }}
           >
-            <span className="mi" style={{ background: IC[t]?.[1] }}>
+            <span className="mi" style={{ background: tabC }}>
               <Icon name={t} />
             </span>
             <span className="mt">
