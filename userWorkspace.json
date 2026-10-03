@@ -488,7 +488,8 @@
           "type": "notes",
           "slug": "qwe"
         }
-      ]
+      ],
+      "icon": "folder"
     }
   ],
   "timelogs": [
@@ -851,6 +852,21 @@
       "startedAt": "2026-10-01T19:04:34.269Z",
       "endedAt": "2026-10-01T19:04:47.869Z",
       "durationSec": 13
+    },
+    {
+      "slug": "2026-10-02-cove-brand-redesign-type-color-system",
+      "project": "cove-brand-redesign",
+      "board": "brand",
+      "card": "type-color-system",
+      "title": "Type & color system",
+      "projectName": "Cove brand redesign",
+      "boardName": "Brand",
+      "color": "#6b4f8c",
+      "kind": "pomodoro",
+      "note": "jio",
+      "startedAt": "2026-10-02T20:21:25.913Z",
+      "endedAt": "2026-10-02T20:21:33.213Z",
+      "durationSec": 7
     }
   ],
   "trash": [

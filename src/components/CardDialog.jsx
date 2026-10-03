@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { cardTimeSpentSec } from "../api.js";
+import { Icon } from "../icons.jsx";
 import {
   PC,
   allBoards,
@@ -7,6 +8,7 @@ import {
   isDone,
   pastel,
 } from "../utils.js";
+import Dropdown from "./Dropdown.jsx";
 import PropDropdown, { PropAffix, closePropDrops } from "./PropDropdown.jsx";
 import RichTextEditor from "./RichTextEditor.jsx";
 import { askConfirm } from "../confirmDialog.js";
@@ -209,149 +211,159 @@ export default function CardDialog({
                 onPersist={persist}
               />
             ) : (
-              <table className="props">
-                <tbody>
-                  <tr>
-                    <td>Task board</td>
-                    <td>
-                      {readonly ? (
-                        <div className="prop-readonly">
-                          <span
-                            className="dot"
-                            style={{
-                              background: curLoc?.folder.color || PC[0],
-                            }}
-                          />
-                          <span>
-                            {(curLoc?.folder.name || "Project") +
-                              " · " +
-                              (curLoc?.mod[1] || "Tab") +
-                              " / " +
-                              (draft.s || "")}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="prop-split">
-                          <PropDropdown
-                            value={
-                              curLoc
-                                ? curLoc.folder.slug + "/" + curLoc.mod[2].slug
-                                : ""
-                            }
-                            options={boards.map(({ folder, mod }) => ({
-                              value: folder.slug + "/" + mod[2].slug,
-                              label: `${folder.name} · ${mod[1]}`,
-                              folder,
-                              mod,
-                            }))}
-                            onChange={(_v, o) => {
-                              const next = { folder: o.folder, mod: o.mod };
-                              setCurLoc(next);
-                              curLocRef.current = next;
-                              const cols = next.mod[2]?.columns || stages;
-                              if (!cols.includes(draftRef.current.s)) {
-                                patch({ s: cols[0] || stages[0] });
-                              }
-                              clearTimeout(persistTimer.current);
-                              persist();
-                            }}
-                            renderOption={(o) => (
-                              <>
-                                <span
-                                  className="dot"
-                                  style={{
-                                    background: o.folder.color || PC[0],
-                                  }}
-                                />
-                                {o.label}
-                              </>
-                            )}
-                          >
-                            <span
-                              className="dot"
-                              style={{
-                                background: curLoc?.folder.color || PC[0],
-                              }}
-                            />
-                            <span className="lab">
-                              {(curLoc?.folder.name || "Project") +
-                                " · " +
-                                (curLoc?.mod[1] || "Tab")}
-                            </span>
-                          </PropDropdown>
-                          <span className="prop-split-sep" aria-hidden="true">
-                            /
-                          </span>
-                          <PropDropdown
-                            value={draft.s || ""}
-                            options={curLoc?.mod[2]?.columns || stages}
-                            onChange={(o) => {
-                              patch({ s: o });
-                              clearTimeout(persistTimer.current);
-                              draftRef.current = { ...draftRef.current, s: o };
-                              persist();
-                            }}
-                          >
-                            <span className="lab">{draft.s || ""}</span>
-                          </PropDropdown>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                  {showMasterColumn && (
-                    <tr>
-                      <td>Master board</td>
-                      <td>
-                        {readonly ? (
-                          <div className="prop-readonly">
-                            <span>{draft.ms || stages[0]}</span>
-                          </div>
-                        ) : (
-                          <PropDropdown
-                            value={draft.ms || stages[0]}
-                            options={stages}
-                            onChange={(o) => {
-                              patch({ ms: o });
-                              clearTimeout(persistTimer.current);
-                              draftRef.current = { ...draftRef.current, ms: o };
-                              persist();
-                            }}
-                          >
-                            <span className="lab">{draft.ms || ""}</span>
-                          </PropDropdown>
-                        )}
-                      </td>
-                    </tr>
-                  )}
-                  {!isDraft &&
-                    !readonly &&
-                    curLoc?.mod[0] === "Board" &&
-                    draft.slug &&
-                    spent > 0 && (
-                    <tr>
-                      <td>Time spent</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="prop-link"
-                          onClick={async () => {
-                            await onOpenTimelogs({
-                              project: curLoc.folder.slug,
-                              board: curLoc.mod[2].slug,
-                              card: draft.slug,
-                              title: draft.n || "Untitled",
-                            });
-                            await close(false);
+              <div className="prop-chips">
+                {readonly ? (
+                  <span className="prop-chip prop-chip-ro">
+                    <span
+                      className="dot"
+                      style={{
+                        background: curLoc?.folder.color || PC[0],
+                      }}
+                    />
+                    <span className="lab">
+                      {(curLoc?.folder.name || "Project") +
+                        " · " +
+                        (curLoc?.mod[1] || "Tab")}
+                    </span>
+                  </span>
+                ) : (
+                  <PropDropdown
+                    className="prop-chip"
+                    value={
+                      curLoc
+                        ? curLoc.folder.slug + "/" + curLoc.mod[2].slug
+                        : ""
+                    }
+                    options={boards.map(({ folder, mod }) => ({
+                      value: folder.slug + "/" + mod[2].slug,
+                      label: `${folder.name} · ${mod[1]}`,
+                      folder,
+                      mod,
+                    }))}
+                    onChange={(_v, o) => {
+                      const next = { folder: o.folder, mod: o.mod };
+                      setCurLoc(next);
+                      curLocRef.current = next;
+                      const cols = next.mod[2]?.columns || stages;
+                      if (!cols.includes(draftRef.current.s)) {
+                        patch({ s: cols[0] || stages[0] });
+                      }
+                      clearTimeout(persistTimer.current);
+                      persist();
+                    }}
+                    renderOption={(o) => (
+                      <>
+                        <span
+                          className="dot"
+                          style={{
+                            background: o.folder.color || PC[0],
                           }}
-                        >
-                          <span className="lab">{formatSpent(spent)}</span>
-                          <PropAffix kind="arrow" />
-                        </button>
-                      </td>
-                    </tr>
+                        />
+                        {o.label}
+                      </>
+                    )}
+                  >
+                    <span
+                      className="dot"
+                      style={{
+                        background: curLoc?.folder.color || PC[0],
+                      }}
+                    />
+                    <span className="lab">
+                      {(curLoc?.folder.name || "Project") +
+                        " · " +
+                        (curLoc?.mod[1] || "Tab")}
+                    </span>
+                  </PropDropdown>
+                )}
+                {readonly ? (
+                  <span className="prop-chip prop-chip-ro">
+                    <span className="lab">{draft.s || ""}</span>
+                  </span>
+                ) : (
+                  <PropDropdown
+                    className="prop-chip"
+                    value={draft.s || ""}
+                    options={curLoc?.mod[2]?.columns || stages}
+                    onChange={(o) => {
+                      patch({ s: o });
+                      clearTimeout(persistTimer.current);
+                      draftRef.current = { ...draftRef.current, s: o };
+                      persist();
+                    }}
+                  >
+                    <span className="lab">{draft.s || ""}</span>
+                  </PropDropdown>
+                )}
+                {showMasterColumn &&
+                  (readonly ? (
+                    <span className="prop-chip prop-chip-ro">
+                      <span className="chip-k">Master</span>
+                      <span className="lab">{draft.ms || stages[0]}</span>
+                    </span>
+                  ) : (
+                    <PropDropdown
+                      className="prop-chip"
+                      value={draft.ms || stages[0]}
+                      options={stages}
+                      onChange={(o) => {
+                        patch({ ms: o });
+                        clearTimeout(persistTimer.current);
+                        draftRef.current = { ...draftRef.current, ms: o };
+                        persist();
+                      }}
+                    >
+                      <span className="chip-k">Master</span>
+                      <span className="lab">{draft.ms || ""}</span>
+                    </PropDropdown>
+                  ))}
+                {!isDraft &&
+                  !readonly &&
+                  curLoc?.mod[0] === "Board" &&
+                  draft.slug && (
+                    <Dropdown
+                      className="prop-dd prop-chip"
+                      buttonClassName="prop-dd-btn"
+                      ariaLabel="Timelog"
+                      title="Timelog"
+                      caret={false}
+                      options={[
+                        ...(showTimelogs
+                          ? [{ value: "pomo", label: "Start pomodoro" }]
+                          : []),
+                        { value: "logs", label: "Open timelogs..." },
+                      ]}
+                      onChange={async (v) => {
+                        if (v === "pomo") {
+                          await onStartPomo({
+                            project: curLoc.folder.slug,
+                            board: curLoc.mod[2].slug,
+                            card: draft.slug,
+                            title: draft.n || "Untitled",
+                            projectName: curLoc.folder.name,
+                            boardName: curLoc.mod[1],
+                            color: curLoc.folder.color || PC[0],
+                          });
+                          await close(false);
+                          return;
+                        }
+                        if (v === "logs") {
+                          await onOpenTimelogs({
+                            project: curLoc.folder.slug,
+                            board: curLoc.mod[2].slug,
+                            card: draft.slug,
+                            title: draft.n || "Untitled",
+                          });
+                          await close(false);
+                        }
+                      }}
+                    >
+                      <Icon name="Timelogs" size={12} />
+                      <span className="lab">{formatSpent(spent)}</span>
+                      <PropAffix kind="caret" />
+                    </Dropdown>
                   )}
-                </tbody>
-              </table>
+              </div>
             )}
           </div>
           <div className="dlg-description">
@@ -402,26 +414,6 @@ export default function CardDialog({
                   >
                     Duplicate
                   </button>
-                  {showTimelogs && (
-                    <button
-                      type="button"
-                      className="pomo-start"
-                      onClick={async () => {
-                        await onStartPomo({
-                          project: curLoc.folder.slug,
-                          board: curLoc.mod[2].slug,
-                          card: draft.slug,
-                          title: draft.n || "Untitled",
-                          projectName: curLoc.folder.name,
-                          boardName: curLoc.mod[1],
-                          color: curLoc.folder.color || PC[0],
-                        });
-                        await close(false);
-                      }}
-                    >
-                      Start pomodoro
-                    </button>
-                  )}
                 </>
               ) : (
                 <button
